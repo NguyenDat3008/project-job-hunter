@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 
 import vn.demo.jobhunter.domain.Company;
 import vn.demo.jobhunter.domain.Job;
+import vn.demo.jobhunter.domain.response.job.ResCreateJobDTO;
+import vn.demo.jobhunter.domain.response.job.ResUpdateJobDTO;
 import vn.demo.jobhunter.repository.CompanyRepository;
 import vn.demo.jobhunter.repository.JobRepository;
 
@@ -21,30 +23,46 @@ public class JobService {
         this.companyRepository = companyRepository;
     }
 
-    // tạo mới job
-    public Job create(Job j) {
-        // Check xem đã tồn tại chưa trước khi gắn vào
+    // === TẠO MỚI JOB → trả về DTO ===
+    public ResCreateJobDTO create(Job j) {
+        // Check company
         if (j.getCompany() != null) {
             Optional<Company> cOptional = this.companyRepository.findById(j.getCompany().getId());
             if (cOptional.isPresent()) {
                 j.setCompany(cOptional.get());
             }
         }
-        return this.jobRepository.save(j);
+
+        Job currentJob = this.jobRepository.save(j);
+
+        // Convert Entity → DTO (chỉ trả những trường cần thiết)
+        ResCreateJobDTO dto = new ResCreateJobDTO();
+        dto.setId(currentJob.getId());
+        dto.setName(currentJob.getName());
+        dto.setSalary(currentJob.getSalary());
+        dto.setQuantity(currentJob.getQuantity());
+        dto.setLocation(currentJob.getLocation());
+        dto.setStartDate(currentJob.getStartDate());
+        dto.setEndDate(currentJob.getEndDate());
+        dto.setActive(currentJob.isActive());
+        dto.setCreatedAt(currentJob.getCreatedAt());
+        dto.setCreatedBy(currentJob.getCreatedBy());
+
+        return dto;
     }
 
-    //lấy tất cả job
+    // === LẤY TẤT CẢ JOB ===
     public List<Job> fetchAll() {
         return this.jobRepository.findAll();
     }
 
-    // tìm job theo id
+    // === TÌM THEO ID ===
     public Optional<Job> fetchJobById(long id) {
         return this.jobRepository.findById(id);
     }
 
-    //cập nhật job
-    public Job update(Job j, Job jobInDB) {
+    // === CẬP NHẬT JOB → trả về DTO ===
+    public ResUpdateJobDTO update(Job j, Job jobInDB) {
         if (j.getCompany() != null) {
             Optional<Company> cOptional = this.companyRepository.findById(j.getCompany().getId());
             if (cOptional.isPresent()) {
@@ -59,10 +77,26 @@ public class JobService {
         jobInDB.setStartDate(j.getStartDate());
         jobInDB.setEndDate(j.getEndDate());
         jobInDB.setActive(j.isActive());
-        return this.jobRepository.save(jobInDB);
+
+        Job currentJob = this.jobRepository.save(jobInDB);
+
+        // Convert Entity → DTO
+        ResUpdateJobDTO dto = new ResUpdateJobDTO();
+        dto.setId(currentJob.getId());
+        dto.setName(currentJob.getName());
+        dto.setSalary(currentJob.getSalary());
+        dto.setQuantity(currentJob.getQuantity());
+        dto.setLocation(currentJob.getLocation());
+        dto.setStartDate(currentJob.getStartDate());
+        dto.setEndDate(currentJob.getEndDate());
+        dto.setActive(currentJob.isActive());
+        dto.setUpdatedAt(currentJob.getUpdatedAt());
+        dto.setUpdatedBy(currentJob.getUpdatedBy());
+
+        return dto;
     }
 
-    //xóa job
+    // === XOÁ JOB ===
     public void delete(long id) {
         this.jobRepository.deleteById(id);
     }

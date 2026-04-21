@@ -19,12 +19,14 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import vn.demo.jobhunter.domain.Job;
+import vn.demo.jobhunter.domain.response.job.ResCreateJobDTO;
+import vn.demo.jobhunter.domain.response.job.ResUpdateJobDTO;
 import vn.demo.jobhunter.service.JobService;
 
 @RestController
 @RequestMapping("/api/v1")
 @CrossOrigin(origins = "*")
-@Tag(name = "Job", description = "API quản lý công việc")
+@Tag(name = "Job", description = "API Quản lý Công việc")
 public class JobController {
 
     private final JobService jobService;
@@ -33,22 +35,22 @@ public class JobController {
         this.jobService = jobService;
     }
 
-    //POST /api/v1/jobs
+    // CREATE → trả về ResCreateJobDTO (DTO)
     @PostMapping("/jobs")
-    @Operation(summary = "Tạo mới công việc", description = "Kèm company.id để liên kết")
-    public ResponseEntity<Job> create(@Valid @RequestBody Job job) {
+    @Operation(summary = "Tạo mới công việc")
+    public ResponseEntity<ResCreateJobDTO> create(@Valid @RequestBody Job job) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(this.jobService.create(job));
     }
 
-    // GET /api/v1/jobs
+    // READ ALL
     @GetMapping("/jobs")
     @Operation(summary = "Lấy danh sách việc làm")
     public ResponseEntity<List<Job>> getAllJobs() {
         return ResponseEntity.ok(this.jobService.fetchAll());
     }
 
-    //GET /api/v1/jobs/1
+    // READ ONE
     @GetMapping("/jobs/{id}")
     @Operation(summary = "Lấy việc làm theo ID")
     public ResponseEntity<Job> getJob(@PathVariable("id") long id) {
@@ -59,10 +61,10 @@ public class JobController {
         return ResponseEntity.notFound().build();
     }
 
-    //PUT /api/v1/jobs
+    // UPDATE → trả về ResUpdateJobDTO (DTO)
     @PutMapping("/jobs")
     @Operation(summary = "Cập nhật việc làm")
-    public ResponseEntity<Job> update(@Valid @RequestBody Job job) {
+    public ResponseEntity<ResUpdateJobDTO> update(@Valid @RequestBody Job job) {
         Optional<Job> currentJob = this.jobService.fetchJobById(job.getId());
         if (!currentJob.isPresent()) {
             return ResponseEntity.notFound().build();
@@ -70,7 +72,7 @@ public class JobController {
         return ResponseEntity.ok(this.jobService.update(job, currentJob.get()));
     }
 
-    //DELETE /api/v1/jobs/1
+    // DELETE
     @DeleteMapping("/jobs/{id}")
     @Operation(summary = "Xoá việc làm theo ID")
     public ResponseEntity<Void> delete(@PathVariable("id") long id) {
