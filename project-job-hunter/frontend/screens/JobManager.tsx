@@ -1,9 +1,34 @@
 import React from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, Platform} from 'react-native';
 
+interface Company {
+  id: number;
+  name: string;
+  address: string;
+}
+
+interface Job {
+  id: number;
+  name: string;
+  salary: number;
+  company?: Company;
+}
+
+interface JobManagerProps {
+  jobs: Job[];
+  jobName: string;
+  setJobName: (text: string) => void;
+  jobSalary: string;
+  setJobSalary: (text: string) => void;
+  jobCompanyId: string;
+  setJobCompanyId: (text: string) => void;
+  onAdd: () => void;
+  onDelete: (id: number) => void;
+}
+
 export const JobManager = ({ 
   jobs, jobName, setJobName, jobSalary, setJobSalary, jobCompanyId, setJobCompanyId, onAdd, onDelete 
-}: any) => (
+}: JobManagerProps) => (
   <View style={{ flex: 1 }}>
     <View style={styles.formCard}>
       <Text style={styles.formTitle}>Đăng Việc Làm Mới</Text>
