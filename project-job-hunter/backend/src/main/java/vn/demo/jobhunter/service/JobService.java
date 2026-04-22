@@ -23,7 +23,7 @@ public class JobService {
         this.companyRepository = companyRepository;
     }
 
-    // === TẠO MỚI JOB → trả về DTO ===
+    // tạo mới job từ đó trả về DTO
     public ResCreateJobDTO create(Job j) {
         // Check company
         if (j.getCompany() != null) {
@@ -51,17 +51,17 @@ public class JobService {
         return dto;
     }
 
-    // === LẤY TẤT CẢ JOB ===
+    //lấy tất cả job
     public List<Job> fetchAll() {
         return this.jobRepository.findAll();
     }
 
-    // === TÌM THEO ID ===
+    //tìm theo id
     public Optional<Job> fetchJobById(long id) {
         return this.jobRepository.findById(id);
     }
 
-    // === CẬP NHẬT JOB → trả về DTO ===
+    //cập nhật job trả về DTO
     public ResUpdateJobDTO update(Job j, Job jobInDB) {
         if (j.getCompany() != null) {
             Optional<Company> cOptional = this.companyRepository.findById(j.getCompany().getId());
@@ -96,7 +96,7 @@ public class JobService {
         return dto;
     }
 
-    // === XOÁ JOB ===
+    // xóa job
     public void delete(long id) {
         this.jobRepository.deleteById(id);
     }
