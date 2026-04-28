@@ -16,9 +16,6 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
-// === GIẢI THÍCH CHO BÁO CÁO ===
-// Entity Job đại diện cho bảng "jobs" trong Database
-// Một Job THUỘC VỀ một Company (quan hệ nhiều - một / ManyToOne)
 @Entity
 @Table(name = "jobs")
 @Getter

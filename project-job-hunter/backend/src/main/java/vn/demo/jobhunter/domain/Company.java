@@ -16,10 +16,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
-// === GIẢI THÍCH CHO BÁO CÁO ===
-// @Entity: Đánh dấu class này tương ứng với 1 bảng trong Database MySQL
-// @Table(name = "companies"): Tên bảng trong DB là "companies"
-// @Getter @Setter: Thư viện Lombok tự tạo hàm get/set cho tất cả field
+
 @Entity
 @Table(name = "companies")
 @Getter
@@ -52,8 +49,6 @@ public class Company {
     @OneToMany(mappedBy = "company")
     List<Job> jobs;
 
-    // === GIẢI THÍCH CHO BÁO CÁO ===
-    // @PrePersist: Hàm này TỰ ĐỘNG chạy TRƯỚC KHI entity được lưu vào DB lần đầu
     // Mục đích: Tự động ghi lại thời điểm tạo record
     @PrePersist
     public void handleBeforeCreate() {

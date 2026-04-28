@@ -51,10 +51,56 @@ export default function App() {
     }
   };
 
-  const handleAddCompany = async () => { /* code api.post... */ fetchData(); };
-  const handleDeleteCompany = async (id: number) => { /* code api.delete... */ fetchData(); };
-  const handleAddJob = async () => { /* code api.post... */ fetchData(); };
-  const handleDeleteJob = async (id: number) => { /* code api.delete... */ fetchData(); };
+  const handleAddCompany = async () => {    if (!compName) return;
+    try {
+      setLoading(true);
+      const res = await api.post('/companies', { name: compName, address: compAddress });
+      setCompanies([res.data, ...companies]);
+      setCompName(''); setCompAddress('');
+      Platform.OS === 'web' ? alert("✅ Thêm Công ty thành công!") : Alert.alert("Thành công", "Đã thêm Công ty mới!");
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    } };
+
+  const handleDeleteCompany = async (id: number) => {     
+    try {
+      await api.delete(`/companies/${id}`);
+      setCompanies(companies.filter(c => c.id !== id));
+    } catch (error) {
+      console.log(error);
+    } 
+  };
+
+  const handleAddJob = async () => {    if (!jobName || !jobCompanyId) return Alert.alert("Lỗi", "Tên và ID Công ty không được trống");
+    try {
+      setLoading(true);
+      const newJob = {
+        name: jobName,
+        salary: Number(jobSalary),
+        company: { id: Number(jobCompanyId) } // Liên kết ManyToOne xuống Backend
+      };
+      const res = await api.post('/jobs', newJob);
+      // Fetch lại để lấy cả thông tin chi tiết company của job mới
+      await fetchData(); 
+      setJobName(''); setJobSalary(''); setJobCompanyId('');
+      Platform.OS === 'web' ? alert("✅ Thêm Việc làm thành công!") : Alert.alert("Thành công", "Đã đăng công việc mới!");
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteJob = async (id: number) => {   
+    try {
+      await api.delete(`/jobs/${id}`);
+      setJobs(jobs.filter(j => j.id !== id));
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   return (
     <View style={styles.root}>
