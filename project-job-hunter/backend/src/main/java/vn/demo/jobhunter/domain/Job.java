@@ -1,27 +1,38 @@
 package vn.demo.jobhunter.domain;
 
 import java.time.Instant;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
+import vn.demo.jobhunter.util.SecurityUtil;
+import vn.demo.jobhunter.util.constant.LevelEnum;
 
 @Entity
 @Table(name = "jobs")
 @Getter
 @Setter
 public class Job {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
@@ -36,6 +47,9 @@ public class Job {
 
     private int quantity;
 
+    @Enumerated(EnumType.STRING)
+    private LevelEnum level;
+
     @Column(columnDefinition = "MEDIUMTEXT")
     private String description;
 
@@ -43,31 +57,44 @@ public class Job {
     private Instant endDate;
     private boolean active;
 
+    private Boolean isPremium = false;
+    private Boolean isUrgent = false;
+    private Long viewCount = 0L;
+    private Long applicantCount = 0L;
+
     private Instant createdAt;
     private Instant updatedAt;
     private String createdBy;
     private String updatedBy;
 
-    // === GIẢI THÍCH CHO BÁO CÁO (QUAN TRỌNG!) ===
-    // @ManyToOne: Quan hệ Nhiều-Một. Nghĩa là: NHIỀU Job có thể thuộc về MỘT Company
-    // @JoinColumn(name = "company_id"): Tạo cột "company_id" trong bảng "jobs" làm KHÓA NGOẠI (Foreign Key)
-    //   trỏ về cột "id" của bảng "companies"
-    // 
-    // Ví dụ trong Database:
-    //   Bảng jobs:    | id=1 | name="Dev React" | company_id=1 |
-    //   Bảng companies: | id=1 | name="FPT Software" |
-    //   => Job "Dev React" thuộc về company "FPT Software"
     @ManyToOne
     @JoinColumn(name = "company_id")
     private Company company;
 
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JsonIgnoreProperties(value = { "jobs" })
+    @JoinTable(name = "job_skill", joinColumns = @JoinColumn(name = "job_id"), inverseJoinColumns = @JoinColumn(name = "skill_id"))
+    private List<Skill> skills;
+
+    @OneToMany(mappedBy = "job", fetch = FetchType.LAZY)
+    @JsonIgnore
+    List<Resume> resumes;
+
     @PrePersist
     public void handleBeforeCreate() {
+        this.createdBy = SecurityUtil.getCurrentUserLogin().isPresent() == true
+                ? SecurityUtil.getCurrentUserLogin().get()
+                : "";
+
         this.createdAt = Instant.now();
     }
 
     @PreUpdate
     public void handleBeforeUpdate() {
+        this.updatedBy = SecurityUtil.getCurrentUserLogin().isPresent() == true
+                ? SecurityUtil.getCurrentUserLogin().get()
+                : "";
+
         this.updatedAt = Instant.now();
     }
 }
