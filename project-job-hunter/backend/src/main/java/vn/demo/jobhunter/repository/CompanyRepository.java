@@ -9,5 +9,5 @@ import vn.demo.jobhunter.domain.Company;
 @Repository
 public interface CompanyRepository extends JpaRepository<Company, Long>,
         JpaSpecificationExecutor<Company> {
-
+    boolean existsByName(String name);
 }

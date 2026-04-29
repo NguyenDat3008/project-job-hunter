@@ -1,0 +1,47 @@
+package vn.demo.jobhunter.service;
+
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
+import vn.demo.jobhunter.domain.Company;
+import vn.demo.jobhunter.domain.Job;
+import vn.demo.jobhunter.repository.CompanyRepository;
+import vn.demo.jobhunter.repository.JobRepository;
+
+@Service
+public class PremiumService {
+
+    private final CompanyRepository companyRepository;
+    private final JobRepository jobRepository;
+
+    public PremiumService(CompanyRepository companyRepository, JobRepository jobRepository) {
+        this.companyRepository = companyRepository;
+        this.jobRepository = jobRepository;
+    }
+
+    public void subscribePremium(Company company, String tier) {
+        company.setIsPremium(true);
+        company.setPremiumTier(tier.toUpperCase());
+        // Set expiry for 30 days
+        company.setPremiumExpiryDate(Instant.now().plus(30, ChronoUnit.DAYS));
+        this.companyRepository.save(company);
+
+        // Update jobs
+        List<Job> jobs = company.getJobs();
+        if (jobs != null) {
+            for (Job j : jobs) {
+                j.setIsPremium(true);
+            }
+            this.jobRepository.saveAll(jobs);
+        }
+    }
+
+    public boolean isCompanyPremium(Company company) {
+        return company.getIsPremium() != null && company.getIsPremium() 
+               && company.getPremiumExpiryDate() != null 
+               && company.getPremiumExpiryDate().isAfter(Instant.now());
+    }
+}
