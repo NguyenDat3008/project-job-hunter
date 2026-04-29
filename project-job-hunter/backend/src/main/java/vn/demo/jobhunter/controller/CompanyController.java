@@ -6,25 +6,28 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.turkraft.springfilter.boot.Filter;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import vn.demo.jobhunter.domain.Company;
 import vn.demo.jobhunter.domain.response.ResultPaginationDTO;
 import vn.demo.jobhunter.service.CompanyService;
 import vn.demo.jobhunter.util.annotation.ApiMessage;
+import vn.demo.jobhunter.util.error.PermissionException;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+
+/**
+ * @controller CompanyController
+ * @description API Quản lý Công ty - Hỗ trợ quy trình Đăng ký & Phê duyệt
+ */
 @RestController
 @RequestMapping("/api/v1")
+@Tag(name = "Company", description = "API Quản lý Công ty")
 public class CompanyController {
     private final CompanyService companyService;
 
@@ -33,35 +36,44 @@ public class CompanyController {
     }
 
     @PostMapping("/companies")
-    public ResponseEntity<?> createCompany(@Valid @RequestBody Company reqCompany) {
-
+    @ApiMessage("Create a company")
+    @Operation(summary = "Tạo mới công ty", description = "Nhập thông tin công ty mới vào hệ thống")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_SUPER_ADMIN')")
+    public ResponseEntity<Company> createCompany(@Valid @RequestBody Company reqCompany) throws PermissionException {
         return ResponseEntity.status(HttpStatus.CREATED).body(this.companyService.handleCreateCompany(reqCompany));
     }
 
     @GetMapping("/companies")
-    @ApiMessage("Fetch companies")
+    @ApiMessage("Fetch companies with pagination")
+    @Operation(summary = "Lấy danh sách công ty", description = "Lấy danh sách các công ty có hỗ trợ phân trang và lọc")
     public ResponseEntity<ResultPaginationDTO> getCompany(
-            @Filter Specification<Company> spec, Pageable pageable) {
-
+            @Filter Specification<Company> spec,
+            Pageable pageable) {
         return ResponseEntity.ok(this.companyService.handleGetCompany(spec, pageable));
     }
 
     @PutMapping("/companies")
-    public ResponseEntity<Company> updateCompany(@Valid @RequestBody Company reqCompany) {
-        Company updatedCompany = this.companyService.handleUpdateCompany(reqCompany);
-        return ResponseEntity.ok(updatedCompany);
+    @ApiMessage("Update company information")
+    @Operation(summary = "Cập nhật công ty", description = "Cập nhật thông tin công ty hoặc phê duyệt trạng thái active")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_SUPER_ADMIN', 'ROLE_HR')")
+    public ResponseEntity<Company> updateCompany(@Valid @RequestBody Company reqCompany) throws PermissionException {
+        return ResponseEntity.ok(this.companyService.handleUpdateCompany(reqCompany));
     }
 
     @DeleteMapping("/companies/{id}")
+    @ApiMessage("Delete a company")
+    @Operation(summary = "Xóa công ty", description = "Xóa công ty khỏi hệ thống dựa trên ID")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_SUPER_ADMIN')")
     public ResponseEntity<Void> deleteCompany(@PathVariable("id") long id) {
         this.companyService.handleDeleteCompany(id);
         return ResponseEntity.ok(null);
     }
 
     @GetMapping("/companies/{id}")
-    @ApiMessage("fetch company by id")
+    @ApiMessage("Fetch company by id")
+    @Operation(summary = "Lấy chi tiết công ty", description = "Lấy toàn bộ thông tin của một công ty thông qua ID")
     public ResponseEntity<Company> fetchCompanyById(@PathVariable("id") long id) {
-        Optional<Company> cOptional = this.companyService.findById(id);
-        return ResponseEntity.ok().body(cOptional.get());
+        Optional<Company> companyOptional = this.companyService.findById(id);
+        return ResponseEntity.ok().body(companyOptional.orElse(null));
     }
 }
