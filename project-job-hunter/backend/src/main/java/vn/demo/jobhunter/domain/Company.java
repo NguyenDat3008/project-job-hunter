@@ -18,11 +18,6 @@ import lombok.Getter;
 import lombok.Setter;
 import vn.demo.jobhunter.util.SecurityUtil;
 
-<<<<<<< HEAD
-
-@Entity
-=======
->>>>>>> job-applications
 @Table(name = "companies")
 @Entity
 @Getter
@@ -70,10 +65,6 @@ public class Company {
     @JsonIgnore
     List<Job> jobs;
 
-<<<<<<< HEAD
-    // Mục đích: Tự động ghi lại thời điểm tạo record
-=======
->>>>>>> job-applications
     @PrePersist
     public void handleBeforeCreate() {
         this.createdBy = SecurityUtil.getCurrentUserLogin().isPresent() == true
