@@ -45,6 +45,9 @@ public class AuthController {
     @Value("${demo.jwt.refresh-token-validity-in-seconds}")
     private long refreshTokenExpiration;
 
+    // Set false khi dev local (HTTP). Đổi thành true khi deploy production (HTTPS)
+    private static final boolean COOKIE_SECURE = false;
+
     public AuthController(
             AuthenticationManagerBuilder authenticationManagerBuilder,
             SecurityUtil securityUtil,
@@ -108,7 +111,7 @@ public class AuthController {
         ResponseCookie resCookies = ResponseCookie
                 .from("refresh_token", refresh_token)
                 .httpOnly(true)
-                .secure(true)
+                .secure(COOKIE_SECURE)
                 .path("/")
                 .maxAge(refreshTokenExpiration)
                 .build();
@@ -197,7 +200,7 @@ public class AuthController {
         ResponseCookie resCookies = ResponseCookie
                 .from("refresh_token", new_refresh_token)
                 .httpOnly(true)
-                .secure(true)
+                .secure(COOKIE_SECURE)
                 .path("/")
                 .maxAge(refreshTokenExpiration)
                 .build();
@@ -224,7 +227,7 @@ public class AuthController {
         ResponseCookie deleteSpringCookie = ResponseCookie
                 .from("refresh_token", null)
                 .httpOnly(true)
-                .secure(true)
+                .secure(COOKIE_SECURE)
                 .path("/")
                 .maxAge(0)
                 .build();

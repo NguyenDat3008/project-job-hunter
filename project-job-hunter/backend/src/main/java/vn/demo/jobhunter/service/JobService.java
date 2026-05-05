@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -12,6 +13,7 @@ import vn.demo.jobhunter.domain.Job;
 import vn.demo.jobhunter.domain.Skill;
 import vn.demo.jobhunter.domain.response.ResultPaginationDTO;
 import vn.demo.jobhunter.domain.response.job.ResCreateJobDTO;
+import vn.demo.jobhunter.domain.response.job.ResFetchJobDTO;
 import vn.demo.jobhunter.domain.response.job.ResUpdateJobDTO;
 import vn.demo.jobhunter.repository.CompanyRepository;
 import vn.demo.jobhunter.repository.JobRepository;
@@ -34,6 +36,58 @@ public class JobService {
 
     public Optional<Job> fetchJobById(long id) {
         return this.jobRepository.findById(id);
+    }
+
+    /**
+     * Convert Job entity to ResFetchJobDTO — safe for API response (no lazy fields exposed).
+     */
+    public ResFetchJobDTO convertToResFetchJobDTO(Job job) {
+        ResFetchJobDTO dto = new ResFetchJobDTO();
+        dto.setId(job.getId());
+        dto.setName(job.getName());
+        dto.setLocation(job.getLocation());
+        dto.setSalary(job.getSalary());
+        dto.setQuantity(job.getQuantity());
+        dto.setLevel(job.getLevel());
+        dto.setDescription(job.getDescription());
+        dto.setStartDate(job.getStartDate());
+        dto.setEndDate(job.getEndDate());
+        dto.setActive(job.isActive());
+        dto.setIsPremium(job.getIsPremium());
+        dto.setIsUrgent(job.getIsUrgent());
+        dto.setViewCount(job.getViewCount());
+        dto.setApplicantCount(job.getApplicantCount());
+        dto.setCreatedAt(job.getCreatedAt());
+        dto.setUpdatedAt(job.getUpdatedAt());
+        dto.setCreatedBy(job.getCreatedBy());
+        dto.setUpdatedBy(job.getUpdatedBy());
+
+        if (job.getSkills() != null) {
+            List<String> skills = job.getSkills()
+                    .stream().map(Skill::getName)
+                    .collect(Collectors.toList());
+            dto.setSkills(skills);
+        }
+
+        if (job.getCompany() != null) {
+            dto.setCompany(new ResFetchJobDTO.CompanyJob(
+                    job.getCompany().getId(),
+                    job.getCompany().getName(),
+                    job.getCompany().getLogo()));
+        }
+
+        return dto;
+    }
+
+    /**
+     * Fetch active jobs with a limit (for recommendation engine).
+     * Avoids loading entire DB table with Pageable.unpaged().
+     */
+    public List<Job> fetchActiveJobs(int limit) {
+        Page<Job> page = this.jobRepository.findAll(
+                (root, query, cb) -> cb.equal(root.get("active"), true),
+                PageRequest.of(0, limit));
+        return page.getContent();
     }
 
     public ResCreateJobDTO create(Job j) {

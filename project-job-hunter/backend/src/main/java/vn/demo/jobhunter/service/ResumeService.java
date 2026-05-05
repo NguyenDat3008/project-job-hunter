@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -29,15 +28,10 @@ import vn.demo.jobhunter.util.SecurityUtil;
 
 @Service
 public class ResumeService {
-    @Autowired
-    FilterBuilder fb;
 
-    @Autowired
-    private FilterParser filterParser;
-
-    @Autowired
-    private FilterSpecificationConverter filterSpecificationConverter;
-
+    private final FilterBuilder fb;
+    private final FilterParser filterParser;
+    private final FilterSpecificationConverter filterSpecificationConverter;
     private final ResumeRepository resumeRepository;
     private final UserRepository userRepository;
     private final JobRepository jobRepository;
@@ -45,10 +39,16 @@ public class ResumeService {
     public ResumeService(
             ResumeRepository resumeRepository,
             UserRepository userRepository,
-            JobRepository jobRepository) {
+            JobRepository jobRepository,
+            FilterBuilder fb,
+            FilterParser filterParser,
+            FilterSpecificationConverter filterSpecificationConverter) {
         this.resumeRepository = resumeRepository;
         this.userRepository = userRepository;
         this.jobRepository = jobRepository;
+        this.fb = fb;
+        this.filterParser = filterParser;
+        this.filterSpecificationConverter = filterSpecificationConverter;
     }
 
     public Optional<Resume> fetchById(long id) {
