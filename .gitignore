@@ -7,3 +7,8 @@ project-job-hunter/backend/target/classes/vn/demo/jobhunter/util/error/StorageEx
 **/target/
 *.class
 project-job-hunter/frontend/node_modules/
+project-job-hunter/backend/target/
+
+.env
+.env.local
+.DS_Store
