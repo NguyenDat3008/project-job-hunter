@@ -2,3 +2,5 @@ project-job-hunter/backend/target/classes/vn/demo/jobhunter/util/error/IdInvalid
 project-job-hunter/backend/target/classes/vn/demo/jobhunter/util/error/GlobalException.class
 project-job-hunter/backend/target/classes/vn/demo/jobhunter/util/error/PermissionException.class
 project-job-hunter/backend/target/classes/vn/demo/jobhunter/util/error/StorageException.class
+**/target/
+*.class
