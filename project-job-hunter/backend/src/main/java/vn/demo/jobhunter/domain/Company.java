@@ -44,7 +44,8 @@ public class Company {
 
     private Instant premiumExpiryDate;
 
-    private Integer jobCount = 0;
+    @org.hibernate.annotations.Formula("(select count(*) from jobs j where j.company_id = id)")
+    private Integer jobCount;
 
     private boolean active = false;
 

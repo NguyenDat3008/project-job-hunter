@@ -30,26 +30,18 @@ public class OpenAPIConfig {
     }
 
     private Contact createContact() {
-        return new Contact()
-                .email("ads.demo@gmail.com")
-                .name("Hỏi Dân IT")
-                .url("https://demo.vn");
+        return new Contact();
     }
 
     private License createLicense() {
-        return new License()
-                .name("MIT License")
-                .url("https://choosealicense.com/licenses/mit/");
+        return new License();
     }
 
     private Info createApiInfo() {
         return new Info()
                 .title("Job Hunter API")
                 .version("1.0")
-                .contact(createContact())
-                .description("This API exposes all endpoints (job hunter)")
-                .termsOfService("https://demo.vn/donate")
-                .license(createLicense());
+                .description("This API exposes all endpoints (job hunter)");
     }
 
     @Bean

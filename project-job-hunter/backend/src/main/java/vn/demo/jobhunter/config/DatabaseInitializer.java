@@ -109,7 +109,14 @@ public class DatabaseInitializer implements CommandLineRunner {
             // Additional permissions for new features
             arr.add(new Permission("Get AI recommended jobs", "/api/v1/jobs/recommend", "GET", "JOBS"));
             arr.add(new Permission("Toggle save job", "/api/v1/jobs/{id}/save", "POST", "JOBS"));
+            arr.add(new Permission("Get saved jobs", "/api/v1/jobs/saved", "GET", "JOBS"));
             arr.add(new Permission("Get resumes by user", "/api/v1/resumes/by-user", "POST", "RESUMES"));
+            // User self-service permissions
+            arr.add(new Permission("Upload avatar", "/api/v1/users/avatar", "POST", "USERS"));
+            arr.add(new Permission("Change password", "/api/v1/users/change-password", "POST", "USERS"));
+            arr.add(new Permission("Update own profile", "/api/v1/users", "PUT", "USERS"));
+            arr.add(new Permission("Delete own account", "/api/v1/users/{id}", "DELETE", "USERS"));
+            arr.add(new Permission("Subscribe premium", "/api/v1/premium/subscribe/{tier}", "POST", "PREMIUM"));
 
             this.permissionRepository.saveAll(arr);
         }
@@ -142,14 +149,28 @@ public class DatabaseInitializer implements CommandLineRunner {
             userRole.setDescription("Candidate - Apply jobs and manage profile");
             userRole.setActive(true);
             List<Permission> userPermissions = allPermissions.stream()
-                .filter(p -> (p.getApiPath().equals("/api/v1/resumes") && p.getMethod().equals("POST"))
-                    || (p.getApiPath().equals("/api/v1/resumes/by-user"))
-                    || (p.getApiPath().equals("/api/v1/jobs/recommend"))
-                    || (p.getApiPath().equals("/api/v1/jobs/{id}/save"))
+                .filter(p ->
+                    // Xem jobs
+                    (p.getModule().equals("JOBS") && p.getMethod().equals("GET"))
+                    // Lưu job / xem job đã lưu / gợi ý job
+                    || (p.getApiPath().equals("/api/v1/jobs/{id}/save") && p.getMethod().equals("POST"))
+                    || (p.getApiPath().equals("/api/v1/jobs/saved") && p.getMethod().equals("GET"))
+                    || (p.getApiPath().equals("/api/v1/jobs/recommend") && p.getMethod().equals("GET"))
+                    // Xem companies
+                    || (p.getModule().equals("COMPANIES") && p.getMethod().equals("GET"))
+                    // Nộp resume và xem resume của bản thân
+                    || (p.getApiPath().equals("/api/v1/resumes") && p.getMethod().equals("POST"))
+                    || (p.getApiPath().equals("/api/v1/resumes/by-user") && p.getMethod().equals("POST"))
+                    // Upload file (chỉ resume, được check ở FileController)
                     || (p.getModule().equals("FILES"))
-                    || (p.getApiPath().equals("/api/v1/companies") && p.getMethod().equals("POST")) // Cho phép tạo công ty để đăng ký
-                    || (p.getModule().equals("COMPANIES") && p.getMethod().equals("GET")) // Cho phép xem công ty
-                    || (p.getModule().equals("JOBS") && p.getMethod().equals("GET")) // Cho phép xem job
+                    // Tự quản lý profile
+                    || (p.getApiPath().equals("/api/v1/users/avatar") && p.getMethod().equals("POST"))
+                    || (p.getApiPath().equals("/api/v1/users/change-password") && p.getMethod().equals("POST"))
+                    || (p.getApiPath().equals("/api/v1/users") && p.getMethod().equals("PUT"))
+                    || (p.getApiPath().equals("/api/v1/users/{id}") && p.getMethod().equals("DELETE"))
+                    // Subscriber
+                    || (p.getApiPath().equals("/api/v1/subscribers") && p.getMethod().equals("POST"))
+                    || (p.getApiPath().equals("/api/v1/subscribers") && p.getMethod().equals("PUT"))
                 )
                 .collect(java.util.stream.Collectors.toList());
             userRole.setPermissions(userPermissions);

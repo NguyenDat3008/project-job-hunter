@@ -13,32 +13,31 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import vn.demo.jobhunter.domain.Company;
-import vn.demo.jobhunter.domain.Job;
 import vn.demo.jobhunter.domain.User;
-import vn.demo.jobhunter.repository.CompanyRepository;
-import vn.demo.jobhunter.repository.JobRepository;
+import vn.demo.jobhunter.service.PremiumService;
 import vn.demo.jobhunter.service.UserService;
 import vn.demo.jobhunter.util.SecurityUtil;
 import vn.demo.jobhunter.util.annotation.ApiMessage;
 
 @RestController
 @RequestMapping("/api/v1/premium")
+@Tag(name = "Premium", description = "API Quản lý gói Premium cho nhà tuyển dụng")
 public class PremiumController {
 
     private final UserService userService;
-    private final CompanyRepository companyRepository;
-    private final JobRepository jobRepository;
+    private final PremiumService premiumService;
 
-    public PremiumController(UserService userService, CompanyRepository companyRepository,
-            JobRepository jobRepository) {
+    public PremiumController(UserService userService, PremiumService premiumService) {
         this.userService = userService;
-        this.companyRepository = companyRepository;
-        this.jobRepository = jobRepository;
+        this.premiumService = premiumService;
     }
 
     @GetMapping("/packages")
     @ApiMessage("Get premium packages")
+    @Operation(summary = "Danh sách gói Premium", description = "Trả về các gói premium có thể đăng ký")
     public ResponseEntity<List<Map<String, Object>>> getPackages() {
         List<Map<String, Object>> packages = new ArrayList<>();
 
@@ -46,12 +45,16 @@ public class PremiumController {
         basic.put("id", 1);
         basic.put("name", "Nổi bật");
         basic.put("price", 1000000);
+        basic.put("description", "Làm nổi bật tin tuyển dụng trong 30 ngày");
+        basic.put("duration", 30);
 
         Map<String, Object> pro = new HashMap<>();
         pro.put("id", 2);
         pro.put("name", "Pro");
         pro.put("price", 3000000);
         pro.put("isPopular", true);
+        pro.put("description", "Ưu tiên hiển thị + badge Pro trong 30 ngày");
+        pro.put("duration", 30);
 
         packages.add(basic);
         packages.add(pro);
@@ -61,28 +64,30 @@ public class PremiumController {
 
     @PostMapping("/subscribe/{tier}")
     @ApiMessage("Subscribe to a premium package")
+    @Operation(summary = "Đăng ký gói Premium", description = "Nâng cấp công ty lên gói Premium (Basic / Pro)")
     public ResponseEntity<String> subscribePremium(@PathVariable("tier") String tier) {
         String email = SecurityUtil.getCurrentUserLogin().orElse("");
         User currentUser = this.userService.handleGetUserByUsername(email);
 
-        if (currentUser == null || currentUser.getCompany() == null) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only users with a company can subscribe.");
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Bạn chưa đăng nhập.");
+        }
+
+        if (currentUser.getCompany() == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Chỉ tài khoản công ty mới có thể đăng ký gói Premium.");
+        }
+
+        // Validate tier
+        String upperTier = tier.toUpperCase();
+        if (!upperTier.equals("BASIC") && !upperTier.equals("PRO") && !upperTier.equals("ENTERPRISE")) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Gói không hợp lệ. Chọn: BASIC, PRO hoặc ENTERPRISE.");
         }
 
         Company company = currentUser.getCompany();
-        company.setIsPremium(true);
-        company.setPremiumTier(tier.toUpperCase());
-        this.companyRepository.save(company);
+        this.premiumService.subscribePremium(company, upperTier);
 
-        // Also update all jobs of this company to be premium
-        List<Job> jobs = company.getJobs();
-        if (jobs != null) {
-            for (Job j : jobs) {
-                j.setIsPremium(true);
-            }
-            this.jobRepository.saveAll(jobs);
-        }
-
-        return ResponseEntity.ok("Successfully upgraded to " + tier);
+        return ResponseEntity.ok("Đăng ký thành công gói " + upperTier + " trong 30 ngày!");
     }
 }

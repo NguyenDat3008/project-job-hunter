@@ -74,13 +74,13 @@ public class JobController {
 
     @GetMapping("/jobs/{id}")
     @ApiMessage("Get a job by id")
-    public ResponseEntity<Job> getJob(@PathVariable("id") long id) throws IdInvalidException {
+    public ResponseEntity<vn.demo.jobhunter.domain.response.job.ResFetchJobDTO> getJob(@PathVariable("id") long id) throws IdInvalidException {
         Optional<Job> currentJob = this.jobService.fetchJobById(id);
         if (!currentJob.isPresent()) {
             throw new IdInvalidException("Job not found");
         }
 
-        return ResponseEntity.ok().body(currentJob.get());
+        return ResponseEntity.ok().body(this.jobService.convertToResFetchJobDTO(currentJob.get()));
     }
 
     @GetMapping("/jobs")
@@ -102,11 +102,9 @@ public class JobController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        // Fetch all active jobs for simplicity, then calculate score
+        // Fetch all active jobs with a reasonable limit to avoid memory issues
         // In real app, we should fetch jobs matching certain criteria first
-        ResultPaginationDTO allJobsDTO = this.jobService.fetchAll(null, Pageable.unpaged());
-        @SuppressWarnings("unchecked")
-        java.util.List<Job> allJobs = (java.util.List<Job>) allJobsDTO.getResult();
+        java.util.List<Job> allJobs = this.jobService.fetchActiveJobs(100);
 
         java.util.List<java.util.Map<String, Object>> recommendations = new java.util.ArrayList<>();
         for (Job job : allJobs) {
