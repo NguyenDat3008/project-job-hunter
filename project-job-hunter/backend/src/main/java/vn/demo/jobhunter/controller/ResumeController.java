@@ -69,7 +69,7 @@ public class ResumeController {
 
     @PutMapping("/resumes")
     @ApiMessage("Update a resume")
-    public ResponseEntity<ResUpdateResumeDTO> update(@RequestBody Resume resume) throws IdInvalidException {
+    public ResponseEntity<ResUpdateResumeDTO> update(@RequestBody Resume resume) throws IdInvalidException, vn.demo.jobhunter.util.error.PermissionException {
         // check id exist
         Optional<Resume> reqResumeOptional = this.resumeService.fetchById(resume.getId());
         if (reqResumeOptional.isEmpty()) {
@@ -77,6 +77,18 @@ public class ResumeController {
         }
 
         Resume reqResume = reqResumeOptional.get();
+
+        // CHECK OWNERSHIP
+        String email = SecurityUtil.getCurrentUserLogin().orElse("");
+        User currentUser = this.userService.handleGetUserByUsername(email);
+        if (currentUser != null && currentUser.getRole() != null) {
+            if (!currentUser.getRole().getName().equals("SUPER_ADMIN")) {
+                if (currentUser.getCompany() == null || reqResume.getJob() == null || reqResume.getJob().getCompany() == null || currentUser.getCompany().getId() != reqResume.getJob().getCompany().getId()) {
+                    throw new vn.demo.jobhunter.util.error.PermissionException("Bạn không có quyền cập nhật Resume của công ty khác.");
+                }
+            }
+        }
+
         reqResume.setStatus(resume.getStatus());
 
         return ResponseEntity.ok().body(this.resumeService.update(reqResume));
@@ -84,10 +96,23 @@ public class ResumeController {
 
     @DeleteMapping("/resumes/{id}")
     @ApiMessage("Delete a resume by id")
-    public ResponseEntity<Void> delete(@PathVariable("id") long id) throws IdInvalidException {
+    public ResponseEntity<Void> delete(@PathVariable("id") long id) throws IdInvalidException, vn.demo.jobhunter.util.error.PermissionException {
         Optional<Resume> reqResumeOptional = this.resumeService.fetchById(id);
         if (reqResumeOptional.isEmpty()) {
             throw new IdInvalidException("Resume với id = " + id + " không tồn tại");
+        }
+
+        Resume reqResume = reqResumeOptional.get();
+
+        // CHECK OWNERSHIP
+        String email = SecurityUtil.getCurrentUserLogin().orElse("");
+        User currentUser = this.userService.handleGetUserByUsername(email);
+        if (currentUser != null && currentUser.getRole() != null) {
+            if (!currentUser.getRole().getName().equals("SUPER_ADMIN")) {
+                if (currentUser.getCompany() == null || reqResume.getJob() == null || reqResume.getJob().getCompany() == null || currentUser.getCompany().getId() != reqResume.getJob().getCompany().getId()) {
+                    throw new vn.demo.jobhunter.util.error.PermissionException("Bạn không có quyền xóa Resume của công ty khác.");
+                }
+            }
         }
 
         this.resumeService.delete(id);
