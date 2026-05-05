@@ -41,3 +41,18 @@ app-example
 # generated native folders
 /ios
 /android
+# Loại bỏ tất cả các file .class
+*.class
+
+# Loại bỏ các thư mục build tự động
+target/
+build/
+bin/
+out/
+
+# Loại bỏ file cấu hình của IDE (nếu cần)
+.settings/
+.classpath
+.project
+.idea/
+*.iml

@@ -60,7 +60,7 @@ public class DatabaseInitializer implements CommandLineRunner {
 
         if (countPermissions == 0) {
             ArrayList<Permission> arr = new ArrayList<>();
-
+            
             arr.add(new Permission("Create a company", "/api/v1/companies", "POST", "COMPANIES"));
             arr.add(new Permission("Update a company", "/api/v1/companies", "PUT", "COMPANIES"));
             arr.add(new Permission("Delete a company", "/api/v1/companies/{id}", "DELETE", "COMPANIES"));
@@ -131,9 +131,8 @@ public class DatabaseInitializer implements CommandLineRunner {
             hrRole.setDescription("Human Resources - Manage jobs and resumes");
             hrRole.setActive(true);
             List<Permission> hrPermissions = allPermissions.stream()
-                    .filter(p -> p.getModule().equals("JOBS") || p.getModule().equals("COMPANIES")
-                            || p.getModule().equals("RESUMES") || p.getModule().equals("FILES"))
-                    .collect(java.util.stream.Collectors.toList());
+                .filter(p -> p.getModule().equals("JOBS") || p.getModule().equals("COMPANIES") || p.getModule().equals("RESUMES") || p.getModule().equals("FILES"))
+                .collect(java.util.stream.Collectors.toList());
             hrRole.setPermissions(hrPermissions);
             this.roleRepository.save(hrRole);
 
@@ -143,20 +142,16 @@ public class DatabaseInitializer implements CommandLineRunner {
             userRole.setDescription("Candidate - Apply jobs and manage profile");
             userRole.setActive(true);
             List<Permission> userPermissions = allPermissions.stream()
-                    .filter(p -> (p.getApiPath().equals("/api/v1/resumes") && p.getMethod().equals("POST"))
-                            || (p.getApiPath().equals("/api/v1/resumes/by-user"))
-                            || (p.getApiPath().equals("/api/v1/jobs/recommend"))
-                            || (p.getApiPath().equals("/api/v1/jobs/{id}/save"))
-                            || (p.getModule().equals("FILES"))
-                            || (p.getApiPath().equals("/api/v1/companies") && p.getMethod().equals("POST")) // Cho phép
-                                                                                                            // tạo công
-                                                                                                            // ty để
-                                                                                                            // đăng ký
-                            || (p.getModule().equals("COMPANIES") && p.getMethod().equals("GET")) // Cho phép xem công
-                                                                                                  // ty
-                            || (p.getModule().equals("JOBS") && p.getMethod().equals("GET")) // Cho phép xem job
-                    )
-                    .collect(java.util.stream.Collectors.toList());
+                .filter(p -> (p.getApiPath().equals("/api/v1/resumes") && p.getMethod().equals("POST"))
+                    || (p.getApiPath().equals("/api/v1/resumes/by-user"))
+                    || (p.getApiPath().equals("/api/v1/jobs/recommend"))
+                    || (p.getApiPath().equals("/api/v1/jobs/{id}/save"))
+                    || (p.getModule().equals("FILES"))
+                    || (p.getApiPath().equals("/api/v1/companies") && p.getMethod().equals("POST")) // Cho phép tạo công ty để đăng ký
+                    || (p.getModule().equals("COMPANIES") && p.getMethod().equals("GET")) // Cho phép xem công ty
+                    || (p.getModule().equals("JOBS") && p.getMethod().equals("GET")) // Cho phép xem job
+                )
+                .collect(java.util.stream.Collectors.toList());
             userRole.setPermissions(userPermissions);
             this.roleRepository.save(userRole);
         }
@@ -180,30 +175,18 @@ public class DatabaseInitializer implements CommandLineRunner {
 
         if (countSkills == 0) {
             List<Skill> skills = new ArrayList<>();
-            Skill s1 = new Skill();
-            s1.setName("Java");
-            skills.add(s1);
-            Skill s2 = new Skill();
-            s2.setName("Spring Boot");
-            skills.add(s2);
-            Skill s3 = new Skill();
-            s3.setName("React Native");
-            skills.add(s3);
-            Skill s4 = new Skill();
-            s4.setName("Node.js");
-            skills.add(s4);
-            Skill s5 = new Skill();
-            s5.setName("TypeScript");
-            skills.add(s5);
-            Skill s6 = new Skill();
-            s6.setName("SQL");
-            skills.add(s6);
+            Skill s1 = new Skill(); s1.setName("Java"); skills.add(s1);
+            Skill s2 = new Skill(); s2.setName("Spring Boot"); skills.add(s2);
+            Skill s3 = new Skill(); s3.setName("React Native"); skills.add(s3);
+            Skill s4 = new Skill(); s4.setName("Node.js"); skills.add(s4);
+            Skill s5 = new Skill(); s5.setName("TypeScript"); skills.add(s5);
+            Skill s6 = new Skill(); s6.setName("SQL"); skills.add(s6);
             this.skillRepository.saveAll(skills);
         }
 
         if (countCompanies == 0) {
             List<Company> companies = new ArrayList<>();
-
+            
             Company c1 = new Company();
             c1.setName("FPT Software");
             c1.setDescription("Leading IT service provider in Vietnam");
@@ -226,10 +209,8 @@ public class DatabaseInitializer implements CommandLineRunner {
         }
 
         if (countJobs == 0) {
-            Company fpt = this.companyRepository.findAll().stream().filter(c -> c.getName().contains("FPT")).findFirst()
-                    .orElse(null);
-            Company vng = this.companyRepository.findAll().stream().filter(c -> c.getName().contains("VNG")).findFirst()
-                    .orElse(null);
+            Company fpt = this.companyRepository.findAll().stream().filter(c -> c.getName().contains("FPT")).findFirst().orElse(null);
+            Company vng = this.companyRepository.findAll().stream().filter(c -> c.getName().contains("VNG")).findFirst().orElse(null);
             List<Skill> allSkills = this.skillRepository.findAll();
 
             if (fpt != null) {
@@ -242,8 +223,7 @@ public class DatabaseInitializer implements CommandLineRunner {
                 j1.setDescription("Build high-performance banking systems using Spring Boot");
                 j1.setActive(true);
                 j1.setCompany(fpt);
-                if (allSkills.size() >= 2)
-                    j1.setSkills(allSkills.subList(0, 2));
+                if (allSkills.size() >= 2) j1.setSkills(allSkills.subList(0, 2));
                 this.jobRepository.save(j1);
             }
 
@@ -257,8 +237,7 @@ public class DatabaseInitializer implements CommandLineRunner {
                 j2.setDescription("Develop ZaloPay's next generation mobile application");
                 j2.setActive(true);
                 j2.setCompany(vng);
-                if (allSkills.size() >= 5)
-                    j2.setSkills(allSkills.subList(2, 5));
+                if (allSkills.size() >= 5) j2.setSkills(allSkills.subList(2, 5));
                 this.jobRepository.save(j2);
             }
         }

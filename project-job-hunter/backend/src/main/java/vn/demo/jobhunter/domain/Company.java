@@ -2,7 +2,9 @@ package vn.demo.jobhunter.domain;
 
 import java.time.Instant;
 import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -39,7 +41,13 @@ public class Company {
     private String industry;
     private Boolean isPremium = false;
     private String premiumTier; // BASIC, PRO, ENTERPRISE
+
+    private Instant premiumExpiryDate;
+
     private Integer jobCount = 0;
+
+    private boolean active = false;
+
     private Instant createdAt;
     private Instant updatedAt;
     private String createdBy;
