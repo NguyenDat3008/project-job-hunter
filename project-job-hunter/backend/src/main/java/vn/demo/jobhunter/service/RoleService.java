@@ -90,4 +90,8 @@ public class RoleService {
         rs.setResult(pRole.getContent());
         return rs;
     }
+
+    public Role findByName(String name) {
+        return this.roleRepository.findByName(name);
+    }
 }

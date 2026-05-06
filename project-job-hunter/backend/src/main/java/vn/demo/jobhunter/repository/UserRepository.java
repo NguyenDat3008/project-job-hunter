@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import vn.demo.jobhunter.domain.Company;
+import vn.demo.jobhunter.domain.Role;
 import vn.demo.jobhunter.domain.User;
 import java.util.List;
 
@@ -17,4 +18,6 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     User findByRefreshTokenAndEmail(String token, String email);
 
     List<User> findByCompany(Company company);
+
+    List<User> findByCompanyAndRole(Company company, Role role);
 }

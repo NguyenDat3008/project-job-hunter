@@ -25,6 +25,8 @@ import vn.demo.jobhunter.domain.User;
 import vn.demo.jobhunter.domain.request.ReqLoginDTO;
 import vn.demo.jobhunter.domain.response.ResCreateUserDTO;
 import vn.demo.jobhunter.domain.response.ResLoginDTO;
+import vn.demo.jobhunter.domain.Role;
+import vn.demo.jobhunter.service.RoleService;
 import vn.demo.jobhunter.service.UserService;
 import vn.demo.jobhunter.service.SubscriberService;
 import vn.demo.jobhunter.util.SecurityUtil;
@@ -41,6 +43,7 @@ public class AuthController {
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
     private final SubscriberService subscriberService;
+    private final RoleService roleService;
 
     @Value("${demo.jwt.refresh-token-validity-in-seconds}")
     private long refreshTokenExpiration;
@@ -53,12 +56,14 @@ public class AuthController {
             SecurityUtil securityUtil,
             UserService userService,
             PasswordEncoder passwordEncoder,
-            SubscriberService subscriberService) {
+            SubscriberService subscriberService,
+            RoleService roleService) {
         this.authenticationManagerBuilder = authenticationManagerBuilder;
         this.securityUtil = securityUtil;
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
         this.subscriberService = subscriberService;
+        this.roleService = roleService;
     }
 
     @PostMapping("/auth/login")
@@ -249,6 +254,13 @@ public class AuthController {
 
         String hashPassword = this.passwordEncoder.encode(postManUser.getPassword());
         postManUser.setPassword(hashPassword);
+
+        // Auto-assign NORMAL_USER role khi đăng ký
+        Role normalUserRole = this.roleService.findByName("NORMAL_USER");
+        if (normalUserRole != null) {
+            postManUser.setRole(normalUserRole);
+        }
+
         User ericUser = this.userService.handleCreateUser(postManUser);
         return ResponseEntity.status(HttpStatus.CREATED).body(this.userService.convertToResCreateUserDTO(ericUser));
     }

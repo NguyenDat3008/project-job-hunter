@@ -19,7 +19,6 @@ import vn.demo.jobhunter.service.CompanyService;
 import vn.demo.jobhunter.util.annotation.ApiMessage;
 import vn.demo.jobhunter.util.error.PermissionException;
 
-import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * @controller CompanyController
@@ -37,8 +36,7 @@ public class CompanyController {
 
     @PostMapping("/companies")
     @ApiMessage("Create a company")
-    @Operation(summary = "Tạo mới công ty", description = "Nhập thông tin công ty mới vào hệ thống")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_SUPER_ADMIN')")
+    @Operation(summary = "Tạo mới công ty", description = "Nhập thông tin công ty mới vào hệ thống (NORMAL_USER tạo sẽ chờ duyệt)")
     public ResponseEntity<Company> createCompany(@Valid @RequestBody Company reqCompany) throws PermissionException {
         return ResponseEntity.status(HttpStatus.CREATED).body(this.companyService.handleCreateCompany(reqCompany));
     }
@@ -55,15 +53,13 @@ public class CompanyController {
     @PutMapping("/companies")
     @ApiMessage("Update company information")
     @Operation(summary = "Cập nhật công ty", description = "Cập nhật thông tin công ty hoặc phê duyệt trạng thái active")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_SUPER_ADMIN', 'ROLE_HR')")
     public ResponseEntity<Company> updateCompany(@Valid @RequestBody Company reqCompany) throws PermissionException {
         return ResponseEntity.ok(this.companyService.handleUpdateCompany(reqCompany));
     }
 
     @DeleteMapping("/companies/{id}")
     @ApiMessage("Delete a company")
-    @Operation(summary = "Xóa công ty", description = "Xóa công ty khỏi hệ thống dựa trên ID")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_SUPER_ADMIN')")
+    @Operation(summary = "Xóa công ty", description = "Xóa công ty khỏi hệ thống dựa trên ID (chỉ SUPER_ADMIN)")
     public ResponseEntity<Void> deleteCompany(@PathVariable("id") long id) {
         this.companyService.handleDeleteCompany(id);
         return ResponseEntity.ok(null);

@@ -2,6 +2,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "JobhunterApplication",
+            "request": "launch",
+            "mainClass": "vn.demo.jobhunter.JobhunterApplication",
+            "projectName": "jobhunter"
+        },
+        {
+            "type": "java",
             "name": "Spring Boot-JobhunterApplication<jobhunter-mini>",
             "request": "launch",
             "cwd": "${workspaceFolder}",

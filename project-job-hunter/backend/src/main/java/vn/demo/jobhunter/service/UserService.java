@@ -211,4 +211,132 @@ public class UserService {
             this.userRepository.save(user);
         }
     }
+
+    /**
+     * Thêm HR vào công ty - chỉ COMPANY_REPRESENTATIVE mới được gọi
+     */
+    public User addHrToCompany(long targetUserId, long companyId, String currentEmail)
+            throws vn.demo.jobhunter.util.error.IdInvalidException, vn.demo.jobhunter.util.error.PermissionException {
+        // Kiểm tra quyền: người gọi phải là COMPANY_REPRESENTATIVE của company này
+        User currentUser = this.handleGetUserByUsername(currentEmail);
+        if (currentUser == null || currentUser.getRole() == null) {
+            throw new vn.demo.jobhunter.util.error.PermissionException("Bạn không có quyền thực hiện thao tác này.");
+        }
+
+        String roleName = currentUser.getRole().getName();
+        boolean isSuperAdmin = roleName.equals("SUPER_ADMIN");
+        boolean isRep = roleName.equals("COMPANY_REPRESENTATIVE");
+
+        if (!isSuperAdmin && !isRep) {
+            throw new vn.demo.jobhunter.util.error.PermissionException("Chỉ Người đại diện công ty hoặc Admin mới có quyền thêm HR.");
+        }
+
+        if (isRep) {
+            if (currentUser.getCompany() == null || currentUser.getCompany().getId() != companyId) {
+                throw new vn.demo.jobhunter.util.error.PermissionException("Bạn chỉ có quyền quản lý HR trong công ty của mình.");
+            }
+        }
+
+        // Kiểm tra target user
+        User targetUser = this.fetchUserById(targetUserId);
+        if (targetUser == null) {
+            throw new vn.demo.jobhunter.util.error.IdInvalidException("User với id = " + targetUserId + " không tồn tại.");
+        }
+
+        // Kiểm tra target user chưa thuộc công ty nào (hoặc đã thuộc công ty này)
+        if (targetUser.getCompany() != null && targetUser.getCompany().getId() != companyId) {
+            throw new vn.demo.jobhunter.util.error.PermissionException("User này đã thuộc công ty khác.");
+        }
+
+        // Kiểm tra company tồn tại
+        java.util.Optional<Company> companyOpt = this.companyService.findById(companyId);
+        if (companyOpt.isEmpty()) {
+            throw new vn.demo.jobhunter.util.error.IdInvalidException("Company với id = " + companyId + " không tồn tại.");
+        }
+
+        // Gán role HR và company
+        Role hrRole = this.roleService.findByName("HR");
+        if (hrRole == null) {
+            throw new vn.demo.jobhunter.util.error.IdInvalidException("Role HR không tồn tại trong hệ thống.");
+        }
+
+        targetUser.setRole(hrRole);
+        targetUser.setCompany(companyOpt.get());
+        return this.userRepository.save(targetUser);
+    }
+
+    /**
+     * Xóa HR khỏi công ty - reset về NORMAL_USER
+     */
+    public User removeHrFromCompany(long targetUserId, long companyId, String currentEmail)
+            throws vn.demo.jobhunter.util.error.IdInvalidException, vn.demo.jobhunter.util.error.PermissionException {
+        // Kiểm tra quyền
+        User currentUser = this.handleGetUserByUsername(currentEmail);
+        if (currentUser == null || currentUser.getRole() == null) {
+            throw new vn.demo.jobhunter.util.error.PermissionException("Bạn không có quyền thực hiện thao tác này.");
+        }
+
+        String roleName = currentUser.getRole().getName();
+        boolean isSuperAdmin = roleName.equals("SUPER_ADMIN");
+        boolean isRep = roleName.equals("COMPANY_REPRESENTATIVE");
+
+        if (!isSuperAdmin && !isRep) {
+            throw new vn.demo.jobhunter.util.error.PermissionException("Chỉ Người đại diện công ty hoặc Admin mới có quyền xóa HR.");
+        }
+
+        if (isRep) {
+            if (currentUser.getCompany() == null || currentUser.getCompany().getId() != companyId) {
+                throw new vn.demo.jobhunter.util.error.PermissionException("Bạn chỉ có quyền quản lý HR trong công ty của mình.");
+            }
+        }
+
+        // Kiểm tra target user
+        User targetUser = this.fetchUserById(targetUserId);
+        if (targetUser == null) {
+            throw new vn.demo.jobhunter.util.error.IdInvalidException("User với id = " + targetUserId + " không tồn tại.");
+        }
+
+        // Kiểm tra target user thuộc đúng công ty
+        if (targetUser.getCompany() == null || targetUser.getCompany().getId() != companyId) {
+            throw new vn.demo.jobhunter.util.error.PermissionException("User này không thuộc công ty của bạn.");
+        }
+
+        // Không cho xóa chính mình (COMPANY_REPRESENTATIVE)
+        if (targetUser.getRole() != null && targetUser.getRole().getName().equals("COMPANY_REPRESENTATIVE")) {
+            throw new vn.demo.jobhunter.util.error.PermissionException("Không thể xóa Người đại diện công ty.");
+        }
+
+        // Reset về NORMAL_USER
+        Role normalRole = this.roleService.findByName("NORMAL_USER");
+        if (normalRole != null) {
+            targetUser.setRole(normalRole);
+        }
+        targetUser.setCompany(null);
+        return this.userRepository.save(targetUser);
+    }
+
+    /**
+     * Lấy danh sách HR của công ty
+     */
+    public List<User> getHrByCompany(long companyId)
+            throws vn.demo.jobhunter.util.error.IdInvalidException {
+        java.util.Optional<Company> companyOpt = this.companyService.findById(companyId);
+        if (companyOpt.isEmpty()) {
+            throw new vn.demo.jobhunter.util.error.IdInvalidException("Company với id = " + companyId + " không tồn tại.");
+        }
+
+        Role hrRole = this.roleService.findByName("HR");
+        Role repRole = this.roleService.findByName("COMPANY_REPRESENTATIVE");
+
+        List<User> result = new java.util.ArrayList<>();
+
+        if (hrRole != null) {
+            result.addAll(this.userRepository.findByCompanyAndRole(companyOpt.get(), hrRole));
+        }
+        if (repRole != null) {
+            result.addAll(this.userRepository.findByCompanyAndRole(companyOpt.get(), repRole));
+        }
+
+        return result;
+    }
 }

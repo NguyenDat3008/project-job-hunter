@@ -118,6 +118,11 @@ public class DatabaseInitializer implements CommandLineRunner {
             arr.add(new Permission("Delete own account", "/api/v1/users/{id}", "DELETE", "USERS"));
             arr.add(new Permission("Subscribe premium", "/api/v1/premium/subscribe/{tier}", "POST", "PREMIUM"));
 
+            // HR Management permissions (COMPANY_REPRESENTATIVE)
+            arr.add(new Permission("Add HR to company", "/api/v1/hr-management/{companyId}", "POST", "HR_MANAGEMENT"));
+            arr.add(new Permission("Remove HR from company", "/api/v1/hr-management/{companyId}/{userId}", "DELETE", "HR_MANAGEMENT"));
+            arr.add(new Permission("Get HR list of company", "/api/v1/hr-management/{companyId}", "GET", "HR_MANAGEMENT"));
+
             this.permissionRepository.saveAll(arr);
         }
 
@@ -132,13 +137,51 @@ public class DatabaseInitializer implements CommandLineRunner {
             adminRole.setPermissions(allPermissions);
             this.roleRepository.save(adminRole);
 
+            // COMPANY_REPRESENTATIVE Role (Người đại diện công ty)
+            Role repRole = new Role();
+            repRole.setName("COMPANY_REPRESENTATIVE");
+            repRole.setDescription("Company Representative - Manage company, HR members, jobs and resumes");
+            repRole.setActive(true);
+            List<Permission> repPermissions = allPermissions.stream()
+                .filter(p ->
+                    // Tất cả quyền của HR: JOBS, COMPANIES, RESUMES, FILES
+                    p.getModule().equals("JOBS")
+                    || p.getModule().equals("COMPANIES")
+                    || p.getModule().equals("RESUMES")
+                    || p.getModule().equals("FILES")
+                    // Quyền quản lý HR (thêm/sửa/xóa HR)
+                    || p.getModule().equals("HR_MANAGEMENT")
+                    // Tự quản lý profile
+                    || (p.getApiPath().equals("/api/v1/users/avatar") && p.getMethod().equals("POST"))
+                    || (p.getApiPath().equals("/api/v1/users/change-password") && p.getMethod().equals("POST"))
+                    || (p.getApiPath().equals("/api/v1/users") && p.getMethod().equals("PUT"))
+                    || (p.getApiPath().equals("/api/v1/users/{id}") && p.getMethod().equals("DELETE"))
+                    // Subscriber
+                    || (p.getApiPath().equals("/api/v1/subscribers") && p.getMethod().equals("POST"))
+                    || (p.getApiPath().equals("/api/v1/subscribers") && p.getMethod().equals("PUT"))
+                )
+                .collect(java.util.stream.Collectors.toList());
+            repRole.setPermissions(repPermissions);
+            this.roleRepository.save(repRole);
+
             // HR Role
             Role hrRole = new Role();
             hrRole.setName("HR");
             hrRole.setDescription("Human Resources - Manage jobs and resumes");
             hrRole.setActive(true);
             List<Permission> hrPermissions = allPermissions.stream()
-                .filter(p -> p.getModule().equals("JOBS") || p.getModule().equals("COMPANIES") || p.getModule().equals("RESUMES") || p.getModule().equals("FILES"))
+                .filter(p -> p.getModule().equals("JOBS") || p.getModule().equals("COMPANIES") || p.getModule().equals("RESUMES") || p.getModule().equals("FILES")
+                    // Tự quản lý profile
+                    || (p.getApiPath().equals("/api/v1/users/avatar") && p.getMethod().equals("POST"))
+                    || (p.getApiPath().equals("/api/v1/users/change-password") && p.getMethod().equals("POST"))
+                    || (p.getApiPath().equals("/api/v1/users") && p.getMethod().equals("PUT"))
+                    || (p.getApiPath().equals("/api/v1/users/{id}") && p.getMethod().equals("DELETE"))
+                    // Xem danh sách HR cùng công ty
+                    || (p.getApiPath().equals("/api/v1/hr-management/{companyId}") && p.getMethod().equals("GET"))
+                    // Subscriber
+                    || (p.getApiPath().equals("/api/v1/subscribers") && p.getMethod().equals("POST"))
+                    || (p.getApiPath().equals("/api/v1/subscribers") && p.getMethod().equals("PUT"))
+                )
                 .collect(java.util.stream.Collectors.toList());
             hrRole.setPermissions(hrPermissions);
             this.roleRepository.save(hrRole);
@@ -156,8 +199,9 @@ public class DatabaseInitializer implements CommandLineRunner {
                     || (p.getApiPath().equals("/api/v1/jobs/{id}/save") && p.getMethod().equals("POST"))
                     || (p.getApiPath().equals("/api/v1/jobs/saved") && p.getMethod().equals("GET"))
                     || (p.getApiPath().equals("/api/v1/jobs/recommend") && p.getMethod().equals("GET"))
-                    // Xem companies
+                    // Xem companies + Tạo company (chờ duyệt)
                     || (p.getModule().equals("COMPANIES") && p.getMethod().equals("GET"))
+                    || (p.getApiPath().equals("/api/v1/companies") && p.getMethod().equals("POST"))
                     // Nộp resume và xem resume của bản thân
                     || (p.getApiPath().equals("/api/v1/resumes") && p.getMethod().equals("POST"))
                     || (p.getApiPath().equals("/api/v1/resumes/by-user") && p.getMethod().equals("POST"))
