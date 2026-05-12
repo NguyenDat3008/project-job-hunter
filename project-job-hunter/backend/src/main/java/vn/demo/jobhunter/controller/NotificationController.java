@@ -17,8 +17,16 @@ import vn.demo.jobhunter.service.UserService;
 import vn.demo.jobhunter.util.SecurityUtil;
 import vn.demo.jobhunter.util.annotation.ApiMessage;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+/**
+ * @controller NotificationController
+ * @description API Quản lý Thông báo - Xem, đánh dấu đã đọc
+ */
 @RestController
 @RequestMapping("/api/v1")
+@Tag(name = "Notification", description = "API Quản lý Thông báo")
 public class NotificationController {
     
     private final NotificationService notificationService;
@@ -31,6 +39,7 @@ public class NotificationController {
 
     @GetMapping("/notifications")
     @ApiMessage("Get notifications for user")
+    @Operation(summary = "Xem thông báo", description = "Lấy danh sách tất cả thông báo của người dùng hiện tại")
     public ResponseEntity<List<Notification>> getNotifications() {
         String email = SecurityUtil.getCurrentUserLogin().orElse("");
         User currentUser = this.userService.handleGetUserByUsername(email);
@@ -44,6 +53,7 @@ public class NotificationController {
 
     @GetMapping("/notifications/unread")
     @ApiMessage("Count unread notifications")
+    @Operation(summary = "Đếm thông báo chưa đọc", description = "Trả về số lượng thông báo chưa đọc")
     public ResponseEntity<Long> countUnread() {
         String email = SecurityUtil.getCurrentUserLogin().orElse("");
         User currentUser = this.userService.handleGetUserByUsername(email);
@@ -55,6 +65,7 @@ public class NotificationController {
 
     @PostMapping("/notifications/{id}/read")
     @ApiMessage("Mark notification as read")
+    @Operation(summary = "Đánh dấu đã đọc", description = "Đánh dấu một thông báo cụ thể là đã đọc")
     public ResponseEntity<Void> markRead(@PathVariable("id") long id) {
         this.notificationService.markAsRead(id);
         return ResponseEntity.ok().build();
@@ -62,6 +73,7 @@ public class NotificationController {
 
     @PostMapping("/notifications/read-all")
     @ApiMessage("Mark all notifications as read")
+    @Operation(summary = "Đánh dấu tất cả đã đọc", description = "Đánh dấu toàn bộ thông báo là đã đọc")
     public ResponseEntity<Void> markAllRead() {
         String email = SecurityUtil.getCurrentUserLogin().orElse("");
         User currentUser = this.userService.handleGetUserByUsername(email);

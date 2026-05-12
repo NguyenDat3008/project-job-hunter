@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.turkraft.springfilter.boot.Filter;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import vn.demo.jobhunter.domain.Role;
 import vn.demo.jobhunter.domain.response.ResultPaginationDTO;
@@ -20,8 +22,13 @@ import vn.demo.jobhunter.service.RoleService;
 import vn.demo.jobhunter.util.annotation.ApiMessage;
 import vn.demo.jobhunter.util.error.IdInvalidException;
 
+/**
+ * @controller RoleController
+ * @description API Quản lý Vai trò (Role) - Chỉ SUPER_ADMIN mới có quyền
+ */
 @RestController
 @RequestMapping("/api/v1")
+@Tag(name = "Role", description = "API Quản lý Vai trò (chỉ SUPER_ADMIN)")
 public class RoleController {
 
     private final RoleService roleService;
@@ -32,6 +39,7 @@ public class RoleController {
 
     @PostMapping("/roles")
     @ApiMessage("Create a role")
+    @Operation(summary = "Tạo vai trò mới", description = "Tạo Role mới với danh sách Permission tương ứng")
     public ResponseEntity<Role> create(@Valid @RequestBody Role r) throws IdInvalidException {
         // check name
         if (this.roleService.existByName(r.getName())) {
@@ -42,6 +50,7 @@ public class RoleController {
 
     @PutMapping("/roles")
     @ApiMessage("Update a role")
+    @Operation(summary = "Cập nhật vai trò", description = "Sửa thông tin Role và danh sách Permission")
     public ResponseEntity<Role> update(@Valid @RequestBody Role r) throws IdInvalidException {
         // check id
         if (this.roleService.fetchById(r.getId()) == null) {
@@ -59,6 +68,7 @@ public class RoleController {
 
     @DeleteMapping("/roles/{id}")
     @ApiMessage("Delete a role")
+    @Operation(summary = "Xóa vai trò", description = "Xóa Role khỏi hệ thống theo ID")
     public ResponseEntity<Void> delete(@PathVariable("id") long id) throws IdInvalidException {
         // check id
         if (this.roleService.fetchById(id) == null) {
@@ -70,6 +80,7 @@ public class RoleController {
 
     @GetMapping("/roles")
     @ApiMessage("Fetch roles")
+    @Operation(summary = "Danh sách vai trò", description = "Lấy danh sách tất cả Role với phân trang")
     public ResponseEntity<ResultPaginationDTO> getPermissions(
             @Filter Specification<Role> spec, Pageable pageable) {
 
@@ -78,6 +89,7 @@ public class RoleController {
 
     @GetMapping("/roles/{id}")
     @ApiMessage("Fetch role by id")
+    @Operation(summary = "Chi tiết vai trò", description = "Xem thông tin chi tiết của một Role theo ID")
     public ResponseEntity<Role> getById(@PathVariable("id") long id) throws IdInvalidException {
 
         Role role = this.roleService.fetchById(id);

@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.turkraft.springfilter.boot.Filter;
 import com.turkraft.springfilter.builder.FilterBuilder;
 import com.turkraft.springfilter.converter.FilterSpecificationConverter;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import vn.demo.jobhunter.domain.Company;
 import vn.demo.jobhunter.domain.Job;
@@ -33,8 +35,13 @@ import vn.demo.jobhunter.util.error.IdInvalidException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
+/**
+ * @controller ResumeController
+ * @description API Quản lý Hồ sơ ứng tuyển (Resume/CV) - Nộp, duyệt, theo dõi trạng thái
+ */
 @RestController
 @RequestMapping("/api/v1")
+@Tag(name = "Resume", description = "API Quản lý Hồ sơ ứng tuyển")
 public class ResumeController {
 
     private final ResumeService resumeService;
@@ -56,6 +63,7 @@ public class ResumeController {
 
     @PostMapping("/resumes")
     @ApiMessage("Create a resume")
+    @Operation(summary = "Nộp hồ sơ ứng tuyển", description = "Ứng viên nộp CV vào một Job cụ thể (cần upload file trước qua API File)")
     public ResponseEntity<ResCreateResumeDTO> create(@Valid @RequestBody Resume resume) throws IdInvalidException {
         // check id exists
         boolean isIdExist = this.resumeService.checkResumeExistByUserAndJob(resume);
@@ -69,6 +77,7 @@ public class ResumeController {
 
     @PutMapping("/resumes")
     @ApiMessage("Update a resume")
+    @Operation(summary = "Cập nhật trạng thái hồ sơ", description = "HR/Admin duyệt hoặc từ chối hồ sơ (chỉ được duyệt Resume của công ty mình)")
     public ResponseEntity<ResUpdateResumeDTO> update(@RequestBody Resume resume) throws IdInvalidException, vn.demo.jobhunter.util.error.PermissionException {
         // check id exist
         Optional<Resume> reqResumeOptional = this.resumeService.fetchById(resume.getId());
@@ -96,6 +105,7 @@ public class ResumeController {
 
     @DeleteMapping("/resumes/{id}")
     @ApiMessage("Delete a resume by id")
+    @Operation(summary = "Xóa hồ sơ ứng tuyển", description = "Xóa Resume theo ID (chỉ được xóa Resume thuộc công ty mình)")
     public ResponseEntity<Void> delete(@PathVariable("id") long id) throws IdInvalidException, vn.demo.jobhunter.util.error.PermissionException {
         Optional<Resume> reqResumeOptional = this.resumeService.fetchById(id);
         if (reqResumeOptional.isEmpty()) {
@@ -121,6 +131,7 @@ public class ResumeController {
 
     @GetMapping("/resumes/{id}")
     @ApiMessage("Fetch a resume by id")
+    @Operation(summary = "Xem chi tiết hồ sơ", description = "Lấy thông tin chi tiết của một hồ sơ ứng tuyển theo ID")
     public ResponseEntity<ResFetchResumeDTO> fetchById(@PathVariable("id") long id) throws IdInvalidException {
         Optional<Resume> reqResumeOptional = this.resumeService.fetchById(id);
         if (reqResumeOptional.isEmpty()) {
@@ -132,6 +143,7 @@ public class ResumeController {
 
     @GetMapping("/resumes")
     @ApiMessage("Fetch all resume with paginate")
+    @Operation(summary = "Danh sách hồ sơ", description = "HR/Admin xem danh sách Resume có phân trang (lọc theo Job của công ty mình)")
     public ResponseEntity<ResultPaginationDTO> fetchAll(
             @Filter Specification<Resume> spec,
             Pageable pageable) {
@@ -152,16 +164,43 @@ public class ResumeController {
             }
         }
 
-        Specification<Resume> jobInSpec = filterSpecificationConverter.convert(filterBuilder.field("job")
-                .in(filterBuilder.input(arrJobIds)).get());
+        // BUG FIX #2: Nếu user không thuộc công ty nào (arrJobIds == null hoặc rỗng)
+        // thì không được trả về toàn bộ resumes của hệ thống.
+        // SUPER_ADMIN không bị lọc theo company → kiểm tra role
+        boolean isSuperAdmin = currentUser != null
+                && currentUser.getRole() != null
+                && currentUser.getRole().getName().equals("SUPER_ADMIN");
 
-        Specification<Resume> finalSpec = jobInSpec.and(spec);
+        if (!isSuperAdmin && (arrJobIds == null || arrJobIds.isEmpty())) {
+            // Trả về kết quả rỗng — user không có công ty không được xem resume
+            ResultPaginationDTO empty = new ResultPaginationDTO();
+            ResultPaginationDTO.Meta mt = new ResultPaginationDTO.Meta();
+            mt.setPage(pageable.getPageNumber() + 1);
+            mt.setPageSize(pageable.getPageSize());
+            mt.setPages(0);
+            mt.setTotal(0);
+            empty.setMeta(mt);
+            empty.setResult(java.util.Collections.emptyList());
+            return ResponseEntity.ok().body(empty);
+        }
+
+        Specification<Resume> finalSpec;
+        if (isSuperAdmin) {
+            // SUPER_ADMIN xem tất cả resumes, chỉ áp dụng filter từ request
+            finalSpec = spec;
+        } else {
+            Specification<Resume> jobInSpec = filterSpecificationConverter.convert(filterBuilder.field("job")
+                    .in(filterBuilder.input(arrJobIds)).get());
+            finalSpec = jobInSpec.and(spec);
+        }
 
         return ResponseEntity.ok().body(this.resumeService.fetchAllResume(finalSpec, pageable));
     }
 
-    @PostMapping("/resumes/by-user")
+    // BUG FIX #3: Đổi từ @PostMapping → @GetMapping (không có body, chỉ đọc data)
+    @GetMapping("/resumes/by-user")
     @ApiMessage("Get list resumes by user")
+    @Operation(summary = "Xem Resume của tôi", description = "Ứng viên xem danh sách hồ sơ mình đã nộp")
     public ResponseEntity<ResultPaginationDTO> fetchResumeByUser(Pageable pageable) {
 
         return ResponseEntity.ok().body(this.resumeService.fetchResumeByUser(pageable));

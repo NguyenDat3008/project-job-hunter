@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.turkraft.springfilter.boot.Filter;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import vn.demo.jobhunter.domain.Skill;
 import vn.demo.jobhunter.domain.response.ResultPaginationDTO;
@@ -20,8 +22,13 @@ import vn.demo.jobhunter.service.SkillService;
 import vn.demo.jobhunter.util.annotation.ApiMessage;
 import vn.demo.jobhunter.util.error.IdInvalidException;
 
+/**
+ * @controller SkillController
+ * @description API Quản lý Kỹ năng - GET công khai, CUD chỉ SUPER_ADMIN
+ */
 @RestController
 @RequestMapping("/api/v1")
+@Tag(name = "Skill", description = "API Quản lý Kỹ năng")
 public class SkillController {
 
     private final SkillService skillService;
@@ -32,6 +39,7 @@ public class SkillController {
 
     @PostMapping("/skills")
     @ApiMessage("Create a skill")
+    @Operation(summary = "Tạo kỹ năng mới", description = "Thêm kỹ năng vào hệ thống (chỉ SUPER_ADMIN)")
     public ResponseEntity<Skill> create(@Valid @RequestBody Skill s) throws IdInvalidException {
         // check name
         if (s.getName() != null && this.skillService.isNameExist(s.getName())) {
@@ -42,6 +50,7 @@ public class SkillController {
 
     @PutMapping("/skills")
     @ApiMessage("Update a skill")
+    @Operation(summary = "Cập nhật kỹ năng", description = "Sửa tên kỹ năng theo ID (chỉ SUPER_ADMIN)")
     public ResponseEntity<Skill> update(@Valid @RequestBody Skill s) throws IdInvalidException {
         // check id
         Skill currentSkill = this.skillService.fetchSkillById(s.getId());
@@ -60,6 +69,7 @@ public class SkillController {
 
     @DeleteMapping("/skills/{id}")
     @ApiMessage("Delete a skill")
+    @Operation(summary = "Xóa kỹ năng", description = "Xóa kỹ năng khỏi hệ thống theo ID (chỉ SUPER_ADMIN)")
     public ResponseEntity<Void> delete(@PathVariable("id") long id) throws IdInvalidException {
         // check id
         Skill currentSkill = this.skillService.fetchSkillById(id);
@@ -72,6 +82,7 @@ public class SkillController {
 
     @GetMapping("/skills")
     @ApiMessage("fetch all skills")
+    @Operation(summary = "Danh sách kỹ năng", description = "Lấy danh sách tất cả kỹ năng với phân trang (công khai)")
     public ResponseEntity<ResultPaginationDTO> getAll(
             @Filter Specification<Skill> spec,
             Pageable pageable) {

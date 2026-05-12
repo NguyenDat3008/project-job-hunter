@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import vn.demo.jobhunter.domain.Subscriber;
 import vn.demo.jobhunter.service.SubscriberService;
@@ -15,8 +17,13 @@ import vn.demo.jobhunter.util.SecurityUtil;
 import vn.demo.jobhunter.util.annotation.ApiMessage;
 import vn.demo.jobhunter.util.error.IdInvalidException;
 
+/**
+ * @controller SubscriberController
+ * @description API Quản lý Người theo dõi - Đăng ký nhận thông báo việc làm theo kỹ năng
+ */
 @RestController
 @RequestMapping("/api/v1")
+@Tag(name = "Subscriber", description = "API Đăng ký nhận việc làm theo kỹ năng")
 public class SubscriberController {
     private final SubscriberService subscriberService;
 
@@ -26,6 +33,7 @@ public class SubscriberController {
 
     @PostMapping("/subscribers")
     @ApiMessage("Create a subscriber")
+    @Operation(summary = "Tạo subscriber", description = "Đăng ký nhận thông báo việc làm với danh sách kỹ năng quan tâm")
     public ResponseEntity<Subscriber> create(@Valid @RequestBody Subscriber sub) throws IdInvalidException {
         // check email
         boolean isExist = this.subscriberService.isExistsByEmail(sub.getEmail());
@@ -38,6 +46,7 @@ public class SubscriberController {
 
     @PutMapping("/subscribers")
     @ApiMessage("Update a subscriber")
+    @Operation(summary = "Cập nhật subscriber", description = "Thay đổi danh sách kỹ năng quan tâm của subscriber")
     public ResponseEntity<Subscriber> update(@RequestBody Subscriber subsRequest) throws IdInvalidException {
         // check id
         Subscriber subsDB = this.subscriberService.findById(subsRequest.getId());
@@ -49,6 +58,7 @@ public class SubscriberController {
 
     @PostMapping("/subscribers/skills")
     @ApiMessage("Get subscriber's skill")
+    @Operation(summary = "Xem kỹ năng của tôi", description = "Lấy danh sách kỹ năng mà người dùng đã đăng ký theo dõi")
     public ResponseEntity<Subscriber> getSubscribersSkill() throws IdInvalidException {
         String email = SecurityUtil.getCurrentUserLogin().isPresent() == true
                 ? SecurityUtil.getCurrentUserLogin().get()
