@@ -36,7 +36,7 @@ public class FileController {
         this.userService = userService;
     }
 
-    @PostMapping("/files")
+    @PostMapping(value = "/files", consumes = "multipart/form-data")
     @ApiMessage("Upload a file")
     @Operation(summary = "Tải lên file", description = "Tải file lên MinIO (Hỗ trợ CV, Logo công ty, ảnh đại diện)")
     public ResponseEntity<ResUploadFileDTO> upload(
