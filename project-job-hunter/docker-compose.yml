@@ -1,0 +1,86 @@
+version: "3.9"
+
+services:
+  # ─── Database ──────────────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    container_name: jobhunter-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - jobhunter-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── MinIO File Storage ────────────────────────────────
+  minio:
+    image: minio/minio
+    container_name: jobhunter-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - jobhunter-net
+
+  # ─── AI Matching Service (Python FastAPI) ─────────────
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: jobhunter-ai
+    ports:
+      - "8000:8000"
+    networks:
+      - jobhunter-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─── Spring Boot Backend ───────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: jobhunter-backend
+    depends_on:
+      mysql:
+        condition: service_healthy
+      ai-service:
+        condition: service_started
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${DB_NAME}
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      DEMO_MINIO_URL: http://minio:9000
+      DEMO_MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      DEMO_MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      AI_SERVICE_URL: http://ai-service:8000
+    ports:
+      - "8080:8080"
+    networks:
+      - jobhunter-net
+
+volumes:
+  mysql_data:
+  minio_data:
+
+networks:
+  jobhunter-net:
+    driver: bridge

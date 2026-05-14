@@ -12,8 +12,16 @@ import vn.demo.jobhunter.repository.UserRepository;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+/**
+ * @controller StatisticsController
+ * @description API Thống kê hệ thống - Chỉ SUPER_ADMIN
+ */
 @RestController
 @RequestMapping("/api/v1/statistics")
+@Tag(name = "Statistics", description = "API Thống kê hệ thống (chỉ SUPER_ADMIN)")
 public class StatisticsController {
     private final UserRepository userRepository;
     private final CompanyRepository companyRepository;
@@ -29,6 +37,7 @@ public class StatisticsController {
     }
 
     @GetMapping("/admin")
+    @Operation(summary = "Thống kê tổng quan", description = "Lấy số liệu tổng quan: tổng user, công ty, việc làm, hồ sơ")
     public ResponseEntity<Map<String, Long>> getAdminStats() {
         Map<String, Long> stats = new HashMap<>();
         stats.put("totalUsers", this.userRepository.count());

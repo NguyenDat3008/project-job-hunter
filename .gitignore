@@ -4,3 +4,11 @@ project-job-hunter/backend/target/classes/vn/demo/jobhunter/util/error/Permissio
 project-job-hunter/backend/target/classes/vn/demo/jobhunter/util/error/StorageException.class
 **/target/
 *.class
+**/target/
+*.class
+project-job-hunter/frontend/node_modules/
+project-job-hunter/backend/target/
+
+.env
+.env.local
+.DS_Store

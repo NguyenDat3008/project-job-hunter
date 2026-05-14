@@ -87,16 +87,17 @@ public class CompanyService {
                         User creator = this.userRepository.findByEmail(currentCompany.getCreatedBy());
                         if (creator != null) {
                             creator.setCompany(currentCompany);
-                            Role hrRole = this.roleRepository.findByName("HR");
-                            if (hrRole != null)
-                                creator.setRole(hrRole);
+                            // Gán role COMPANY_REPRESENTATIVE (người đại diện công ty)
+                            Role repRole = this.roleRepository.findByName("COMPANY_REPRESENTATIVE");
+                            if (repRole != null)
+                                creator.setRole(repRole);
                             this.userRepository.save(creator);
 
                             // Gửi thông báo cho người dùng
                             this.notificationService.createNotification(
                                     creator,
                                     "Chúc mừng! Doanh nghiệp " + currentCompany.getName()
-                                            + " của bạn đã được phê duyệt.",
+                                            + " của bạn đã được phê duyệt. Bạn là Người đại diện công ty.",
                                     "COMPANY_APPROVED");
                         }
                     }

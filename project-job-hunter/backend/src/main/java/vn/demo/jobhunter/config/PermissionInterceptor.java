@@ -47,7 +47,6 @@ public class PermissionInterceptor implements HandlerInterceptor {
                 if (role != null) {
                     List<Permission> permissions = role.getPermissions();
 
-                    // Allow public GET requests are now handled by SecurityConfiguration
                     boolean isAllow = permissions.stream().anyMatch(item -> item.getApiPath().equals(path)
                             && item.getMethod().equals(httpMethod));
 
@@ -55,8 +54,12 @@ public class PermissionInterceptor implements HandlerInterceptor {
                         throw new PermissionException("Bạn không có quyền truy cập endpoint này.");
                     }
                 } else {
-                    throw new PermissionException("Bạn không có quyền truy cập endpoint này.");
+                    // User tồn tại nhưng không có role → từ chối
+                    throw new PermissionException("Tài khoản chưa được gán quyền truy cập.");
                 }
+            } else {
+                // BUG FIX #4: Token hợp lệ nhưng user đã bị xóa khỏi DB → từ chối
+                throw new PermissionException("Tài khoản không tồn tại hoặc đã bị vô hiệu hóa.");
             }
         }
 

@@ -17,8 +17,16 @@ import vn.demo.jobhunter.service.UserService;
 import vn.demo.jobhunter.util.SecurityUtil;
 import vn.demo.jobhunter.util.annotation.ApiMessage;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+/**
+ * @controller SavedJobController
+ * @description API Việc làm đã lưu - Xem danh sách Job yêu thích của người dùng
+ */
 @RestController
 @RequestMapping("/api/v1")
+@Tag(name = "Saved Job", description = "API Việc làm đã lưu")
 public class SavedJobController {
     
     private final SavedJobRepository savedJobRepository;
@@ -31,6 +39,7 @@ public class SavedJobController {
 
     @GetMapping("/jobs/saved")
     @ApiMessage("Get saved jobs for current user")
+    @Operation(summary = "Xem việc làm đã lưu", description = "Lấy danh sách tất cả Job mà người dùng đã lưu")
     public ResponseEntity<List<Job>> getSavedJobs() {
         String email = SecurityUtil.getCurrentUserLogin().orElse("");
         User currentUser = this.userService.handleGetUserByUsername(email);
