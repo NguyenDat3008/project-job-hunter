@@ -13,15 +13,18 @@ import {
   View,
   Image,
   StatusBar,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { jobService } from '@services/jobService';
 import { LoadingSpinner, Banner, JobCard } from '@components/index';
 import { COLORS, SHADOW } from '@constants/theme';
+import { useAuthStore } from '@store/authStore';
 
 export default function HomeTab() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { isAuthenticated } = useAuthStore();
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [latestJobs, setLatestJobs] = useState<Job[]>([]);
@@ -58,14 +61,22 @@ export default function HomeTab() {
   const bannerImage = require('../../assets/images/Banner trên cùng mới.jpg');
 
   const handleToggleSave = async (job: Job) => {
+    if (!isAuthenticated) {
+      Alert.alert('Yêu cầu đăng nhập', 'Bạn cần đăng nhập để lưu công việc này.', [
+        { text: 'Hủy', style: 'cancel' },
+        { text: 'Đăng nhập', onPress: () => router.push('/login') }
+      ]);
+      return;
+    }
     try {
       await jobService.saveJob(job.id);
       // Update local state for immediate feedback
       setLatestJobs(prev => prev.map(j => 
         j.id === job.id ? { ...j, isSaved: !j.isSaved } : j
       ));
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error toggling save:', error);
+      Alert.alert('Lỗi', error.message || 'Không thể lưu công việc lúc này.');
     }
   };
 

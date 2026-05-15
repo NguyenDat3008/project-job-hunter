@@ -6,7 +6,8 @@ import { Job, Resume, ResumeStatus } from '@/types/job.types';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Alert } from 'react-native';
+import { useAuthStore } from '@store/authStore';
 
 const STATUS_CONFIG: Record<ResumeStatus, { label: string; color: string; symbol: string }> = {
   PENDING: { label: 'Đã gửi', color: '#F59E0B', symbol: '○' },
@@ -17,6 +18,7 @@ const STATUS_CONFIG: Record<ResumeStatus, { label: string; color: string; symbol
 
 export default function ApplicationsTab() {
   const router = useRouter();
+  const { isAuthenticated } = useAuthStore();
   const [applications, setApplications] = useState<Resume[]>([]);
   const [savedJobs, setSavedJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,11 +45,16 @@ export default function ApplicationsTab() {
   };
 
   const handleToggleSave = async (job: Job) => {
+    if (!isAuthenticated) {
+      Alert.alert('Yêu cầu đăng nhập', 'Bạn cần đăng nhập để lưu công việc này.');
+      return;
+    }
     try {
       await jobService.saveJob(job.id);
       loadData(); // Refresh both
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error toggling save:', error);
+      Alert.alert('Lỗi', error.message || 'Không thể lưu công việc lúc này.');
     }
   };
 

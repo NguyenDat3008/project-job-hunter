@@ -3,6 +3,7 @@ import { Job } from '@/types/job.types';
 import { COLORS, SHADOW } from '@constants/theme';
 import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import MatchScore from '../MatchScore/MatchScore';
 
 interface JobCardProps {
@@ -34,12 +35,12 @@ const JobCard: React.FC<JobCardProps> = ({
     >
       <View style={styles.header}>
         <View style={styles.logoContainer}>
-          {job.company.logo ? (
+          {job.company?.logo ? (
             <Image source={{ uri: job.company.logo }} style={styles.logo} />
           ) : (
             <View style={styles.logoPlaceholder}>
               <Text style={styles.logoLetter}>
-                {job.company.name?.charAt(0) || 'C'}
+                {job.company?.name?.charAt(0) || 'C'}
               </Text>
             </View>
           )}
@@ -52,7 +53,7 @@ const JobCard: React.FC<JobCardProps> = ({
               <Text style={styles.verifiedIcon}>✓</Text>
             </View>
           </View>
-          <Text style={styles.companyName} numberOfLines={1}>{job.company.name}</Text>
+          <Text style={styles.companyName} numberOfLines={1}>{job.company?.name || 'Công ty ẩn danh'}</Text>
         </View>
 
         {showMatchScore && job.matchScore !== undefined && (
@@ -72,12 +73,17 @@ const JobCard: React.FC<JobCardProps> = ({
 
         <TouchableOpacity
           style={styles.saveButton}
-          onPress={onSavePress}
+          onPress={() => {
+            onSavePress?.();
+          }}
           activeOpacity={0.6}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Text style={[styles.saveIcon, job.isSaved && styles.savedIcon]}>
-            {job.isSaved ? '♥' : '♡'}
-          </Text>
+          <Ionicons 
+            name={job.isSaved ? "heart" : "heart-outline"} 
+            size={22} 
+            color={job.isSaved ? COLORS.error : COLORS.gray[400]} 
+          />
         </TouchableOpacity>
       </View>
     </TouchableOpacity>

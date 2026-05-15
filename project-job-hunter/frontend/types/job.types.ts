@@ -19,6 +19,7 @@ export interface Job {
   company?: Company;
   isSaved?: boolean;
   isApplied?: boolean;
+  matchScore?: number;
   createdAt?: string;
   updatedAt?: string;
 }
