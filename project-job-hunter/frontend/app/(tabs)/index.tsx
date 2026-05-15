@@ -20,11 +20,12 @@ import { jobService } from '@services/jobService';
 import { LoadingSpinner, Banner, JobCard } from '@components/index';
 import { COLORS, SHADOW } from '@constants/theme';
 import { useAuthStore } from '@store/authStore';
+import { NotificationBell } from '@components/index';
 
 export default function HomeTab() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [latestJobs, setLatestJobs] = useState<Job[]>([]);
@@ -97,11 +98,9 @@ export default function HomeTab() {
               {/* Optional: Mascot or Greeting */}
             </View>
             <View style={styles.headerRightContainer}>
-              <TouchableOpacity style={styles.avatar}>
-                <Text style={styles.avatarText}>TJ</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.notificationBtn} onPress={() => router.push('/(tabs)/notifications')}>
-                <Ionicons name="notifications-outline" size={18} color={COLORS.white} />
+              <NotificationBell light onPress={() => router.push('/(tabs)/notifications')} />
+              <TouchableOpacity style={styles.avatar} onPress={() => router.push('/(tabs)/profile')}>
+                <Text style={styles.avatarText}>{user?.name?.charAt(0) || 'U'}</Text>
               </TouchableOpacity>
             </View>
           </View>

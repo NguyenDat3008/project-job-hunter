@@ -8,10 +8,12 @@ import {
   Dimensions,
   ActivityIndicator,
   Platform,
+  TextInput,
 } from 'react-native';
 import MapView, { Marker, UrlTile } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SHADOW, SPACING, TYPOGRAPHY, BORDER_RADIUS } from '@constants/theme';
 
 const { width, height } = Dimensions.get('window');
@@ -29,6 +31,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
   onSelect,
   initialLocation,
 }) => {
+  const insets = useSafeAreaInsets();
   const [region, setRegion] = useState({
     latitude: initialLocation?.latitude || 21.0285,
     longitude: initialLocation?.longitude || 105.8542,
@@ -106,7 +109,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
   return (
     <Modal visible={visible} animationType="slide" transparent={false}>
       <View style={styles.container}>
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
           <TouchableOpacity onPress={onClose} style={styles.backBtn}>
             <Ionicons name="close" size={24} color={COLORS.text.primary} />
           </TouchableOpacity>
@@ -141,12 +144,20 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
         </View>
 
         <View style={styles.footer}>
+          <Text style={styles.footerLabel}>Địa chỉ xác định:</Text>
           <View style={styles.addressBox}>
             <Ionicons name="location" size={20} color={COLORS.primary} />
-            <Text style={styles.addressText} numberOfLines={2}>
-              {address || 'Đang xác định địa chỉ...'}
-            </Text>
+            <TextInput
+              style={styles.addressInput}
+              value={address}
+              onChangeText={setAddress}
+              placeholder="Nhập địa chỉ hoặc chọn trên bản đồ..."
+              multiline
+            />
           </View>
+          <Text style={styles.hintText}>
+            Bạn có thể chỉnh sửa địa chỉ trên nếu bản đồ định vị chưa hoàn toàn chính xác.
+          </Text>
           <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirm}>
             <Text style={styles.confirmBtnText}>Xác nhận vị trí này</Text>
           </TouchableOpacity>
@@ -166,7 +177,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: SPACING.md,
-    paddingTop: Platform.OS === 'ios' ? 50 : 20,
+    paddingTop: 16, // Base padding
     paddingBottom: SPACING.md,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
@@ -216,17 +227,34 @@ const styles = StyleSheet.create({
   },
   addressBox: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: SPACING.sm,
-    marginBottom: SPACING.lg,
-    padding: SPACING.md,
+    marginBottom: SPACING.sm,
+    padding: SPACING.sm,
     backgroundColor: COLORS.gray[50],
     borderRadius: BORDER_RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
-  addressText: {
+  addressInput: {
     flex: 1,
     ...TYPOGRAPHY.body2,
     color: COLORS.text.primary,
+    paddingTop: 0,
+    minHeight: 40,
+  },
+  footerLabel: {
+    ...TYPOGRAPHY.caption,
+    fontWeight: '700',
+    color: COLORS.text.secondary,
+    marginBottom: 6,
+  },
+  hintText: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.text.light,
+    fontSize: 10,
+    marginBottom: SPACING.lg,
+    fontStyle: 'italic',
   },
   confirmBtn: {
     backgroundColor: COLORS.primary,

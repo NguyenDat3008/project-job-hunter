@@ -30,6 +30,16 @@ public class ResLoginDTO {
         private vn.demo.jobhunter.util.constant.GenderEnum gender;
         private String address;
         private java.util.List<String> skills;
+        private UserCompany company;
+    }
+
+    @Getter
+    @Setter
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class UserCompany {
+        private long id;
+        private String name;
     }
 
     @Getter

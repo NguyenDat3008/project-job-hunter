@@ -91,6 +91,13 @@ public class AuthController {
             userLogin.setAge(currentUserDB.getAge());
             userLogin.setGender(currentUserDB.getGender());
             userLogin.setAddress(currentUserDB.getAddress());
+            // Map company
+            if (currentUserDB.getCompany() != null) {
+                userLogin.setCompany(new ResLoginDTO.UserCompany(
+                    currentUserDB.getCompany().getId(),
+                    currentUserDB.getCompany().getName()
+                ));
+            }
             // Map skills
             vn.demo.jobhunter.domain.Subscriber subscriberDB = this.subscriberService.findByEmail(loginDto.getUsername());
             if (subscriberDB != null && subscriberDB.getSkills() != null) {
@@ -143,6 +150,14 @@ public class AuthController {
             userLogin.setEmail(currentUserDB.getEmail());
             userLogin.setName(currentUserDB.getName());
             userLogin.setRole(currentUserDB.getRole());
+            
+            // Map company
+            if (currentUserDB.getCompany() != null) {
+                userLogin.setCompany(new ResLoginDTO.UserCompany(
+                    currentUserDB.getCompany().getId(),
+                    currentUserDB.getCompany().getName()
+                ));
+            }
 
             userGetAccount.setUser(userLogin);
         }
@@ -180,6 +195,13 @@ public class AuthController {
             userLogin.setAge(currentUserDB.getAge());
             userLogin.setGender(currentUserDB.getGender());
             userLogin.setAddress(currentUserDB.getAddress());
+            // Map company
+            if (currentUserDB.getCompany() != null) {
+                userLogin.setCompany(new ResLoginDTO.UserCompany(
+                    currentUserDB.getCompany().getId(),
+                    currentUserDB.getCompany().getName()
+                ));
+            }
             // Map skills
             vn.demo.jobhunter.domain.Subscriber subscriberDB = this.subscriberService.findByEmail(email);
             if (subscriberDB != null && subscriberDB.getSkills() != null) {

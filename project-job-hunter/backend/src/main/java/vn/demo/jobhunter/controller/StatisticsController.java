@@ -44,6 +44,11 @@ public class StatisticsController {
         stats.put("totalCompanies", this.companyRepository.count());
         stats.put("totalJobs", this.jobRepository.count());
         stats.put("totalResumes", this.resumeRepository.count());
+        
+        // Bổ sung số liệu chờ duyệt
+        stats.put("pendingCompanies", this.companyRepository.countByActive(false));
+        stats.put("inactiveJobs", this.jobRepository.countByActive(false));
+        
         return ResponseEntity.ok(stats);
     }
 }

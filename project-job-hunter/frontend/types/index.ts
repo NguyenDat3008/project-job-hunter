@@ -33,6 +33,8 @@ export interface User {
     id: number;
     name: string;
     logo?: string;
+    isPremium?: boolean;
+    premiumTier?: string;
   };
 }
 
@@ -81,6 +83,13 @@ export interface LoginResponse {
     gender?: 'MALE' | 'FEMALE' | 'OTHER';
     address?: string;
     skills?: string[];
+    company?: {
+      id: number;
+      name: string;
+      logo?: string;
+      isPremium?: boolean;
+      premiumTier?: string;
+    };
   };
 }
 

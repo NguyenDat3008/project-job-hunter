@@ -217,8 +217,18 @@ public class JobService {
         this.jobRepository.deleteById(id);
     }
 
-    public ResultPaginationDTO fetchAll(Specification<Job> spec, Pageable pageable) {
-        Page<Job> pageUser = this.jobRepository.findAll(spec, pageable);
+    public ResultPaginationDTO fetchAll(Specification<Job> spec, org.springframework.data.domain.Pageable pageable) {
+        // Ưu tiên cty Premium lên đầu, sau đó mới đến các tiêu chí sort khác
+        org.springframework.data.domain.Sort premiumSort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "company.isPremium")
+                .and(pageable.getSort());
+        
+        org.springframework.data.domain.Pageable newPageable = org.springframework.data.domain.PageRequest.of(
+            pageable.getPageNumber(), 
+            pageable.getPageSize(), 
+            premiumSort
+        );
+
+        Page<Job> pageUser = this.jobRepository.findAll(spec, newPageable);
         ResultPaginationDTO rs = new ResultPaginationDTO();
         ResultPaginationDTO.Meta mt = new ResultPaginationDTO.Meta();
         mt.setPage(pageable.getPageNumber() + 1);

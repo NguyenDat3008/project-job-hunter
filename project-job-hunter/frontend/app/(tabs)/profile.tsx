@@ -279,6 +279,20 @@ export default function ProfileTab() {
                 iconColor={COLORS.primary}
                 bgColor="#F0FDF4"
               />
+              <View style={styles.divider} />
+              <MenuItem 
+                icon="star" 
+                label="Gói dịch vụ Premium" 
+                description="Nâng cấp để ưu tiên hiển thị tin tuyển dụng"
+                onPress={() => router.push('/hr/premium-plans' as any)}
+                iconColor="#EAB308"
+                bgColor="#FEF9C3"
+                rightElement={user?.company?.isPremium ? (
+                  <View style={styles.activeBadge}>
+                    <Text style={styles.activeBadgeText}>ĐANG BẬT</Text>
+                  </View>
+                ) : null}
+              />
             </View>
           </>
         )}
@@ -296,6 +310,14 @@ export default function ProfileTab() {
                 iconColor={COLORS.primary}
                 bgColor="#F0FDF4"
                 onPress={() => router.push('/hr/job-form')}
+              />
+              <View style={styles.divider} />
+              <MenuItem 
+                icon="star" 
+                label="Mua gói Premium" 
+                iconColor="#EAB308"
+                bgColor="#FEF9C3"
+                onPress={() => router.push('/hr/premium-plans' as any)}
               />
               <View style={styles.divider} />
               <MenuItem 
@@ -541,6 +563,17 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '700',
     color: COLORS.primary,
+  },
+  activeBadge: {
+    backgroundColor: COLORS.success,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  activeBadgeText: {
+    color: COLORS.white,
+    fontSize: 10,
+    fontWeight: '800',
   },
   scrollContent: {
     paddingTop: 10,

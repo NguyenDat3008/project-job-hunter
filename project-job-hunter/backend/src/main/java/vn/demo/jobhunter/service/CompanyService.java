@@ -46,7 +46,26 @@ public class CompanyService {
             throw new PermissionException("Tên công ty này đã tồn tại trên hệ thống.");
         }
         c.setActive(false);
-        return this.companyRepository.save(c);
+        Company saved = this.companyRepository.save(c);
+
+        // Gán user tạo vào công ty luôn (để họ thấy mình thuộc cty đang chờ duyệt)
+        String email = SecurityUtil.getCurrentUserLogin().orElse("");
+        User currentUser = this.userRepository.findByEmail(email);
+        if (currentUser != null) {
+            currentUser.setCompany(saved);
+            this.userRepository.save(currentUser);
+        }
+
+        // Notify Admin
+        User admin = this.userRepository.findByEmail("admin@gmail.com");
+        if (admin != null) {
+            this.notificationService.createNotification(
+                    admin,
+                    "Yêu cầu đăng ký doanh nghiệp mới",
+                    "Doanh nghiệp " + c.getName() + " vừa gửi yêu cầu tham gia hệ thống.",
+                    "COMPANY_REGISTRATION_REQUEST");
+        }
+        return saved;
     }
 
     @SuppressWarnings("null")
@@ -120,6 +139,19 @@ public class CompanyService {
                         }
                     }
                     currentCompany.setActive(c.isActive());
+
+                    // Khi Admin Từ chối (Active vẫn false nhưng có updateReason mới)
+                    if (!c.isActive() && c.getUpdateReason() != null && c.getUpdateReason().startsWith("Từ chối:")) {
+                        User creator = this.userRepository.findByEmail(currentCompany.getCreatedBy());
+                        if (creator != null) {
+                            this.notificationService.createNotification(
+                                creator,
+                                "Yêu cầu đăng ký bị từ chối",
+                                "Yêu cầu đăng ký công ty " + currentCompany.getName() + " bị từ chối. Lý do: " + c.getUpdateReason().replace("Từ chối: ", ""),
+                                "COMPANY_REJECTED"
+                            );
+                        }
+                    }
                     
                     // Thông báo nâng cấp Premium
                     if (!currentCompany.getIsPremium() && c.getIsPremium()) {

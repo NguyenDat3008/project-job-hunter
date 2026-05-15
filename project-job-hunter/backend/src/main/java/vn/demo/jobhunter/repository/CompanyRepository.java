@@ -10,4 +10,5 @@ import vn.demo.jobhunter.domain.Company;
 public interface CompanyRepository extends JpaRepository<Company, Long>,
         JpaSpecificationExecutor<Company> {
     boolean existsByName(String name);
+    long countByActive(boolean active);
 }

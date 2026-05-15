@@ -3,6 +3,43 @@ import React from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, TYPOGRAPHY, SHADOW, BORDER_RADIUS } from '@constants/theme';
+import { notificationService } from '@services/notificationService';
+import { useAuthStore } from '@store/authStore';
+
+function NotificationIcon({ color, focused }: { color: string; focused: boolean }) {
+  const [count, setCount] = React.useState(0);
+  const { user, isAuthenticated } = useAuthStore();
+
+  React.useEffect(() => {
+    if (isAuthenticated && user) {
+      const loadCount = async () => {
+        try {
+          const c = await notificationService.getUnreadCount();
+          setCount(c);
+        } catch (e) {
+          // ignore
+        }
+      };
+      loadCount();
+      // Polling every 30s
+      const interval = setInterval(loadCount, 30000);
+      return () => clearInterval(interval);
+    } else {
+      setCount(0);
+    }
+  }, [isAuthenticated, user?.id]);
+
+  return (
+    <View>
+      <Ionicons name={focused ? 'notifications' : 'notifications-outline'} size={24} color={color} />
+      {count > 0 && (
+        <View style={styles.notifBadge}>
+          <Text style={styles.notifBadgeText}>{count > 9 ? '9+' : count}</Text>
+        </View>
+      )}
+    </View>
+  );
+}
 
 export default function TabLayout() {
   return (
@@ -46,14 +83,7 @@ export default function TabLayout() {
         name="notifications"
         options={{
           title: 'Thông báo',
-          tabBarIcon: ({ color, focused }) => (
-            <View>
-              <Ionicons name={focused ? 'notifications' : 'notifications-outline'} size={24} color={color} />
-              <View style={styles.notifBadge}>
-                <Text style={styles.notifBadgeText}>3</Text>
-              </View>
-            </View>
-          ),
+          tabBarIcon: ({ color, focused }) => <NotificationIcon color={color} focused={focused} />,
         }}
       />
       <Tabs.Screen

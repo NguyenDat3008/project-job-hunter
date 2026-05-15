@@ -39,6 +39,8 @@ export default function NotificationsTab() {
 
   useEffect(() => {
     loadNotifications();
+    // Mark all as read when entering the screen
+    notificationService.markAllAsRead();
   }, []);
 
   const loadNotifications = async () => {
