@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { jobService } from '@services/jobService';
-import { LoadingSpinner, Banner } from '@components/index';
+import { LoadingSpinner, Banner, JobCard } from '@components/index';
 import { COLORS, SHADOW } from '@constants/theme';
 
 export default function HomeTab() {
