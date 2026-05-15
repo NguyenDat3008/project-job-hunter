@@ -1,0 +1,17 @@
+{
+  "name": "payment-gateway",
+  "version": "1.0.0",
+  "description": "Payment Gateway with HMAC + VietQR for JobHunter",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "axios": "^1.7.0",
+    "uuid": "^10.0.0"
+  }
+}
