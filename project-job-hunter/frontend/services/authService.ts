@@ -1,85 +1,66 @@
-// Authentication Service — mapped to Spring Boot AuthController
-// All responses wrapped by FormatRestResponse: { statusCode, data, message }
-import { API_CONFIG, ENDPOINTS } from '@constants/endpoints';
-import { LoginRequest, LoginResponse, SignUpRequest, SignUpResponse, User } from '@/types/index';
-import { MOCK_CURRENT_USER } from './mockData';
+// services/authService.ts
+// Kết nối với Spring Boot AuthController
+// Endpoints: POST /auth/login, POST /auth/register, POST /auth/logout, GET /auth/account, GET /auth/refresh
+// Dùng api wrapper (axios-based, auto-attach token)
+// Refresh token được quản lý qua httpOnly Cookie — KHÔNG lưu trong app
+
 import api from './api';
+import { ENDPOINTS } from '@constants/endpoints';
+import { LoginResponse, RegisterResponse, User } from '@/types/index';
 
-class AuthService {
-  async login(credentials: LoginRequest): Promise<LoginResponse> {
-    if (API_CONFIG.USE_MOCK) {
-      // Demo login
-      if (credentials.username === 'demo@topjob.vn' && credentials.password === '123456') {
-        return {
-          access_token: 'mock-token-' + Date.now(),
-          user: {
-            id: MOCK_CURRENT_USER.id,
-            email: MOCK_CURRENT_USER.email,
-            name: MOCK_CURRENT_USER.name,
-            role: MOCK_CURRENT_USER.role!,
-            age: MOCK_CURRENT_USER.age,
-            gender: MOCK_CURRENT_USER.gender,
-            address: MOCK_CURRENT_USER.address,
-            skills: MOCK_CURRENT_USER.skills,
-          },
-        };
-      }
-      throw new Error('Email hoặc mật khẩu không chính xác');
-    }
+const authService = {
+  /**
+   * POST /api/v1/auth/login
+   * Body: { username: string, password: string }
+   * Response: { access_token, user: { id, email, name, role, ... } }
+   * Side-effect: Backend set refresh_token cookie (httpOnly)
+   */
+  login: async (credentials: {
+    username: string;
+    password: string;
+  }): Promise<LoginResponse> => {
+    return api.post<LoginResponse>(ENDPOINTS.AUTH.LOGIN, credentials);
+  },
 
-    // Real Spring API: POST /api/v1/auth/login
-    // FormatRestResponse wraps: { statusCode, data: { access_token, user }, message }
-    const response = await api.post(ENDPOINTS.AUTH.LOGIN, credentials);
-    return (response.data as any).data;
-  }
+  /**
+   * POST /api/v1/auth/register
+   * Body: { email, password, name }
+   * Tự động assign NORMAL_USER role
+   */
+  register: async (data: {
+    email: string;
+    password: string;
+    name: string;
+  }): Promise<RegisterResponse> => {
+    return api.post<RegisterResponse>(ENDPOINTS.AUTH.REGISTER, data);
+  },
 
-  async register(data: SignUpRequest): Promise<SignUpResponse> {
-    if (API_CONFIG.USE_MOCK) {
-      return {
-        id: Date.now(),
-        email: data.email,
-        name: data.name,
-        age: data.age,
-        gender: data.gender,
-        address: data.address,
-        createdAt: new Date().toISOString(),
-      };
-    }
+  /**
+   * POST /api/v1/auth/logout
+   * Xóa refreshToken trong DB + xóa cookie
+   * Token được tự động gắn bởi interceptor
+   */
+  logout: async (): Promise<void> => {
+    await api.post(ENDPOINTS.AUTH.LOGOUT);
+  },
 
-    // Real Spring API: POST /api/v1/auth/register
-    // FormatRestResponse wraps: { statusCode, data: ResCreateUserDTO, message }
-    const response = await api.post(ENDPOINTS.AUTH.REGISTER, data);
-    return (response.data as any).data;
-  }
+  /**
+   * GET /api/v1/auth/account
+   * Trả về thông tin user đang login từ access token
+   * Token được tự động gắn bởi interceptor
+   */
+  getAccount: async (): Promise<{ user: User }> => {
+    return api.get<{ user: User }>(ENDPOINTS.AUTH.ACCOUNT);
+  },
 
-  async logout(): Promise<void> {
-    if (API_CONFIG.USE_MOCK) return;
+  /**
+   * GET /api/v1/auth/refresh
+   * Cookie refresh_token tự động đi kèm (withCredentials: true)
+   * → issue accessToken mới
+   */
+  refreshToken: async (): Promise<LoginResponse> => {
+    return api.get<LoginResponse>(ENDPOINTS.AUTH.REFRESH);
+  },
+};
 
-    try {
-      await api.post(ENDPOINTS.AUTH.LOGOUT);
-    } catch (error) {
-      console.warn('Logout error:', error);
-    }
-  }
-
-  async getCurrentUser(): Promise<User> {
-    if (API_CONFIG.USE_MOCK) {
-      return MOCK_CURRENT_USER;
-    }
-
-    // Real Spring API: GET /api/v1/auth/account
-    // FormatRestResponse wraps: { statusCode, data: { user: UserLogin }, message }
-    const response = await api.get(ENDPOINTS.AUTH.ACCOUNT);
-    const accountData = (response.data as any).data;
-    return accountData?.user;
-  }
-
-  async refreshToken(): Promise<LoginResponse> {
-    // Real Spring API: GET /api/v1/auth/refresh (reads cookie)
-    const response = await api.get(ENDPOINTS.AUTH.REFRESH);
-    return (response.data as any).data;
-  }
-}
-
-export const authService = new AuthService();
 export default authService;

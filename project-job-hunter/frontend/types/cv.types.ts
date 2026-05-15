@@ -1,24 +1,11 @@
-// CV types
-export interface CV {
+export interface SectionItem {
   id: string;
-  userId: string;
   title: string;
-  template: string;
-  color: string;
-  personalInfo: PersonalInfo;
-  sections: CVSection[];
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface PersonalInfo {
-  fullName: string;
-  email: string;
-  phone: string;
-  address?: string;
-  profilePhoto?: string;
-  summary?: string;
+  subtitle?: string;
+  description?: string;
+  startDate?: string;
+  endDate?: string;
+  order: number;
 }
 
 export interface CVSection {
@@ -29,66 +16,27 @@ export interface CVSection {
   order: number;
 }
 
-export interface SectionItem {
-  id: string;
-  title: string;
-  subtitle?: string;
-  description?: string;
-  startDate?: string;
-  endDate?: string;
-  location?: string;
-  company?: string;
-  degree?: string;
-  school?: string;
-  skills?: string[];
-  level?: string;
-  imageUrl?: string;
-  order: number;
-}
-
 export interface CVTemplate {
   id: string;
   name: string;
   description: string;
-  thumbnail: string;
+  previewImage?: string;
   colors: string[];
 }
 
-export interface CreateCVRequest {
+export interface CV {
+  id: string;
+  userId: number;
   title: string;
-  template: string;
+  templateId: string;
   color: string;
-  personalInfo: PersonalInfo;
-  sections?: CVSection[];
-}
-
-export interface UpdateCVRequest {
-  title?: string;
-  template?: string;
-  color?: string;
-  personalInfo?: PersonalInfo;
-  sections?: CVSection[];
-}
-
-export interface CVListResponse {
-  data: CV[];
-  total: number;
-}
-
-export interface ExportCVRequest {
-  cvId: string;
-  format: 'PDF' | 'DOCX';
-}
-
-export interface ShareCVRequest {
-  cvId: string;
-  email: string[];
-}
-
-export interface CVAnalytics {
-  cvId: string;
-  viewCount: number;
-  shareCount: number;
-  downloadCount: number;
-  ratings: number[];
+  fullName: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  summary?: string;
+  avatar?: string;
+  sections: CVSection[];
+  createdAt: string;
+  updatedAt: string;
 }

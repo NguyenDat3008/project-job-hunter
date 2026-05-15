@@ -120,6 +120,16 @@ public class JobController {
         return ResponseEntity.ok().body(null);
     }
 
+    @GetMapping("/jobs/nearby")
+    @ApiMessage("Get jobs near a location")
+    @Operation(summary = "Tìm việc làm quanh đây", description = "Lấy danh sách Job trong bán kính (radius) tính từ tọa độ (lat, lng)")
+    public ResponseEntity<java.util.List<Job>> getJobsNearby(
+            @org.springframework.web.bind.annotation.RequestParam("lat") double lat,
+            @org.springframework.web.bind.annotation.RequestParam("lng") double lng,
+            @org.springframework.web.bind.annotation.RequestParam(value = "radius", defaultValue = "10") double radius) {
+        return ResponseEntity.ok().body(this.jobService.findJobsNearby(lat, lng, radius));
+    }
+
     @GetMapping("/jobs/{id}")
     @ApiMessage("Get a job by id")
     @Operation(summary = "Lấy chi tiết việc làm", description = "Xem thông tin chi tiết của một tin tuyển dụng (công khai)")

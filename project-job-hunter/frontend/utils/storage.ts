@@ -1,112 +1,137 @@
-// Storage utility with SecureStore support
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as SecureStore from 'expo-secure-store';
-import { StorageData } from '@/types/index';
+// utils/storage.ts
+// Tiện ích lưu trữ: SecureStore cho tokens nhạy cảm, AsyncStorage cho dữ liệu thường
+// Compatible với Expo SDK 55
 
-const PREFIX = '@topcv:';
+import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
+
+// ─── Secure Storage (cho access_token, refresh_token) ─────────────────────────
+// SecureStore chỉ hoạt động trên iOS/Android, fallback sang AsyncStorage trên web
+
+const isNativePlatform = Platform.OS === 'ios' || Platform.OS === 'android';
+
+export const secureStorage = {
+  async get(key: string): Promise<string | null> {
+    try {
+      if (isNativePlatform) {
+        return await SecureStore.getItemAsync(key);
+      }
+      // Fallback cho web
+      return await AsyncStorage.getItem(`secure_${key}`);
+    } catch (error) {
+      console.error(`[SecureStorage] Error getting ${key}:`, error);
+      return null;
+    }
+  },
+
+  async set(key: string, value: string): Promise<void> {
+    try {
+      if (isNativePlatform) {
+        await SecureStore.setItemAsync(key, value);
+      } else {
+        await AsyncStorage.setItem(`secure_${key}`, value);
+      }
+    } catch (error) {
+      console.error(`[SecureStorage] Error setting ${key}:`, error);
+    }
+  },
+
+  async remove(key: string): Promise<void> {
+    try {
+      if (isNativePlatform) {
+        await SecureStore.deleteItemAsync(key);
+      } else {
+        await AsyncStorage.removeItem(`secure_${key}`);
+      }
+    } catch (error) {
+      console.error(`[SecureStorage] Error removing ${key}:`, error);
+    }
+  },
+};
+
+// ─── General Storage (cho user info, settings, cache) ─────────────────────────
+
+export const generalStorage = {
+  async get<T = any>(key: string): Promise<T | null> {
+    try {
+      const value = await AsyncStorage.getItem(key);
+      if (value === null) return null;
+      return JSON.parse(value) as T;
+    } catch (error) {
+      console.error(`[GeneralStorage] Error getting ${key}:`, error);
+      return null;
+    }
+  },
+
+  async set<T = any>(key: string, value: T): Promise<void> {
+    try {
+      await AsyncStorage.setItem(key, JSON.stringify(value));
+    } catch (error) {
+      console.error(`[GeneralStorage] Error setting ${key}:`, error);
+    }
+  },
+
+  async remove(key: string): Promise<void> {
+    try {
+      await AsyncStorage.removeItem(key);
+    } catch (error) {
+      console.error(`[GeneralStorage] Error removing ${key}:`, error);
+    }
+  },
+
+  async getString(key: string): Promise<string | null> {
+    try {
+      return await AsyncStorage.getItem(key);
+    } catch (error) {
+      console.error(`[GeneralStorage] Error getting string ${key}:`, error);
+      return null;
+    }
+  },
+
+  async setString(key: string, value: string): Promise<void> {
+    try {
+      await AsyncStorage.setItem(key, value);
+    } catch (error) {
+      console.error(`[GeneralStorage] Error setting string ${key}:`, error);
+    }
+  },
+};
+
+// ─── Storage Keys Constants ───────────────────────────────────────────────────
+
+export const STORAGE_KEYS = {
+  // SecureStore keys (tokens)
+  ACCESS_TOKEN: 'auth_access_token',
+  // REFRESH_TOKEN không cần lưu — backend quản lý qua httpOnly Cookie
+
+  // AsyncStorage keys (user data, settings)
+  USER_DATA: 'auth_user_data',
+  SETTINGS: 'app_settings',
+  SEARCH_HISTORY: 'search_history',
+  CACHED_JOBS: 'cached_jobs',
+} as const;
+
+// ─── Legacy-compatible storage object (cho AuthContext) ───────────────────────
 
 export const storage = {
-  // Regular storage (AsyncStorage)
-  async set(key: string, value: string | object | number | boolean, expiresAt?: number) {
-    try {
-      const data: StorageData = {
-        key,
-        value,
-        expiresAt,
-      };
-      await AsyncStorage.setItem(PREFIX + key, JSON.stringify(data));
-    } catch (error) {
-      console.error('Storage set error:', error);
-    }
+  async getSecure(key: string): Promise<string | null> {
+    return secureStorage.get(key);
   },
-
-  async get(key: string) {
-    try {
-      const data = await AsyncStorage.getItem(PREFIX + key);
-      if (!data) return null;
-
-      const parsed = JSON.parse(data) as StorageData;
-
-      // Check expiration
-      if (parsed.expiresAt && parsed.expiresAt < Date.now()) {
-        await this.remove(key);
-        return null;
-      }
-
-      return parsed.value;
-    } catch (error) {
-      console.error('Storage get error:', error);
-      return null;
-    }
+  async setSecure(key: string, value: string): Promise<void> {
+    return secureStorage.set(key, value);
   },
-
-  async remove(key: string) {
-    try {
-      await AsyncStorage.removeItem(PREFIX + key);
-    } catch (error) {
-      console.error('Storage remove error:', error);
-    }
+  async removeSecure(key: string): Promise<void> {
+    return secureStorage.remove(key);
   },
-
-  // Secure storage (SecureStore)
-  async setSecure(key: string, value: string) {
-    try {
-      await SecureStore.setItemAsync(PREFIX + key, value);
-    } catch (error) {
-      console.error('SecureStorage set error:', error);
-    }
+  async get<T = any>(key: string): Promise<T | null> {
+    return generalStorage.get<T>(key);
   },
-
-  async getSecure(key: string) {
-    try {
-      return await SecureStore.getItemAsync(PREFIX + key);
-    } catch (error) {
-      console.error('SecureStorage get error:', error);
-      return null;
-    }
+  async set<T = any>(key: string, value: T): Promise<void> {
+    return generalStorage.set<T>(key, value);
   },
-
-  async removeSecure(key: string) {
-    try {
-      await SecureStore.deleteItemAsync(PREFIX + key);
-    } catch (error) {
-      console.error('SecureStorage remove error:', error);
-    }
-  },
-
-  async clear() {
-    try {
-      const keys = await AsyncStorage.getAllKeys();
-      const prefixedKeys = keys.filter((key: string) => key.startsWith(PREFIX));
-      await AsyncStorage.multiRemove(prefixedKeys);
-      
-      // Note: SecureStore doesn't have a clear all, need to remove specific keys
-      // Usually tokens are the only things in secure store
-      await this.removeSecure('authToken');
-      await this.removeSecure('refreshToken');
-    } catch (error) {
-      console.error('Storage clear error:', error);
-    }
-  },
-
-  async getAll() {
-    try {
-      const keys = await AsyncStorage.getAllKeys();
-      const prefixedKeys = keys.filter((key: string) => key.startsWith(PREFIX));
-      const items = await AsyncStorage.multiGet(prefixedKeys);
-      
-      const result: Record<string, any> = {};
-      items.forEach(([key, value]: readonly [string, string | null]) => {
-        if (value) {
-          const cleanKey = key.replace(PREFIX, '');
-          result[cleanKey] = JSON.parse(value).value;
-        }
-      });
-      return result;
-    } catch (error) {
-      console.error('Storage getAll error:', error);
-      return {};
-    }
+  async remove(key: string): Promise<void> {
+    return generalStorage.remove(key);
   },
 };
 

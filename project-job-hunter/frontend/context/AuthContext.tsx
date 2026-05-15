@@ -1,8 +1,14 @@
-// Auth Context — updated for Spring Boot backend
+// context/AuthContext.tsx
+// Auth Context — LEGACY, giữ lại cho backward compatibility
+// ⚠️ App hiện dùng useAuthStore (Zustand) làm state management chính
+// File này KHÔNG được mount trong _layout.tsx
+// Nếu cần dùng auth, hãy import useAuth từ @hooks/index thay vì AuthContext
+//
+// Token strategy: access_token → SecureStore, refresh_token → httpOnly Cookie
+
 import { AuthState, User } from '@/types/index';
 import authService from '@services/authService';
-import { MOCK_CURRENT_USER } from '@services/mockData';
-import { storage } from '@utils/storage';
+import { storage, STORAGE_KEYS } from '@utils/storage';
 import React, { createContext, ReactNode, useEffect, useState } from 'react';
 
 export interface AuthContextType {
@@ -32,21 +38,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Restore auth state on app startup
   useEffect(() => {
     const restoreAuth = async () => {
-      console.log('DEBUG AUTH CONTEXT: restoreAuth started.');
       try {
         setState(prev => ({ ...prev, isLoading: true }));
-        const token = await storage.getSecure('authToken');
-        const user = await storage.get('user');
-
-        console.log('DEBUG AUTH CONTEXT restoreAuth: Retrieved storage data:', {
-          tokenExists: !!token,
-          userExists: !!user,
-          tokenPreview: token ? token.substring(0, 20) + '...' : 'null',
-          userPreview: user ? JSON.stringify(user).substring(0, 100) + '...' : 'null',
-        });
+        const token = await storage.getSecure(STORAGE_KEYS.ACCESS_TOKEN);
+        const user = await storage.get<User>(STORAGE_KEYS.USER_DATA);
 
         if (token && user) {
-          console.log('DEBUG AUTH CONTEXT: Auth restored successfully.');
           setState(prev => ({
             ...prev,
             token: token as string,
@@ -55,11 +52,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             isLoading: false,
           }));
         } else {
-          console.log('DEBUG AUTH CONTEXT: Auth restoration failed (token or user missing).');
           setState(prev => ({ ...prev, isLoading: false }));
         }
       } catch (error) {
-        console.error('DEBUG AUTH CONTEXT Error restoring auth:', error);
+        console.error('[AuthContext] Error restoring auth:', error);
         setState(prev => ({ ...prev, isLoading: false }));
       }
     };
@@ -78,31 +74,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       const token = response.access_token;
-      const refreshToken = response.refresh_token;
       const loginUser = response.user;
 
-      // Build full user object
       const fullUser: User = {
         id: loginUser.id,
         email: loginUser.email,
         name: loginUser.name,
         role: loginUser.role,
-        // Add mock user details for demo mode
-        ...(email === 'demo@topjob.vn' ? {
-          phone: MOCK_CURRENT_USER.phone,
-          age: MOCK_CURRENT_USER.age,
-          gender: MOCK_CURRENT_USER.gender,
-          address: MOCK_CURRENT_USER.address,
-          skills: MOCK_CURRENT_USER.skills,
-        } : {}),
         createdAt: new Date().toISOString(),
       };
 
-      await storage.setSecure('authToken', token);
-      if (refreshToken) {
-        await storage.setSecure('refreshToken', refreshToken);
-      }
-      await storage.set('user', fullUser);
+      // Access token → SecureStore
+      // Refresh token → httpOnly Cookie (backend tự xử lý)
+      await storage.setSecure(STORAGE_KEYS.ACCESS_TOKEN, token);
+      await storage.set(STORAGE_KEYS.USER_DATA, fullUser);
 
       setState(prev => ({
         ...prev,
@@ -112,15 +97,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         error: null,
         isLoading: false,
       }));
-      console.log('DEBUG AUTH CONTEXT: Login successful.');
     } catch (error: any) {
-      const errorMessage = error?.message || 'Đăng nhập thất bại';
+      const errorMessage = error?.response?.data?.message || error?.message || 'Đăng nhập thất bại';
       setState(prev => ({
         ...prev,
         error: errorMessage,
         isLoading: false,
       }));
-      console.error('DEBUG AUTH CONTEXT Login error:', error);
       throw error;
     }
   };
@@ -133,15 +116,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Auto login after signup
       await login(email, password);
-      console.log('DEBUG AUTH CONTEXT: Signup successful and auto-logged in.');
     } catch (error: any) {
-      const errorMessage = error?.message || 'Đăng ký thất bại';
+      const errorMessage = error?.response?.data?.message || error?.message || 'Đăng ký thất bại';
       setState(prev => ({
         ...prev,
         error: errorMessage,
         isLoading: false,
       }));
-      console.error('DEBUG AUTH CONTEXT Signup error:', error);
       throw error;
     }
   };
@@ -151,11 +132,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setState(prev => ({ ...prev, isLoading: true }));
       await authService.logout();
     } catch (error) {
-      console.error('DEBUG AUTH CONTEXT Logout error:', error);
+      console.warn('[AuthContext] Logout API error (ignored):', error);
     } finally {
-      await storage.removeSecure('authToken');
-      await storage.removeSecure('refreshToken');
-      await storage.remove('user');
+      await storage.removeSecure(STORAGE_KEYS.ACCESS_TOKEN);
+      await storage.remove(STORAGE_KEYS.USER_DATA);
 
       setState({
         user: null,
@@ -164,13 +144,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         error: null,
         isLoading: false,
       });
-      console.log('DEBUG AUTH CONTEXT: Logout successful.');
     }
   };
 
   const updateUser = (user: User) => {
     setState(prev => ({ ...prev, user }));
-    storage.set('user', user);
+    storage.set(STORAGE_KEYS.USER_DATA, user);
   };
 
   const value: AuthContextType = {

@@ -1,38 +1,29 @@
-// Job types — mapped to Spring Boot entity
+import { Role } from './index';
+
+// ─── Job (matches backend Job entity) ────────────────────────────────────────
+
+export type LevelEnum = 'INTERN' | 'FRESHER' | 'JUNIOR' | 'MIDDLE' | 'SENIOR' | 'LEAD' | 'MANAGER';
 
 export interface Job {
   id: number;
-  name: string; // Spring uses "name" not "title"
-  description: string;
+  name: string;
   location: string;
   salary: number;
   quantity: number;
   level: LevelEnum;
-  skills: Skill[];
-  company: Company;
+  description: string;
   active: boolean;
-  startDate: string;
+  startDate?: string;
   endDate?: string;
-  createdAt: string;
-  updatedAt?: string;
-  createdBy?: string;
-
-  // Frontend-only enrichments (from mock/recommendation service)
-  isPremium?: boolean;
-  isUrgent?: boolean;
+  skills?: Skill[];
+  company?: Company;
   isSaved?: boolean;
   isApplied?: boolean;
-  matchScore?: number; // AI match percentage 0-100
-  viewCount?: number;
-  applicantCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export type LevelEnum = 'INTERN' | 'FRESHER' | 'JUNIOR' | 'MIDDLE' | 'SENIOR';
-
-export interface Skill {
-  id: number;
-  name: string;
-}
+// ─── Company (matches backend Company entity) ─────────────────────────────────
 
 export interface Company {
   id: number;
@@ -41,63 +32,62 @@ export interface Company {
   address?: string;
   logo?: string;
   website?: string;
-  size?: string;
   industry?: string;
+  size?: string;
+  active: boolean;
   isPremium?: boolean;
-  premiumTier?: 'BASIC' | 'PRO' | 'ENTERPRISE';
-  jobCount?: number;
+  premiumTier?: string;
+  premiumExpiryDate?: string;
   createdAt?: string;
+  updatedAt?: string;
+  pendingName?: string;
+  pendingLogo?: string;
+  updateReason?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
-export interface JobListRequest {
-  page?: number;
-  size?: number; // Spring uses "size" not "limit"
-  search?: string;
-  location?: string;
-  level?: LevelEnum;
-  salaryMin?: number;
-  salaryMax?: number;
-  companyId?: number;
-  skillIds?: number[];
-  sort?: string; // e.g. "salary,desc"
+// ─── Skill ────────────────────────────────────────────────────────────────────
+
+export interface Skill {
+  id: number;
+  name: string;
 }
 
-// Spring pagination response: ResultPaginationDTO
-export interface JobListResponse {
-  meta: PaginationMeta;
-  result: Job[];
-}
+// ─── Resume / Application (matches backend Resume entity) ─────────────────────
 
-export interface PaginationMeta {
-  page: number;
-  pageSize: number;
-  pages: number;
-  total: number;
+export enum ResumeStatus {
+  PENDING = 'PENDING',
+  REVIEWING = 'REVIEWING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
 }
-
-export interface SaveJobRequest {
-  jobId: number;
-}
-
-export interface ApplyJobRequest {
-  jobId: number;
-  email: string;
-  url: string; // CV file URL
-  coverLetter?: string;
-}
-
-export type ResumeStatus = 'PENDING' | 'REVIEWING' | 'APPROVED' | 'REJECTED';
 
 export interface Resume {
   id: number;
   email: string;
-  url: string;
+  url?: string;
   status: ResumeStatus;
-  companyName?: string;
-  jobName?: string;
-  user?: { id: number; name: string };
-  job?: { id: number; name: string };
-  createdAt: string;
+  createdAt?: string;
   updatedAt?: string;
-  createdBy?: string;
+  user?: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  job?: {
+    id: number;
+    name: string;
+    company?: {
+      id: number;
+      name: string;
+    };
+  };
+  companyName?: string;
+}
+
+export interface ResumeState {
+  resumes: Resume[];
+  isLoading: boolean;
+  error: string | null;
 }

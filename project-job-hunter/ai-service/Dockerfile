@@ -10,7 +10,9 @@ RUN apt-get update && apt-get install -y \
 
 # Copy và cài Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --default-timeout=1000 --no-cache-dir \
+    --extra-index-url https://download.pytorch.org/whl/cpu \
+    -r requirements.txt
 
 # Pre-download model (lưu vào image để không cần download lại mỗi lần start)
 RUN python -c "from sentence_transformers import SentenceTransformer; \

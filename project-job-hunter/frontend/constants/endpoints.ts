@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 
 // API Endpoints configuration — mapped to Spring Boot backend
 const defaultHost = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+
 export const API_CONFIG = {
   BASE_URL:
     process.env.EXPO_PUBLIC_API_URL ||
@@ -109,6 +110,13 @@ export const ENDPOINTS = {
   SAVED_JOBS: {
     LIST: '/jobs/saved',
     TOGGLE: (id: number) => `/jobs/${id}/save`,
+  },
+
+  // HR Management (Spring: HRManagementController) — COMPANY_REPRESENTATIVE only
+  HR_MANAGEMENT: {
+    LIST: (companyId: number) => `/hr-management/${companyId}`,
+    ADD: (companyId: number) => `/hr-management/${companyId}`,
+    REMOVE: (companyId: number, userId: number) => `/hr-management/${companyId}/${userId}`,
   },
 
   // AI Recommendations (Spring: JobController)

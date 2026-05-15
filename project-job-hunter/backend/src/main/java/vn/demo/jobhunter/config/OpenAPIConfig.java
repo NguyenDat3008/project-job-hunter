@@ -29,12 +29,11 @@ public class OpenAPIConfig {
         return server;
     }
 
-    private Contact createContact() {
-        return new Contact();
-    }
-
     private License createLicense() {
-        return new License();
+        License license = new License();
+        license.setName("MIT License");
+        license.setUrl("https://choosealicense.com/licenses/mit/");
+        return license;
     }
 
     private Info createApiInfo() {

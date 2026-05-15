@@ -14,4 +14,5 @@ public interface JobRepository extends JpaRepository<Job, Long>,
                 JpaSpecificationExecutor<Job> {
 
         List<Job> findBySkillsIn(List<Skill> skills);
+        List<Job> findByActiveTrue();
 }

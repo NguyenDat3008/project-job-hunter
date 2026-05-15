@@ -14,9 +14,12 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  if (!isLoading && state.isAuthenticated) {
-    setTimeout(() => router.replace('/(tabs)'), 0);
-  }
+  // Nếu đã login rồi thì redirect về home
+  React.useEffect(() => {
+    if (!isLoading && state.isAuthenticated) {
+      router.replace('/(tabs)');
+    }
+  }, [isLoading, state.isAuthenticated]);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -26,9 +29,10 @@ export default function LoginScreen() {
     try {
       setError('');
       await login(email, password);
-      router.replace('/(tabs)');
     } catch (err: any) {
-      setError(err?.message || 'Đăng nhập thất bại. Vui lòng thử lại.');
+      // Parse error message từ backend (axios wraps trong response.data)
+      const msg = err?.response?.data?.message || err?.message || 'Đăng nhập thất bại. Vui lòng thử lại.';
+      setError(msg);
     }
   };
 

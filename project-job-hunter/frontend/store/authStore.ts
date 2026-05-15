@@ -1,7 +1,12 @@
+// store/authStore.ts
+// Zustand store - quản lý auth state toàn cục
+// Access Token → SecureStore, User data → AsyncStorage
+// Refresh Token → httpOnly Cookie (backend tự quản lý qua Set-Cookie)
+
 import { create } from 'zustand';
-import { AuthState, User, LoginResponse } from '@/types/index';
+import { AuthState, User } from '@/types/index';
 import authService from '@services/authService';
-import { storage } from '@utils/storage';
+import { secureStorage, generalStorage, STORAGE_KEYS } from '@utils/storage';
 
 interface AuthStore extends AuthState {
   login: (email: string, password: string) => Promise<void>;
@@ -10,7 +15,6 @@ interface AuthStore extends AuthState {
   updateUser: (user: User) => void;
   restoreAuth: () => Promise<void>;
   refreshUserFromServer: () => Promise<void>;
-  setError: (error: string | null) => void;
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
@@ -20,28 +24,19 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   isLoading: true,
   error: null,
 
-  setError: (error) => set({ error }),
-
   restoreAuth: async () => {
     try {
       set({ isLoading: true });
-      const token = await storage.getSecure('authToken');
-      const user = await storage.get('user');
-
-      console.log('DEBUG RESTORE AUTH:', { hasToken: !!token, hasUser: !!user });
+      const token = await secureStorage.get(STORAGE_KEYS.ACCESS_TOKEN);
+      const user = await generalStorage.get<User>(STORAGE_KEYS.USER_DATA);
 
       if (token && user) {
-        set({
-          token: token as string,
-          user: user as User,
-          isAuthenticated: true,
-          isLoading: false,
-        });
+        set({ token, user, isAuthenticated: true, isLoading: false, error: null });
       } else {
         set({ isLoading: false });
       }
-    } catch (error) {
-      console.error('Error restoring auth:', error);
+    } catch (e) {
+      console.error('[AuthStore] restoreAuth error:', e);
       set({ isLoading: false });
     }
   },
@@ -49,51 +44,30 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   login: async (email: string, password: string) => {
     try {
       set({ isLoading: true, error: null });
-
-      const response = await authService.login({
-        username: email,
-        password,
-      });
-
-      console.log('DEBUG LOGIN RESPONSE:', response);
-
+      const response = await authService.login({ username: email, password });
+      console.log('[LOGIN] Full response:', JSON.stringify(response));
       const token = response.access_token;
-      const refreshToken = response.refresh_token;
       const loginUser = response.user;
-
-      // Build full user object from real API data
-      // Backend ResLoginDTO.UserLogin includes: id, email, name, role, age, gender, address, skills
-      const fullUser: User = {
+      const user: User = {
         id: loginUser.id,
         email: loginUser.email,
         name: loginUser.name,
         role: loginUser.role,
-        age: (loginUser as any).age,
-        gender: (loginUser as any).gender,
-        address: (loginUser as any).address,
-        skills: (loginUser as any).skills,
-        createdAt: new Date().toISOString(),
+        age: loginUser.age,
+        gender: loginUser.gender,
+        address: loginUser.address,
+        skills: loginUser.skills,
       };
 
-      await storage.setSecure('authToken', token);
-      if (refreshToken) {
-        await storage.setSecure('refreshToken', refreshToken);
-      }
-      await storage.set('user', fullUser);
-      
-      console.log('DEBUG STORAGE SAVED:', { token: token?.substring(0, 20), user: fullUser });
+      // Access Token → SecureStore
+      // Refresh Token → httpOnly Cookie (backend tự set qua Set-Cookie header)
+      await secureStorage.set(STORAGE_KEYS.ACCESS_TOKEN, token);
+      await generalStorage.set(STORAGE_KEYS.USER_DATA, user);
 
-      set({
-        user: fullUser,
-        token,
-        isAuthenticated: true,
-        error: null,
-        isLoading: false,
-      });
+      set({ user, token, isAuthenticated: true, isLoading: false, error: null });
     } catch (error: any) {
-      console.error('DEBUG LOGIN ERROR:', error);
-      const errorMessage = error?.message || 'Đăng nhập thất bại';
-      set({ error: errorMessage, isLoading: false });
+      const message = error?.response?.data?.message || error?.message || 'Đăng nhập thất bại';
+      set({ isLoading: false, error: message });
       throw error;
     }
   },
@@ -102,11 +76,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       await authService.register({ email, password, name });
-      // Auto login after signup
       await get().login(email, password);
     } catch (error: any) {
-      const errorMessage = error?.message || 'Đăng ký thất bại';
-      set({ error: errorMessage, isLoading: false });
+      const message = error?.response?.data?.message || error?.message || 'Đăng ký thất bại';
+      set({ isLoading: false, error: message });
       throw error;
     }
   },
@@ -115,45 +88,36 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     try {
       set({ isLoading: true });
       await authService.logout();
-    } catch (error) {
-      console.error('Logout error:', error);
+    } catch (e) {
+      console.warn('[AuthStore] logout API error (ignored):', e);
     } finally {
-      await storage.removeSecure('authToken');
-      await storage.removeSecure('refreshToken');
-      await storage.remove('user');
-
-      set({
-        user: null,
-        token: null,
-        isAuthenticated: false,
-        error: null,
-        isLoading: false,
-      });
+      // Xóa access token + user data
+      // Refresh token cookie sẽ được backend xóa qua Set-Cookie maxAge=0
+      await secureStorage.remove(STORAGE_KEYS.ACCESS_TOKEN);
+      await generalStorage.remove(STORAGE_KEYS.USER_DATA);
+      set({ user: null, token: null, isAuthenticated: false, error: null, isLoading: false });
     }
   },
 
   updateUser: (user: User) => {
     set({ user });
-    storage.set('user', user);
+    generalStorage.set(STORAGE_KEYS.USER_DATA, user);
   },
 
-  // Fetch fresh user data from server (GET /auth/account)
   refreshUserFromServer: async () => {
+    const { token } = get();
+    if (!token) return;
     try {
-      const freshUser = await authService.getCurrentUser();
-      if (freshUser) {
-        const currentUser = get().user;
-        const mergedUser: User = {
-          ...currentUser,
-          ...freshUser,
-          // Keep fields that account endpoint might not return
-          createdAt: currentUser?.createdAt || new Date().toISOString(),
-        };
-        set({ user: mergedUser });
-        await storage.set('user', mergedUser);
-      }
+      set({ isLoading: true });
+      const response = await authService.getAccount();
+      const user = response.user;
+      set({ user, isAuthenticated: true, isLoading: false });
+      await generalStorage.set(STORAGE_KEYS.USER_DATA, user);
     } catch (error) {
-      console.error('Error refreshing user from server:', error);
+      console.error('[AuthStore] refreshUserFromServer error:', error);
+      set({ isLoading: false });
     }
   },
 }));
+
+export default useAuthStore;

@@ -72,4 +72,13 @@ public class CompanyController {
         Optional<Company> companyOptional = this.companyService.findById(id);
         return ResponseEntity.ok().body(companyOptional.orElse(null));
     }
+
+    @PostMapping("/companies/logo")
+    @ApiMessage("Upload company logo")
+    @Operation(summary = "Upload logo công ty", description = "Tải lên hình ảnh logo công ty, tự động tối ưu hóa dung lượng")
+    public ResponseEntity<String> uploadLogo(
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) throws Exception {
+        String fileName = this.companyService.uploadCompanyLogo(file);
+        return ResponseEntity.ok(fileName);
+    }
 }

@@ -17,6 +17,8 @@ import vn.demo.jobhunter.domain.response.ResUpdateUserDTO;
 import vn.demo.jobhunter.domain.response.ResUserDTO;
 import vn.demo.jobhunter.domain.response.ResultPaginationDTO;
 import vn.demo.jobhunter.repository.UserRepository;
+import vn.demo.jobhunter.util.error.IdInvalidException;
+import vn.demo.jobhunter.util.error.PermissionException;
 
 @Service
 public class UserService {
@@ -212,15 +214,24 @@ public class UserService {
         }
     }
 
+    public User addHrByEmail(String targetEmail, long companyId, String currentEmail)
+            throws IdInvalidException, PermissionException {
+        User targetUser = this.handleGetUserByUsername(targetEmail);
+        if (targetUser == null) {
+            throw new IdInvalidException("User với email = " + targetEmail + " không tồn tại trên hệ thống.");
+        }
+        return this.addHrToCompany(targetUser.getId(), companyId, currentEmail);
+    }
+
     /**
      * Thêm HR vào công ty - chỉ COMPANY_REPRESENTATIVE mới được gọi
      */
     public User addHrToCompany(long targetUserId, long companyId, String currentEmail)
-            throws vn.demo.jobhunter.util.error.IdInvalidException, vn.demo.jobhunter.util.error.PermissionException {
+            throws IdInvalidException, PermissionException {
         // Kiểm tra quyền: người gọi phải là COMPANY_REPRESENTATIVE của company này
         User currentUser = this.handleGetUserByUsername(currentEmail);
         if (currentUser == null || currentUser.getRole() == null) {
-            throw new vn.demo.jobhunter.util.error.PermissionException("Bạn không có quyền thực hiện thao tác này.");
+            throw new PermissionException("Bạn không có quyền thực hiện thao tác này.");
         }
 
         String roleName = currentUser.getRole().getName();
@@ -228,36 +239,36 @@ public class UserService {
         boolean isRep = roleName.equals("COMPANY_REPRESENTATIVE");
 
         if (!isSuperAdmin && !isRep) {
-            throw new vn.demo.jobhunter.util.error.PermissionException("Chỉ Người đại diện công ty hoặc Admin mới có quyền thêm HR.");
+            throw new PermissionException("Chỉ Người đại diện công ty hoặc Admin mới có quyền thêm HR.");
         }
 
         if (isRep) {
             if (currentUser.getCompany() == null || currentUser.getCompany().getId() != companyId) {
-                throw new vn.demo.jobhunter.util.error.PermissionException("Bạn chỉ có quyền quản lý HR trong công ty của mình.");
+                throw new PermissionException("Bạn chỉ có quyền quản lý HR trong công ty của mình.");
             }
         }
 
         // Kiểm tra target user
         User targetUser = this.fetchUserById(targetUserId);
         if (targetUser == null) {
-            throw new vn.demo.jobhunter.util.error.IdInvalidException("User với id = " + targetUserId + " không tồn tại.");
+            throw new IdInvalidException("User với id = " + targetUserId + " không tồn tại.");
         }
 
         // Kiểm tra target user chưa thuộc công ty nào (hoặc đã thuộc công ty này)
         if (targetUser.getCompany() != null && targetUser.getCompany().getId() != companyId) {
-            throw new vn.demo.jobhunter.util.error.PermissionException("User này đã thuộc công ty khác.");
+            throw new PermissionException("User này đã thuộc công ty khác.");
         }
 
         // Kiểm tra company tồn tại
         java.util.Optional<Company> companyOpt = this.companyService.findById(companyId);
         if (companyOpt.isEmpty()) {
-            throw new vn.demo.jobhunter.util.error.IdInvalidException("Company với id = " + companyId + " không tồn tại.");
+            throw new IdInvalidException("Company với id = " + companyId + " không tồn tại.");
         }
 
         // Gán role HR và company
         Role hrRole = this.roleService.findByName("HR");
         if (hrRole == null) {
-            throw new vn.demo.jobhunter.util.error.IdInvalidException("Role HR không tồn tại trong hệ thống.");
+            throw new IdInvalidException("Role HR không tồn tại trong hệ thống.");
         }
 
         targetUser.setRole(hrRole);
@@ -269,11 +280,11 @@ public class UserService {
      * Xóa HR khỏi công ty - reset về NORMAL_USER
      */
     public User removeHrFromCompany(long targetUserId, long companyId, String currentEmail)
-            throws vn.demo.jobhunter.util.error.IdInvalidException, vn.demo.jobhunter.util.error.PermissionException {
+            throws IdInvalidException, PermissionException {
         // Kiểm tra quyền
         User currentUser = this.handleGetUserByUsername(currentEmail);
         if (currentUser == null || currentUser.getRole() == null) {
-            throw new vn.demo.jobhunter.util.error.PermissionException("Bạn không có quyền thực hiện thao tác này.");
+            throw new PermissionException("Bạn không có quyền thực hiện thao tác này.");
         }
 
         String roleName = currentUser.getRole().getName();
@@ -281,29 +292,29 @@ public class UserService {
         boolean isRep = roleName.equals("COMPANY_REPRESENTATIVE");
 
         if (!isSuperAdmin && !isRep) {
-            throw new vn.demo.jobhunter.util.error.PermissionException("Chỉ Người đại diện công ty hoặc Admin mới có quyền xóa HR.");
+            throw new PermissionException("Chỉ Người đại diện công ty hoặc Admin mới có quyền xóa HR.");
         }
 
         if (isRep) {
             if (currentUser.getCompany() == null || currentUser.getCompany().getId() != companyId) {
-                throw new vn.demo.jobhunter.util.error.PermissionException("Bạn chỉ có quyền quản lý HR trong công ty của mình.");
+                throw new PermissionException("Bạn chỉ có quyền quản lý HR trong công ty của mình.");
             }
         }
 
         // Kiểm tra target user
         User targetUser = this.fetchUserById(targetUserId);
         if (targetUser == null) {
-            throw new vn.demo.jobhunter.util.error.IdInvalidException("User với id = " + targetUserId + " không tồn tại.");
+            throw new IdInvalidException("User với id = " + targetUserId + " không tồn tại.");
         }
 
         // Kiểm tra target user thuộc đúng công ty
         if (targetUser.getCompany() == null || targetUser.getCompany().getId() != companyId) {
-            throw new vn.demo.jobhunter.util.error.PermissionException("User này không thuộc công ty của bạn.");
+            throw new PermissionException("User này không thuộc công ty của bạn.");
         }
 
         // Không cho xóa chính mình (COMPANY_REPRESENTATIVE)
         if (targetUser.getRole() != null && targetUser.getRole().getName().equals("COMPANY_REPRESENTATIVE")) {
-            throw new vn.demo.jobhunter.util.error.PermissionException("Không thể xóa Người đại diện công ty.");
+            throw new PermissionException("Không thể xóa Người đại diện công ty.");
         }
 
         // Reset về NORMAL_USER
@@ -319,10 +330,10 @@ public class UserService {
      * Lấy danh sách HR của công ty
      */
     public List<User> getHrByCompany(long companyId)
-            throws vn.demo.jobhunter.util.error.IdInvalidException {
+            throws IdInvalidException {
         java.util.Optional<Company> companyOpt = this.companyService.findById(companyId);
         if (companyOpt.isEmpty()) {
-            throw new vn.demo.jobhunter.util.error.IdInvalidException("Company với id = " + companyId + " không tồn tại.");
+            throw new IdInvalidException("Company với id = " + companyId + " không tồn tại.");
         }
 
         Role hrRole = this.roleService.findByName("HR");

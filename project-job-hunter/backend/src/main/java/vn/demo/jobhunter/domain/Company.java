@@ -54,6 +54,16 @@ public class Company {
     private String createdBy;
     private String updatedBy;
 
+    // Các trường chờ duyệt
+    private String pendingName;
+    private String pendingLogo;
+    
+    @Column(columnDefinition = "MEDIUMTEXT")
+    private String updateReason; // Lý do thay đổi thông tin (User ghi)
+    
+    @Column(columnDefinition = "MEDIUMTEXT")
+    private String adminNotes;   // Ghi chú của Admin khi duyệt/từ chối
+
     @OneToMany(mappedBy = "company", fetch = FetchType.LAZY)
     @JsonIgnore
     List<User> users;
@@ -61,6 +71,9 @@ public class Company {
     @OneToMany(mappedBy = "company", fetch = FetchType.LAZY)
     @JsonIgnore
     List<Job> jobs;
+
+    private Double latitude;
+    private Double longitude;
 
     @PrePersist
     public void handleBeforeCreate() {

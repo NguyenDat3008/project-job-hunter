@@ -18,13 +18,6 @@ export default function RootLayout() {
     restoreAuth();
   }, []);
 
-  if (isLoading) {
-    return (
-      <View style={styles.webContainer}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
 
   const appContent = (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
@@ -41,6 +34,20 @@ export default function RootLayout() {
         <Stack.Screen name="cv-builder" options={{ headerShown: false }} />
         <Stack.Screen name="upload-cv" options={{ headerShown: false }} />
         <Stack.Screen name="account-settings" options={{ headerShown: false }} />
+        <Stack.Screen name="register-company" options={{ headerShown: true, headerBackTitle: 'Quay lại' }} />
+
+        {/* Admin screens */}
+        <Stack.Screen name="admin/dashboard" options={{ headerShown: true, headerBackTitle: 'Quay lại' }} />
+        <Stack.Screen name="admin/companies" options={{ headerShown: true, headerBackTitle: 'Quay lại' }} />
+        <Stack.Screen name="admin/resumes" options={{ headerShown: true, headerBackTitle: 'Quay lại' }} />
+        <Stack.Screen name="admin/users" options={{ headerShown: true, headerBackTitle: 'Quay lại' }} />
+
+        {/* HR screens */}
+        <Stack.Screen name="hr/job-form" options={{ headerShown: true, headerBackTitle: 'Quay lại' }} />
+        <Stack.Screen name="hr/my-jobs" options={{ headerShown: true, headerBackTitle: 'Quay lại' }} />
+
+        {/* Company Representative screens */}
+        <Stack.Screen name="company-rep/hr-management" options={{ headerShown: true, headerBackTitle: 'Quay lại' }} />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>

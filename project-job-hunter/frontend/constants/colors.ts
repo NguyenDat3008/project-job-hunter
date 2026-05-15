@@ -31,6 +31,7 @@ export const COLORS = {
   text: {
     primary: '#222222',
     secondary: '#888888',
+    tertiary: '#AAAAAA', // Added tertiary
     light: '#AAAAAA',
     white: '#FFFFFF',
     link: '#00B14F',

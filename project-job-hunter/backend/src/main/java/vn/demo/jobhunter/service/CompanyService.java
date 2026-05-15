@@ -25,16 +25,19 @@ public class CompanyService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final NotificationService notificationService;
+    private final FileService fileService;
 
     public CompanyService(
             CompanyRepository companyRepository,
             UserRepository userRepository,
             RoleRepository roleRepository,
-            NotificationService notificationService) {
+            NotificationService notificationService,
+            FileService fileService) {
         this.companyRepository = companyRepository;
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.notificationService = notificationService;
+        this.fileService = fileService;
     }
 
     public Company handleCreateCompany(Company c) throws PermissionException {
@@ -101,6 +104,20 @@ public class CompanyService {
                                     "COMPANY_APPROVED");
                         }
                     }
+                    
+                    // Nếu Admin duyệt các thay đổi quan trọng (Name, Logo)
+                    if (currentCompany.getPendingName() != null || currentCompany.getPendingLogo() != null) {
+                        if (c.isActive()) { // Admin gửi active=true để phê duyệt thay đổi
+                            if (currentCompany.getPendingName() != null) 
+                                currentCompany.setName(currentCompany.getPendingName());
+                            if (currentCompany.getPendingLogo() != null)
+                                currentCompany.setLogo(currentCompany.getPendingLogo());
+                            
+                            currentCompany.setPendingName(null);
+                            currentCompany.setPendingLogo(null);
+                            currentCompany.setUpdateReason(null);
+                        }
+                    }
                     currentCompany.setActive(c.isActive());
                     currentCompany.setIsPremium(c.getIsPremium());
                     currentCompany.setPremiumTier(c.getPremiumTier());
@@ -109,8 +126,25 @@ public class CompanyService {
                     if (currentUser.getCompany() == null || currentUser.getCompany().getId() != c.getId()) {
                         throw new PermissionException("Bạn không có quyền chỉnh sửa thông tin của công ty khác.");
                     }
-                    currentCompany.setLogo(c.getLogo());
-                    currentCompany.setName(c.getName());
+                    
+                    // Kiểm tra các thay đổi quan trọng cần duyệt (Tên và Logo)
+                    boolean isNameChanged = c.getName() != null && !c.getName().equals(currentCompany.getName());
+                    boolean isLogoChanged = c.getLogo() != null && !c.getLogo().equals(currentCompany.getLogo());
+
+                    if (isNameChanged || isLogoChanged) {
+                        currentCompany.setPendingName(c.getName());
+                        currentCompany.setPendingLogo(c.getLogo());
+                        currentCompany.setUpdateReason(c.getUpdateReason());
+                        
+                        // Gửi thông báo cho admin
+                        this.notificationService.createNotification(
+                            this.userRepository.findByEmail("admin@gmail.com"), 
+                            "Công ty " + currentCompany.getName() + " yêu cầu thay đổi thông tin quan trọng.",
+                            "COMPANY_UPDATE_REQUEST"
+                        );
+                    }
+
+                    // Các thông tin khác cập nhật ngay lập tức
                     currentCompany.setDescription(c.getDescription());
                     currentCompany.setAddress(c.getAddress());
                     currentCompany.setWebsite(c.getWebsite());
@@ -143,5 +177,9 @@ public class CompanyService {
 
     public Optional<Company> findById(long id) {
         return this.companyRepository.findById(id);
+    }
+
+    public String uploadCompanyLogo(org.springframework.web.multipart.MultipartFile file) throws Exception {
+        return this.fileService.store(file, "company-logos");
     }
 }

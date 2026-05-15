@@ -42,14 +42,14 @@ public class HrManagementController {
      * Request body cho việc thêm HR
      */
     public static class AddHrRequest {
-        private long userId;
+        private String email;
 
-        public long getUserId() {
-            return userId;
+        public String getEmail() {
+            return email;
         }
 
-        public void setUserId(long userId) {
-            this.userId = userId;
+        public void setEmail(String email) {
+            this.email = email;
         }
     }
 
@@ -62,7 +62,8 @@ public class HrManagementController {
             @RequestBody AddHrRequest request) throws IdInvalidException, PermissionException {
 
         String email = SecurityUtil.getCurrentUserLogin().orElse("");
-        User updatedUser = this.userService.addHrToCompany(request.getUserId(), companyId, email);
+        // Call service to add HR by email
+        User updatedUser = this.userService.addHrByEmail(request.getEmail(), companyId, email);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(this.userService.convertToResUserDTO(updatedUser));
     }
@@ -85,7 +86,20 @@ public class HrManagementController {
     @Operation(summary = "Lấy danh sách HR của công ty",
             description = "Lấy tất cả HR và Người đại diện thuộc công ty")
     public ResponseEntity<List<ResUserDTO>> getHrByCompany(
-            @PathVariable("companyId") long companyId) throws IdInvalidException {
+            @PathVariable("companyId") long companyId) throws IdInvalidException, PermissionException {
+
+        // Kiểm tra quyền: Chỉ cho phép Admin hoặc người thuộc chính công ty đó xem
+        String email = SecurityUtil.getCurrentUserLogin().orElse("");
+        User currentUser = this.userService.handleGetUserByUsername(email);
+        
+        if (currentUser != null && currentUser.getRole() != null) {
+            String roleName = currentUser.getRole().getName();
+            if (!roleName.equals("SUPER_ADMIN")) {
+                if (currentUser.getCompany() == null || currentUser.getCompany().getId() != companyId) {
+                    throw new PermissionException("Bạn không có quyền xem danh sách nhân sự của công ty khác.");
+                }
+            }
+        }
 
         List<User> users = this.userService.getHrByCompany(companyId);
         List<ResUserDTO> result = users.stream()

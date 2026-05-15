@@ -29,7 +29,9 @@ public class PermissionInterceptorConfiguration implements WebMvcConfigurer {
                 // Premium packages (public)
                 "/api/v1/premium/packages",
                 // Email
-                "/api/v1/email/**"
+                "/api/v1/email/**",
+                // Notifications
+                "/api/v1/notifications", "/api/v1/notifications/**"
         };
         registry.addInterceptor(getPermissionInterceptor())
                 .excludePathPatterns(whiteList);

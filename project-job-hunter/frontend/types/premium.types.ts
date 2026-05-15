@@ -1,43 +1,25 @@
-// Premium package types
-
-export type PremiumTier = 'BASIC' | 'PRO' | 'ENTERPRISE';
-
-export interface PremiumPackage {
-  id: string;
-  name: string;
-  tier: PremiumTier;
-  price: number;
-  currency: string;
-  duration: number; // months
-  features: PremiumFeature[];
-  isPopular?: boolean;
-  color: string;
-  icon: string;
-}
+export type Tier = 'BASIC' | 'PRO' | 'ENTERPRISE';
 
 export interface PremiumFeature {
   name: string;
   included: boolean;
+}
+
+export interface PremiumPackage {
+  id: string;
+  name: string;
+  tier: Tier;
+  price: number;
+  features: PremiumFeature[];
+  isPopular?: boolean;
   description?: string;
 }
 
-export interface PremiumSubscription {
+export interface Subscription {
   id: string;
-  companyId: number;
+  userId: number;
   packageId: string;
-  tier: PremiumTier;
   status: 'ACTIVE' | 'EXPIRED' | 'CANCELLED';
   startDate: string;
   endDate: string;
-  autoRenew: boolean;
-}
-
-export interface PremiumBenefits {
-  boostedJobs: number; // số lượng job được đẩy lên top
-  highlightBadge: boolean;
-  prioritySearch: boolean;
-  aiMatching: boolean;
-  unlimitedJobs: boolean;
-  analyticsAccess: boolean;
-  dedicatedSupport: boolean;
 }

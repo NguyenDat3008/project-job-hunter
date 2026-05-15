@@ -30,7 +30,9 @@ export default function SignUpScreen() {
       await signup(email, password, name);
       router.replace('/(tabs)');
     } catch (err: any) {
-      setError(err?.message || 'Đăng ký thất bại. Vui lòng thử lại.');
+      // Parse error message từ backend (axios wraps trong response.data)
+      const msg = err?.response?.data?.message || err?.message || 'Đăng ký thất bại. Vui lòng thử lại.';
+      setError(msg);
     }
   };
 
