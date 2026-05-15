@@ -47,6 +47,8 @@ public class PermissionInterceptor implements HandlerInterceptor {
         if (lowerURI.contains("auth") || 
             lowerURI.contains("notifications") ||
             lowerURI.contains("stats") ||
+            lowerURI.contains("payment") ||
+            lowerURI.contains("premium") ||
             lowerURI.contains("v3/api-docs") ||
             lowerURI.contains("swagger-ui")) {
             System.out.println(">>> [DEBUG] Whitelist Skip (Aggressive): " + requestURI);

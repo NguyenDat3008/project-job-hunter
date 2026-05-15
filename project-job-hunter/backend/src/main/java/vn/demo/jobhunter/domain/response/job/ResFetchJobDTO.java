@@ -20,6 +20,7 @@ public class ResFetchJobDTO {
     private int quantity;
     private LevelEnum level;
     private String description;
+    private String requirements;
     private Instant startDate;
     private Instant endDate;
     private boolean active;

@@ -60,6 +60,7 @@ public class JobService {
         dto.setQuantity(job.getQuantity());
         dto.setLevel(job.getLevel());
         dto.setDescription(job.getDescription());
+        dto.setRequirements(job.getRequirements());
         dto.setStartDate(job.getStartDate());
         dto.setEndDate(job.getEndDate());
         dto.setActive(job.isActive());
@@ -141,6 +142,7 @@ public class JobService {
         dto.setQuantity(currentJob.getQuantity());
         dto.setLocation(currentJob.getLocation());
         dto.setLevel(currentJob.getLevel());
+        dto.setRequirements(currentJob.getRequirements());
         dto.setStartDate(currentJob.getStartDate());
         dto.setEndDate(currentJob.getEndDate());
         dto.setActive(currentJob.isActive());
@@ -182,6 +184,8 @@ public class JobService {
         jobInDB.setQuantity(j.getQuantity());
         jobInDB.setLocation(j.getLocation());
         jobInDB.setLevel(j.getLevel());
+        jobInDB.setDescription(j.getDescription());
+        jobInDB.setRequirements(j.getRequirements());
         jobInDB.setStartDate(j.getStartDate());
         jobInDB.setEndDate(j.getEndDate());
         jobInDB.setActive(j.isActive());
@@ -197,6 +201,7 @@ public class JobService {
         dto.setQuantity(currentJob.getQuantity());
         dto.setLocation(currentJob.getLocation());
         dto.setLevel(currentJob.getLevel());
+        dto.setRequirements(currentJob.getRequirements());
         dto.setStartDate(currentJob.getStartDate());
         dto.setEndDate(currentJob.getEndDate());
         dto.setActive(currentJob.isActive());

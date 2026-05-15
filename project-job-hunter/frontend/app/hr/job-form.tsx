@@ -13,11 +13,15 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Modal,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import dayjs from 'dayjs';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { BORDER_RADIUS, COLORS, SHADOW, SPACING, TYPOGRAPHY } from '@constants/theme';
 import { jobService } from '@services/jobService';
+import useAuthStore from '@store/authStore';
 import api from '@services/api';
 import { ENDPOINTS } from '@constants/endpoints';
 import LoadingSpinner from '@components/LoadingSpinner/LoadingSpinner';
@@ -28,7 +32,18 @@ const LEVELS = ['INTERN', 'FRESHER', 'JUNIOR', 'MIDDLE', 'SENIOR', 'LEAD', 'MANA
 export default function JobFormScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
+  const { user } = useAuthStore();
   const isEdit = !!id;
+
+  // Premium Limits (Days)
+  const TIER_LIMITS: Record<string, number> = {
+    BASIC: 14,
+    PRO: 45,
+    ENTERPRISE: 365,
+  };
+
+  const currentTier = user?.company?.premiumTier || 'BASIC';
+  const maxDays = TIER_LIMITS[currentTier] || 14;
 
   const [loading, setLoading] = useState(isEdit);
   const [submitting, setSubmitting] = useState(false);
@@ -41,6 +56,7 @@ export default function JobFormScreen() {
     location: 'Hà Nội',
     level: 'JUNIOR',
     description: '',
+    requirements: '',
     skills: '',
     startDate: '',
     endDate: '',
@@ -50,6 +66,10 @@ export default function JobFormScreen() {
   const [showMap, setShowMap] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  // Date Picker State
+  const [showStartDate, setShowStartDate] = useState(false);
+  const [showEndDate, setShowEndDate] = useState(false);
 
   useEffect(() => {
     if (isEdit) {
@@ -67,6 +87,7 @@ export default function JobFormScreen() {
         location: job.location,
         level: job.level,
         description: job.description,
+        requirements: job.requirements || '',
         skills: (job.skills || []).map(s => s.name).join(', '),
         startDate: job.startDate ? job.startDate.split('T')[0] : '',
         endDate: job.endDate ? job.endDate.split('T')[0] : '',
@@ -87,6 +108,27 @@ export default function JobFormScreen() {
     if (!formData.salary) newErrors.salary = 'Vui lòng nhập lương';
     if (!formData.skills) newErrors.skills = 'Vui lòng nhập ít nhất 1 kỹ năng';
     if (!formData.description) newErrors.description = 'Vui lòng nhập mô tả';
+    if (!formData.requirements) newErrors.requirements = 'Vui lòng nhập yêu cầu công việc';
+    
+    // Date validation
+    if (!formData.startDate) {
+      newErrors.startDate = 'Vui lòng chọn ngày bắt đầu';
+    }
+    if (!formData.endDate) {
+      newErrors.endDate = 'Vui lòng chọn ngày kết thúc';
+    }
+
+    if (formData.startDate && formData.endDate) {
+      const start = dayjs(formData.startDate);
+      const end = dayjs(formData.endDate);
+      const diff = end.diff(start, 'day');
+
+      if (diff <= 0) {
+        newErrors.endDate = 'Ngày kết thúc phải sau ngày bắt đầu';
+      } else if (diff > maxDays) {
+        newErrors.endDate = `Gói ${currentTier} chỉ cho phép đăng tin tối đa ${maxDays} ngày. Hãy nâng cấp để đăng tin lâu hơn!`;
+      }
+    }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -107,6 +149,7 @@ export default function JobFormScreen() {
         location: formData.location,
         level: formData.level,
         description: formData.description,
+        requirements: formData.requirements,
         skills: skillsArray,
         startDate: formData.startDate ? `${formData.startDate}T00:00:00Z` : undefined,
         endDate: formData.endDate ? `${formData.endDate}T23:59:59Z` : undefined,
@@ -248,24 +291,92 @@ export default function JobFormScreen() {
           {errors.description && <Text style={styles.errorText}>{errors.description}</Text>}
         </View>
 
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Yêu cầu công việc *</Text>
+          <TextInput
+            style={[styles.input, styles.textArea, !!errors.requirements && styles.inputError]}
+            value={formData.requirements}
+            onChangeText={(text) => setFormData(prev => ({ ...prev, requirements: text }))}
+            multiline
+            numberOfLines={6}
+            textAlignVertical="top"
+            placeholder="Yêu cầu về kinh nghiệm, kỹ năng, thái độ..."
+          />
+          {errors.requirements && <Text style={styles.errorText}>{errors.requirements}</Text>}
+        </View>
+
+        <View style={styles.limitInfo}>
+          <Ionicons name="information-circle-outline" size={16} color={COLORS.primary} />
+          <Text style={styles.limitInfoText}>
+            Gói <Text style={{fontWeight: 'bold'}}>{currentTier}</Text>: Đăng tin tối đa <Text style={{fontWeight: 'bold'}}>{maxDays} ngày</Text>.
+          </Text>
+        </View>
+
         <View style={styles.row}>
           <View style={[styles.inputGroup, { flex: 1, marginRight: 10 }]}>
-            <Text style={styles.label}>Ngày bắt đầu (YYYY-MM-DD)</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.startDate}
-              onChangeText={(text) => setFormData(prev => ({ ...prev, startDate: text }))}
-              placeholder="2024-05-01"
-            />
+            <Text style={styles.label}>Ngày bắt đầu *</Text>
+            <TouchableOpacity 
+              style={[styles.input, !!errors.startDate && styles.inputError, styles.dateInput]}
+              onPress={() => setShowStartDate(true)}
+            >
+              <Text style={{ color: formData.startDate ? COLORS.text.primary : COLORS.text.secondary }}>
+                {formData.startDate ? dayjs(formData.startDate).format('DD/MM/YYYY') : 'Chọn ngày'}
+              </Text>
+              <Ionicons name="calendar-outline" size={20} color={COLORS.primary} />
+            </TouchableOpacity>
+            {errors.startDate && <Text style={styles.errorText}>{errors.startDate}</Text>}
+            
+            {showStartDate && (
+              <DateTimePicker
+                value={formData.startDate ? new Date(formData.startDate) : new Date()}
+                mode="date"
+                display="default"
+                minimumDate={new Date()}
+                onChange={(event, selectedDate) => {
+                  setShowStartDate(false);
+                  if (selectedDate) {
+                    const dateStr = dayjs(selectedDate).format('YYYY-MM-DD');
+                    // Tự động set ngày kết thúc sau 14 ngày hoặc max limit nếu chưa có ngày kết thúc
+                    const newEndDate = formData.endDate || dayjs(selectedDate).add(Math.min(14, maxDays), 'day').format('YYYY-MM-DD');
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      startDate: dateStr,
+                      endDate: newEndDate
+                    }));
+                  }
+                }}
+              />
+            )}
           </View>
+
           <View style={[styles.inputGroup, { flex: 1 }]}>
-            <Text style={styles.label}>Ngày kết thúc (YYYY-MM-DD)</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.endDate}
-              onChangeText={(text) => setFormData(prev => ({ ...prev, endDate: text }))}
-              placeholder="2024-06-01"
-            />
+            <Text style={styles.label}>Ngày kết thúc *</Text>
+            <TouchableOpacity 
+              style={[styles.input, !!errors.endDate && styles.inputError, styles.dateInput]}
+              onPress={() => setShowEndDate(true)}
+            >
+              <Text style={{ color: formData.endDate ? COLORS.text.primary : COLORS.text.secondary }}>
+                {formData.endDate ? dayjs(formData.endDate).format('DD/MM/YYYY') : 'Chọn ngày'}
+              </Text>
+              <Ionicons name="calendar-outline" size={20} color={COLORS.primary} />
+            </TouchableOpacity>
+            {errors.endDate && <Text style={styles.errorText}>{errors.endDate}</Text>}
+
+            {showEndDate && (
+              <DateTimePicker
+                value={formData.endDate ? new Date(formData.endDate) : new Date()}
+                mode="date"
+                display="default"
+                minimumDate={formData.startDate ? new Date(formData.startDate) : new Date()}
+                onChange={(event, selectedDate) => {
+                  setShowEndDate(false);
+                  if (selectedDate) {
+                    const dateStr = dayjs(selectedDate).format('YYYY-MM-DD');
+                    setFormData(prev => ({ ...prev, endDate: dateStr }));
+                  }
+                }}
+              />
+            )}
           </View>
         </View>
 
@@ -385,5 +496,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: COLORS.border,
+  },
+  dateInput: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  limitInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.primaryLight,
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 15,
+    gap: 8,
+  },
+  limitInfoText: {
+    fontSize: 12,
+    color: COLORS.primary,
   },
 });

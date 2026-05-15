@@ -166,4 +166,44 @@ public class PaymentController {
 
         return ResponseEntity.ok(response);
     }
+
+    // === MOCK GATEWAY ENDPOINTS (FOR TESTING) ===
+
+    @PostMapping("/mock/gw/create-bill")
+    @Operation(summary = "Mock Gateway: Tạo hóa đơn", description = "Giả lập cổng thanh toán VNPay/VietQR")
+    public ResponseEntity<?> mockCreateBill(@RequestBody Map<String, Object> body) {
+        String orderId = (String) body.get("orderId");
+        Map<String, Object> data = new HashMap<>();
+        data.put("billId", "BILL-" + System.currentTimeMillis());
+        data.put("qrUrl", "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=" + orderId);
+        data.put("expiredAt", java.time.Instant.now().plusSeconds(600).toString());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("data", data);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/mock/simulate-success/{orderCode}")
+    @Operation(summary = "Mock: Giả lập thanh toán thành công", description = "Gọi callback để kích hoạt Premium cho một đơn hàng")
+    public ResponseEntity<?> simulateSuccess(@PathVariable String orderCode) {
+        Order order = this.paymentService.getOrderByCode(orderCode);
+        if (order == null) return ResponseEntity.status(404).body("Order not found");
+
+        try {
+            Map<String, Object> callbackData = new HashMap<>();
+            callbackData.put("billId", order.getBillId());
+            callbackData.put("orderId", order.getOrderCode());
+            callbackData.put("status", "PAID");
+
+            String bodyJson = objectMapper.writeValueAsString(callbackData);
+            String secret = "jobhunter_secret_key_2026"; // Match application.properties
+            String signature = vn.demo.jobhunter.util.HmacUtil.sign(secret, bodyJson);
+
+            return this.paymentCallback(bodyJson, signature, String.valueOf(System.currentTimeMillis()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+        }
+    }
 }

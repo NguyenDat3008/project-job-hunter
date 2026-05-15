@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
 import api from '@services/api';
 import useAuthStore from '@store/authStore';
 import { API_CONFIG } from '@constants/endpoints';
@@ -141,15 +141,28 @@ export default function CompanyProfileScreen() {
   };
 
   const handlePickLogo = async () => {
+    // Request permission
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Thông báo', 'Vui lòng cấp quyền truy cập thư viện ảnh để đổi logo.');
+      return;
+    }
+
     try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: 'image/*',
-        copyToCacheDirectory: true,
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
-        uploadLogo(asset);
+        uploadLogo({
+          uri: asset.uri,
+          name: asset.fileName || 'logo.jpg',
+          mimeType: asset.mimeType || 'image/jpeg',
+        });
       }
     } catch (error) {
       console.error('Pick logo error:', error);

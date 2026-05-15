@@ -12,6 +12,7 @@ export interface Job {
   quantity: number;
   level: LevelEnum;
   description: string;
+  requirements?: string;
   active: boolean;
   startDate?: string;
   endDate?: string;

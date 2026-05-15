@@ -211,6 +211,13 @@ export default function JobDetailScreen() {
           <Text style={styles.sectionContent}>{job.description}</Text>
         </View>
 
+        {job.requirements && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Yêu cầu công việc</Text>
+            <Text style={styles.sectionContent}>{job.requirements}</Text>
+          </View>
+        )}
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Yêu cầu kỹ năng</Text>
           <View style={styles.skillsRow}>

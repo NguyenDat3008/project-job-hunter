@@ -16,6 +16,7 @@ public class ResUpdateJobDTO {
     private double salary;
     private int quantity;
     private LevelEnum level;
+    private String requirements;
     private Instant startDate;
     private Instant endDate;
     private boolean isActive;

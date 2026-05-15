@@ -22,11 +22,11 @@ public class PremiumService {
         this.jobRepository = jobRepository;
     }
 
-    public void subscribePremium(Company company, String tier) {
+    public void subscribePremium(Company company, String tier, int days) {
         company.setIsPremium(true);
         company.setPremiumTier(tier.toUpperCase());
-        // Set expiry for 30 days
-        company.setPremiumExpiryDate(Instant.now().plus(30, ChronoUnit.DAYS));
+        // Set expiry
+        company.setPremiumExpiryDate(Instant.now().plus(days, ChronoUnit.DAYS));
         this.companyRepository.save(company);
 
         // Update jobs

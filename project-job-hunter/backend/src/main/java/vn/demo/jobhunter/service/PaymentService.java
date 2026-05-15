@@ -149,9 +149,10 @@ public class PaymentService {
 
             // 6. Kích hoạt Premium
             if (order.getCompany() != null) {
-                String premiumTier = "MONTHLY".equals(order.getTier()) ? "BASIC" : "PRO";
-                this.premiumService.subscribePremium(order.getCompany(), premiumTier);
-                System.out.println("[BE] Premium activated for company: " + order.getCompany().getName());
+                String tier = order.getTier().toUpperCase();
+                int days = tier.contains("YEAR") || tier.equals("ENTERPRISE") ? 365 : 30;
+                this.premiumService.subscribePremium(order.getCompany(), tier, days);
+                System.out.println("[BE] Premium " + tier + " activated for company: " + order.getCompany().getName());
             }
         } else {
             order.setStatus("FAILED");
@@ -167,8 +168,10 @@ public class PaymentService {
     //Tính tiền theo gói
     private long getAmountByTier(String tier) {
         return switch (tier.toUpperCase()) {
-            case "MONTHLY" -> 50000;    // 50,000 VND / tháng
-            case "YEARLY" -> 499000;    // 499,000 VND / năm
+            case "PRO" -> 500000;         // 500,000 VND / tháng
+            case "MONTHLY" -> 500000;     // Compatibility
+            case "ENTERPRISE" -> 5000000; // 5,000,000 VND / năm
+            case "YEARLY" -> 5000000;     // Compatibility
             default -> throw new IllegalArgumentException("Invalid tier: " + tier);
         };
     }

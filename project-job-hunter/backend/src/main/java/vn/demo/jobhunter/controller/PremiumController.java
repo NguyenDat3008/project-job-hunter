@@ -86,8 +86,9 @@ public class PremiumController {
         }
 
         Company company = currentUser.getCompany();
-        this.premiumService.subscribePremium(company, upperTier);
+        int days = upperTier.equals("ENTERPRISE") ? 365 : 30;
+        this.premiumService.subscribePremium(company, upperTier, days);
 
-        return ResponseEntity.ok("Đăng ký thành công gói " + upperTier + " trong 30 ngày!");
+        return ResponseEntity.ok("Đăng ký thành công gói " + upperTier + " trong " + days + " ngày!");
     }
 }

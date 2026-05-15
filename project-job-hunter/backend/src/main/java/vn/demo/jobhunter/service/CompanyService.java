@@ -175,29 +175,39 @@ public class CompanyService {
                     }
                     
                     // Kiểm tra các thay đổi quan trọng cần duyệt (Tên và Logo)
-                    boolean isNameChanged = c.getName() != null && !c.getName().equals(currentCompany.getName());
-                    boolean isLogoChanged = c.getLogo() != null && !c.getLogo().equals(currentCompany.getLogo());
+                    boolean isNameChanged = c.getName() != null && !c.getName().trim().isEmpty() && !c.getName().equals(currentCompany.getName());
+                    boolean isLogoChanged = c.getLogo() != null && !c.getLogo().trim().isEmpty() && !c.getLogo().equals(currentCompany.getLogo());
 
                     if (isNameChanged || isLogoChanged) {
-                        currentCompany.setPendingName(c.getName());
-                        currentCompany.setPendingLogo(c.getLogo());
+                        // Nếu có thay đổi quan trọng, lưu vào trường Pending và giữ nguyên trường chính
+                        if (isNameChanged) currentCompany.setPendingName(c.getName());
+                        if (isLogoChanged) currentCompany.setPendingLogo(c.getLogo());
+                        
                         currentCompany.setUpdateReason(c.getUpdateReason());
                         
+                        // Nội dung thông báo chi tiết
+                        String msg = "Công ty " + currentCompany.getName() + " yêu cầu thay đổi: ";
+                        if (isNameChanged && isLogoChanged) msg += "Tên và Logo";
+                        else if (isNameChanged) msg += "Tên công ty";
+                        else msg += "Logo công ty";
+
                         // Gửi thông báo cho admin
                         this.notificationService.createNotification(
                             this.userRepository.findByEmail("admin@gmail.com"), 
                             "Yêu cầu thay đổi thông tin",
-                            "Công ty " + currentCompany.getName() + " yêu cầu thay đổi thông tin quan trọng.",
+                            msg,
                             "COMPANY_UPDATE_REQUEST"
                         );
                     }
 
-                    // Các thông tin khác cập nhật ngay lập tức
-                    currentCompany.setDescription(c.getDescription());
-                    currentCompany.setAddress(c.getAddress());
-                    currentCompany.setWebsite(c.getWebsite());
-                    currentCompany.setIndustry(c.getIndustry());
-                    currentCompany.setSize(c.getSize());
+                    // Các thông tin khác cập nhật ngay lập tức (không cần duyệt)
+                    if (c.getDescription() != null) currentCompany.setDescription(c.getDescription());
+                    if (c.getAddress() != null) currentCompany.setAddress(c.getAddress());
+                    if (c.getWebsite() != null) currentCompany.setWebsite(c.getWebsite());
+                    if (c.getIndustry() != null) currentCompany.setIndustry(c.getIndustry());
+                    if (c.getSize() != null) currentCompany.setSize(c.getSize());
+                    if (c.getLatitude() != null) currentCompany.setLatitude(c.getLatitude());
+                    if (c.getLongitude() != null) currentCompany.setLongitude(c.getLongitude());
                 }
             }
 

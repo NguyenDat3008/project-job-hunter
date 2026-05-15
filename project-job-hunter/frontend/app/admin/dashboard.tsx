@@ -33,6 +33,9 @@ interface Company {
   premiumTier?: 'BASIC' | 'PRO' | 'ENTERPRISE';
   createdAt: string;
   createdBy: string;
+  pendingName?: string;
+  pendingLogo?: string;
+  updateReason?: string;
 }
 
 interface Stats {
@@ -323,6 +326,41 @@ const AdminDashboard = () => {
                 <DetailRow icon="globe-outline" label="Website" value={selectedCompany?.website || 'Chưa cung cấp'} />
                 <DetailRow icon="briefcase-outline" label="Lĩnh vực" value={selectedCompany?.industry || 'Chưa cung cấp'} />
                 <DetailRow icon="people-outline" label="Quy mô" value={selectedCompany?.size || 'Chưa cung cấp'} />
+                
+                {(selectedCompany?.pendingName || selectedCompany?.pendingLogo) && (
+                  <View style={styles.pendingSection}>
+                    <View style={styles.pendingHeader}>
+                      <Ionicons name="alert-circle" size={20} color={COLORS.warning} />
+                      <Text style={styles.pendingTitle}>YÊU CẦU THAY ĐỔI ĐANG CHỜ</Text>
+                    </View>
+                    
+                    {selectedCompany.pendingName && (
+                      <View style={styles.pendingRow}>
+                        <Text style={styles.pendingLabel}>Tên mới:</Text>
+                        <Text style={styles.pendingValue}>{selectedCompany.pendingName}</Text>
+                      </View>
+                    )}
+                    
+                    {selectedCompany.pendingLogo && (
+                      <View style={styles.pendingRow}>
+                        <Text style={styles.pendingLabel}>Logo mới:</Text>
+                        <View style={styles.pendingLogoBox}>
+                          <Image 
+                            source={{ uri: selectedCompany.pendingLogo }} 
+                            style={styles.pendingLogoImg} 
+                          />
+                        </View>
+                      </View>
+                    )}
+                    
+                    {selectedCompany.updateReason && (
+                      <View style={styles.pendingRow}>
+                        <Text style={styles.pendingLabel}>Lý do:</Text>
+                        <Text style={styles.pendingReason}>{selectedCompany.updateReason}</Text>
+                      </View>
+                    )}
+                  </View>
+                )}
               </View>
 
               <View style={styles.detailSection}>
@@ -351,9 +389,20 @@ const AdminDashboard = () => {
                 </>
               )}
               {selectedCompany?.active && (
-                <View style={styles.activeFooter}>
-                  <Ionicons name="checkmark-circle" size={20} color={COLORS.success} />
-                  <Text style={styles.activeFooterText}>Công ty này đã được kích hoạt</Text>
+                <View style={{ flex: 1 }}>
+                  {(selectedCompany?.pendingName || selectedCompany?.pendingLogo) ? (
+                    <TouchableOpacity 
+                      style={[styles.actionBtn, styles.approveBtnLarge]} 
+                      onPress={() => selectedCompany && handleApprove(selectedCompany)}
+                    >
+                      <Text style={styles.approveBtnTextLarge}>Phê duyệt thay đổi</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <View style={styles.activeFooter}>
+                      <Ionicons name="checkmark-circle" size={20} color={COLORS.success} />
+                      <Text style={styles.activeFooterText}>Công ty này đã được kích hoạt</Text>
+                    </View>
+                  )}
                 </View>
               )}
             </View>
@@ -796,6 +845,57 @@ const styles = StyleSheet.create({
   confirmBtnText: {
     color: COLORS.white,
     fontWeight: '700',
+  },
+  pendingSection: {
+    marginTop: 15,
+    padding: 15,
+    backgroundColor: '#FFFBEB',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#FEF3C7',
+  },
+  pendingHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  pendingTitle: {
+    fontSize: 12,
+    fontWeight: '900',
+    color: '#92400E',
+  },
+  pendingRow: {
+    marginBottom: 8,
+  },
+  pendingLabel: {
+    fontSize: 11,
+    color: '#92400E',
+    opacity: 0.8,
+    marginBottom: 4,
+  },
+  pendingValue: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.text.primary,
+  },
+  pendingLogoBox: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    backgroundColor: COLORS.white,
+    ...SHADOW.sm,
+    padding: 5,
+  },
+  pendingLogoImg: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 4,
+  },
+  pendingReason: {
+    fontSize: 12,
+    color: '#B45309',
+    fontStyle: 'italic',
   },
 });
 
