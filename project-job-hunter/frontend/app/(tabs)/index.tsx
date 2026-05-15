@@ -57,6 +57,18 @@ export default function HomeTab() {
 
   const bannerImage = require('../../assets/images/Banner trên cùng mới.jpg');
 
+  const handleToggleSave = async (job: Job) => {
+    try {
+      await jobService.saveJob(job.id);
+      // Update local state for immediate feedback
+      setLatestJobs(prev => prev.map(j => 
+        j.id === job.id ? { ...j, isSaved: !j.isSaved } : j
+      ));
+    } catch (error) {
+      console.error('Error toggling save:', error);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
@@ -90,7 +102,7 @@ export default function HomeTab() {
               style={styles.searchInputField}
               placeholder="Tìm kiếm việc làm, công ty..."
               placeholderTextColor={COLORS.text.light}
-              value="thực tập sinh"
+              defaultValue="thực tập sinh"
             />
           </View>
         </View>
@@ -143,33 +155,12 @@ export default function HomeTab() {
 
           {latestJobs.length > 0 ? (
             latestJobs.slice(0, 5).map((job) => (
-              <TouchableOpacity 
-                key={job.id} 
-                style={styles.cardContainer} 
-                activeOpacity={0.7}
+              <JobCard
+                key={job.id}
+                job={job}
                 onPress={() => router.push(`/detail?jobId=${job.id}`)}
-              >
-                <View style={styles.cardTopRow}>
-                  <View style={[styles.logoWrap, styles.logoPlaceholderGrey]}>
-                    <Ionicons name="business" size={24} color="#9CA3AF" />
-                  </View>
-                  <View style={styles.cardInfo}>
-                    <Text style={styles.jobTitle} numberOfLines={1}>{job.name}</Text>
-                    <Text style={styles.companyName} numberOfLines={1}>{job.company?.name || 'Công ty ẩn danh'}</Text>
-                  </View>
-                  <TouchableOpacity style={styles.heartBtn}>
-                    <Ionicons name="heart-outline" size={20} color="#9CA3AF" />
-                  </TouchableOpacity>
-                </View>
-                <View style={styles.cardTagsRow}>
-                  <View style={[styles.tag, styles.tagGreenBg]}>
-                    <Text style={styles.tagGreenText}>{job.salary > 0 ? `${job.salary} triệu` : 'Thỏa thuận'}</Text>
-                  </View>
-                  <View style={styles.tag}>
-                    <Text style={styles.tagText}>{job.location || 'Toàn quốc'}</Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
+                onSavePress={() => handleToggleSave(job)}
+              />
             ))
           ) : (
             <>

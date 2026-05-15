@@ -2,6 +2,8 @@
 import { JobCard, LoadingSpinner, MatchScore, SkillTag } from '@components/index';
 import { COLORS, SPACING, TYPOGRAPHY } from '@constants/theme';
 import { recommendationService } from '@services/recommendationService';
+import { jobService } from '@services/jobService';
+import { Job } from '@/types/job.types';
 import { useAuth } from '@hooks/index';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -38,6 +40,17 @@ export default function AIMatchTab() {
       console.error('Error:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleToggleSave = async (job: Job) => {
+    try {
+      await jobService.saveJob(job.id);
+      setResults(prev => prev.map(r => 
+        r.job.id === job.id ? { ...r, job: { ...r.job, isSaved: !r.job.isSaved } } : r
+      ));
+    } catch (error) {
+      console.error('Error toggling save:', error);
     }
   };
 
@@ -121,6 +134,7 @@ export default function AIMatchTab() {
             <JobCard
               job={result.job}
               onPress={() => router.push(`/detail?jobId=${result.job.id}`)}
+              onSavePress={() => handleToggleSave(result.job)}
               showMatchScore
             />
 

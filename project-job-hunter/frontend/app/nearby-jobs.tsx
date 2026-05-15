@@ -16,6 +16,8 @@ import * as Location from 'expo-location';
 import api from '@services/api';
 import { COLORS, SHADOW } from '@constants/theme';
 import { Job } from '@/types/job.types';
+import { JobCard } from '@components/index';
+import { jobService } from '@services/jobService';
 
 const { width, height } = Dimensions.get('window');
 
@@ -64,6 +66,17 @@ export default function NearbyJobsScreen() {
     }
   };
 
+  const handleToggleSave = async (job: Job) => {
+    try {
+      await jobService.saveJob(job.id);
+      setJobs(prev => prev.map(j => 
+        j.id === job.id ? { ...j, isSaved: !j.isSaved } : j
+      ));
+    } catch (error) {
+      console.error('Error toggling save:', error);
+    }
+  };
+
   const handleRegionChange = (region: any) => {
     // Optional: Auto re-fetch when map moves significantly
   };
@@ -76,20 +89,12 @@ export default function NearbyJobsScreen() {
   };
 
   const renderJobItem = ({ item }: { item: Job }) => (
-    <TouchableOpacity 
-      style={styles.jobCard} 
+    <JobCard
+      job={item}
       onPress={() => router.push(`/detail?jobId=${item.id}`)}
-    >
-      <View style={styles.jobInfo}>
-        <Text style={styles.jobName} numberOfLines={1}>{item.name}</Text>
-        <Text style={styles.companyName}>{item.company?.name}</Text>
-        <View style={styles.tagRow}>
-          <Text style={styles.salaryText}>{item.salary} triệu</Text>
-          <Text style={styles.locationText}> • {item.location}</Text>
-        </View>
-      </View>
-      <Ionicons name="chevron-forward" size={20} color={COLORS.gray[400]} />
-    </TouchableOpacity>
+      onSavePress={() => handleToggleSave(item)}
+      style={{ marginBottom: 12 }}
+    />
   );
 
   if (loading) {

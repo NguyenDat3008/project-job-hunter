@@ -8,21 +8,57 @@ import vn.demo.jobhunter.repository.NotificationRepository;
 @Service
 public class NotificationService {
     private final NotificationRepository notificationRepository;
+    private final vn.demo.jobhunter.repository.UserRepository userRepository;
 
-    public NotificationService(NotificationRepository notificationRepository) {
+    public NotificationService(
+            NotificationRepository notificationRepository,
+            vn.demo.jobhunter.repository.UserRepository userRepository) {
         this.notificationRepository = notificationRepository;
+        this.userRepository = userRepository;
     }
 
-    public void createNotification(User user, String content, String type) {
+    public void createNotification(User user, String title, String body, String type) {
+        this.createNotification(user, title, body, type, null);
+    }
+
+    public void createNotification(User user, String title, String body, String type, String data) {
+        if (user == null) return;
         Notification notification = new Notification();
         notification.setUser(user);
-        notification.setContent(content);
+        notification.setTitle(title);
+        notification.setBody(body);
         notification.setType(type);
+        notification.setData(data);
         this.notificationRepository.save(notification);
     }
 
-    public java.util.List<Notification> fetchByUser(User user) {
-        return this.notificationRepository.findByUser(user);
+    /**
+     * Gửi thông báo cho nhiều người dùng dựa trên Role
+     * @param roleName Tên role (SUPER_ADMIN, COMPANY_REPRESENTATIVE, NORMAL_USER). Nếu null thì gửi cho tất cả.
+     */
+    public void broadcastNotification(String title, String body, String type, String roleName) {
+        java.util.List<User> targets;
+        if (roleName != null && !roleName.isEmpty()) {
+            targets = this.userRepository.findByRoleName(roleName);
+        } else {
+            targets = this.userRepository.findAll();
+        }
+
+        java.util.List<Notification> notifications = new java.util.ArrayList<>();
+        for (User user : targets) {
+            Notification notification = new Notification();
+            notification.setUser(user);
+            notification.setTitle(title);
+            notification.setBody(body);
+            notification.setType(type);
+            notifications.add(notification);
+        }
+        this.notificationRepository.saveAll(notifications);
+    }
+
+    public org.springframework.data.domain.Page<Notification> fetchByUser(User user, org.springframework.data.domain.Pageable pageable) {
+        return this.notificationRepository.findAll((root, query, criteriaBuilder) -> 
+            criteriaBuilder.equal(root.get("user"), user), pageable);
     }
 
     public long countUnread(User user) {

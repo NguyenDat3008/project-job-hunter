@@ -99,6 +99,7 @@ public class CompanyService {
                             // Gửi thông báo cho người dùng
                             this.notificationService.createNotification(
                                     creator,
+                                    "Phê duyệt doanh nghiệp",
                                     "Chúc mừng! Doanh nghiệp " + currentCompany.getName()
                                             + " của bạn đã được phê duyệt. Bạn là Người đại diện công ty.",
                                     "COMPANY_APPROVED");
@@ -119,6 +120,20 @@ public class CompanyService {
                         }
                     }
                     currentCompany.setActive(c.isActive());
+                    
+                    // Thông báo nâng cấp Premium
+                    if (!currentCompany.getIsPremium() && c.getIsPremium()) {
+                        User creator = this.userRepository.findByEmail(currentCompany.getCreatedBy());
+                        if (creator != null) {
+                            this.notificationService.createNotification(
+                                creator,
+                                "Nâng cấp Premium thành công",
+                                "Chúc mừng! Công ty " + currentCompany.getName() + " đã được nâng cấp lên gói Premium.",
+                                "PREMIUM_UPGRADE"
+                            );
+                        }
+                    }
+
                     currentCompany.setIsPremium(c.getIsPremium());
                     currentCompany.setPremiumTier(c.getPremiumTier());
                     currentCompany.setPremiumExpiryDate(c.getPremiumExpiryDate());
@@ -139,6 +154,7 @@ public class CompanyService {
                         // Gửi thông báo cho admin
                         this.notificationService.createNotification(
                             this.userRepository.findByEmail("admin@gmail.com"), 
+                            "Yêu cầu thay đổi thông tin",
                             "Công ty " + currentCompany.getName() + " yêu cầu thay đổi thông tin quan trọng.",
                             "COMPANY_UPDATE_REQUEST"
                         );

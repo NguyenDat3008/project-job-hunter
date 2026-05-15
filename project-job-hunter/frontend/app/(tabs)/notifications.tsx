@@ -53,9 +53,42 @@ export default function NotificationsTab() {
   };
 
   const handlePress = async (notification: NotificationItem) => {
-    await notificationService.markAsRead(notification.id);
-    if (notification.data?.jobId) {
-      router.push(`/detail?jobId=${notification.data.jobId}`);
+    // Đánh dấu đã đọc ngay lập tức
+    if (!notification.read) {
+      await notificationService.markAsRead(notification.id);
+      setNotifications(prev => 
+        prev.map(n => n.id === notification.id ? { ...n, read: true } : n)
+      );
+    }
+
+    // Điều hướng dựa trên loại thông báo
+    switch (notification.type) {
+      case 'COMPANY_APPROVED':
+        router.push('/company-rep/company-profile');
+        break;
+      case 'COMPANY_UPDATE_REQUEST':
+        router.push('/admin/companies');
+        break;
+      case 'NEW_APPLICATION':
+        if (notification.data?.jobId) {
+          router.push(`/detail?jobId=${notification.data.jobId}`);
+        } else {
+          router.push('/hr/my-jobs');
+        }
+        break;
+      case 'APPLICATION_STATUS':
+      case 'JOB_ALERT':
+        if (notification.data?.jobId) {
+          router.push(`/detail?jobId=${notification.data.jobId}`);
+        }
+        break;
+      default:
+        // System notifications or unknown types
+        if (notification.data?.url) {
+          // Xử lý mở URL nếu có (ví dụ link bài viết)
+          console.log('Open URL:', notification.data.url);
+        }
+        break;
     }
   };
 

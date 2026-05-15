@@ -4,9 +4,9 @@ export interface NotificationItem {
   body: string;
   read: boolean;
   createdAt: string;
-  type?: 'JOB_ALERT' | 'SYSTEM' | 'APPLICATION';
+  type?: 'JOB_ALERT' | 'SYSTEM' | 'APPLICATION' | 'NEW_APPLICATION' | 'APPLICATION_STATUS' | 'COMPANY_APPROVED' | 'COMPANY_UPDATE_REQUEST';
   data?: {
-    jobId?: string;
+    jobId?: number | string;
     url?: string;
   };
 }

@@ -20,4 +20,8 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     List<User> findByCompany(Company company);
 
     List<User> findByCompanyAndRole(Company company, Role role);
+
+    List<User> findByRoleName(String roleName);
+
+    long countByCompanyId(long companyId);
 }

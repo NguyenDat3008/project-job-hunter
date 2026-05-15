@@ -124,7 +124,13 @@ const AdminDashboard = () => {
           <Text style={styles.statNumber}>{companies.length}</Text>
           <Text style={styles.statLabel}>Chờ duyệt</Text>
         </View>
-        {/* Có thể thêm các thống kê khác ở đây */}
+        <TouchableOpacity 
+          style={[styles.statBox, { backgroundColor: COLORS.secondaryLight || '#E0F2FE' }]}
+          onPress={() => router.push('/admin/broadcast' as any)}
+        >
+          <Ionicons name="megaphone" size={32} color={COLORS.secondary || '#0EA5E9'} />
+          <Text style={[styles.statLabel, { color: COLORS.secondary || '#0EA5E9' }]}>Gửi thông báo</Text>
+        </TouchableOpacity>
       </View>
 
       <Text style={styles.sectionTitle}>Danh sách công ty đăng ký mới</Text>

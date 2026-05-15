@@ -26,13 +26,16 @@ public class UserService {
     private final UserRepository userRepository;
     private final CompanyService companyService;
     private final RoleService roleService;
+    private final NotificationService notificationService;
 
     public UserService(UserRepository userRepository,
             CompanyService companyService,
-            RoleService roleService) {
+            RoleService roleService,
+            NotificationService notificationService) {
         this.userRepository = userRepository;
         this.companyService = companyService;
         this.roleService = roleService;
+        this.notificationService = notificationService;
     }
 
     public User handleCreateUser(User user) {
@@ -273,7 +276,17 @@ public class UserService {
 
         targetUser.setRole(hrRole);
         targetUser.setCompany(companyOpt.get());
-        return this.userRepository.save(targetUser);
+        targetUser = this.userRepository.save(targetUser);
+
+        // Thông báo cho User
+        this.notificationService.createNotification(
+            targetUser,
+            "Bạn đã được thêm vào đội ngũ nhân sự",
+            "Chúc mừng! Bạn đã trở thành HR của công ty " + companyOpt.get().getName(),
+            "ROLE_UPDATE"
+        );
+
+        return targetUser;
     }
 
     /**
@@ -322,8 +335,19 @@ public class UserService {
         if (normalRole != null) {
             targetUser.setRole(normalRole);
         }
+        String companyName = targetUser.getCompany() != null ? targetUser.getCompany().getName() : "công ty";
         targetUser.setCompany(null);
-        return this.userRepository.save(targetUser);
+        targetUser = this.userRepository.save(targetUser);
+
+        // Thông báo cho User
+        this.notificationService.createNotification(
+            targetUser,
+            "Cập nhật quyền hạn",
+            "Bạn đã không còn là HR của " + companyName,
+            "ROLE_UPDATE"
+        );
+
+        return targetUser;
     }
 
     /**

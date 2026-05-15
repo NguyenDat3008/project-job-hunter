@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { companyService } from '@/services/companyService';
 import { Company } from '@/types/job.types';
 import { COLORS } from '@/constants/theme';
@@ -38,11 +38,18 @@ export default function AdminCompanyApproval() {
   };
 
   const renderItem = ({ item }: { item: Company }) => {
+    if (!item) return null;
     const hasPendingChanges = item.pendingName || item.pendingLogo;
 
     return (
       <View style={styles.card}>
-        <View style={styles.info}>
+        <TouchableOpacity 
+          style={styles.info}
+          onPress={() => router.push({
+            pathname: '/admin/company-detail',
+            params: { id: item.id, companyData: JSON.stringify(item) }
+          })}
+        >
           <Text style={styles.name}>{item.name}</Text>
           {item.pendingName && (
             <Text style={styles.pendingHighlight}>Yêu cầu đổi tên: {item.pendingName}</Text>
@@ -58,25 +65,18 @@ export default function AdminCompanyApproval() {
             {hasPendingChanges && (
               <View style={[styles.badge, { backgroundColor: '#FEF3C7', marginLeft: 8 }]}>
                 <Text style={{ color: '#92400E', fontSize: 12 }}>
-                  Có thay đổi mới
+                   Có thay đổi mới
                 </Text>
               </View>
             )}
           </View>
-
-          {hasPendingChanges && item.updateReason && (
-            <View style={styles.reasonBox}>
-              <Text style={styles.reasonLabel}>Lý do thay đổi:</Text>
-              <Text style={styles.reasonText}>{item.updateReason}</Text>
-            </View>
-          )}
-        </View>
+        </TouchableOpacity>
         <TouchableOpacity 
           style={[styles.button, { backgroundColor: item.active && !hasPendingChanges ? COLORS.error : COLORS.primary }]}
           onPress={() => handleToggleStatus(item.id, !!item.active)}
         >
           <Text style={styles.buttonText}>
-            {hasPendingChanges ? 'Duyệt thay đổi' : (item.active ? 'Khóa' : 'Duyệt')}
+            {hasPendingChanges ? 'Duyệt' : (item.active ? 'Khóa' : 'Duyệt')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -92,7 +92,7 @@ export default function AdminCompanyApproval() {
         <FlatList
           data={companies}
           renderItem={renderItem}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item, index) => item?.id?.toString() || index.toString()}
           contentContainerStyle={styles.list}
           ListEmptyComponent={<Text style={styles.empty}>Không có công ty nào</Text>}
           onRefresh={loadCompanies}

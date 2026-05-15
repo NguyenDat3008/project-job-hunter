@@ -13,7 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { BORDER_RADIUS, COLORS, SHADOW, SPACING, TYPOGRAPHY } from '@constants/theme';
 import api from '@services/api';
@@ -94,9 +94,16 @@ export default function AdminUsersScreen() {
   };
 
   const renderItem = ({ item }: { item: User }) => {
+    if (!item) return null;
     const badge = getRoleBadgeColor(item.role?.name);
     return (
-      <View style={styles.card}>
+      <TouchableOpacity 
+        style={styles.card}
+        onPress={() => router.push({
+          pathname: '/admin/user-detail',
+          params: { id: item.id, userData: JSON.stringify(item) }
+        })}
+      >
         <View style={styles.avatarCircle}>
           <Text style={styles.avatarText}>{(item.name || 'U').charAt(0).toUpperCase()}</Text>
         </View>
@@ -111,11 +118,11 @@ export default function AdminUsersScreen() {
           </View>
           <Text style={styles.email} numberOfLines={1}>{item.email}</Text>
           <View style={styles.meta}>
-            {item.gender && (
+            {!!item.gender && (
               <Text style={styles.metaText}>{GENDER_LABEL[item.gender] || item.gender}</Text>
             )}
-            {item.age && <Text style={styles.metaText}>{item.age} tuổi</Text>}
-            {item.company?.name && (
+            {!!item.age && <Text style={styles.metaText}>{item.age} tuổi</Text>}
+            {!!item.company?.name && (
               <View style={styles.companyTag}>
                 <Ionicons name="business-outline" size={10} color={COLORS.primary} />
                 <Text style={styles.companyTagText} numberOfLines={1}>{item.company.name}</Text>
@@ -123,10 +130,13 @@ export default function AdminUsersScreen() {
             )}
           </View>
         </View>
-        <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDeleteUser(item)}>
+        <TouchableOpacity style={styles.deleteBtn} onPress={(e) => {
+          e.stopPropagation();
+          handleDeleteUser(item);
+        }}>
           <Ionicons name="trash-outline" size={18} color={COLORS.error} />
         </TouchableOpacity>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -166,7 +176,7 @@ export default function AdminUsersScreen() {
       <FlatList
         data={users}
         renderItem={renderItem}
-        keyExtractor={item => item.id.toString()}
+        keyExtractor={(item, index) => item?.id?.toString() || index.toString()}
         contentContainerStyle={styles.list}
         refreshControl={
           <RefreshControl

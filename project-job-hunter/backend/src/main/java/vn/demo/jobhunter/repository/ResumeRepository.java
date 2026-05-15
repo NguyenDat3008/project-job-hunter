@@ -8,5 +8,5 @@ import vn.demo.jobhunter.domain.Resume;
 @Repository
 public interface ResumeRepository extends JpaRepository<Resume, Long>,
                 JpaSpecificationExecutor<Resume> {
-
+    long countByUserId(long userId);
 }

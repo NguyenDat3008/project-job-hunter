@@ -27,6 +27,7 @@ public class ResFetchJobDTO {
     private Boolean isUrgent;
     private Long viewCount;
     private Long applicantCount;
+    private Boolean isSaved;
     private List<String> skills;
     private CompanyJob company;
     private Instant createdAt;

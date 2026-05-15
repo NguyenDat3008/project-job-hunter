@@ -93,6 +93,7 @@ export const ENDPOINTS = {
     MARK_READ: (id: number) => `/notifications/${id}/read`,
     MARK_ALL_READ: '/notifications/read-all',
     COUNT_UNREAD: '/notifications/unread',
+    BROADCAST: '/notifications/broadcast',
   },
 
   // Reviews (Spring: ReviewController)
@@ -104,6 +105,8 @@ export const ENDPOINTS = {
   // Statistics (Spring: StatisticsController)
   STATISTICS: {
     ADMIN: '/statistics/admin',
+    USER: '/stats/user',
+    COMPANY: '/stats/company',
   },
 
   // Saved Jobs (Spring: SavedJobController + JobController)

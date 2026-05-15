@@ -22,16 +22,22 @@ public class SubscriberService {
     private final SkillRepository skillRepository;
     private final JobRepository jobRepository;
     private final EmailService emailService;
+    private final NotificationService notificationService;
+    private final vn.demo.jobhunter.repository.UserRepository userRepository;
 
     public SubscriberService(
             SubscriberRepository subscriberRepository,
             SkillRepository skillRepository,
             JobRepository jobRepository,
-            EmailService emailService) {
+            EmailService emailService,
+            NotificationService notificationService,
+            vn.demo.jobhunter.repository.UserRepository userRepository) {
         this.subscriberRepository = subscriberRepository;
         this.skillRepository = skillRepository;
         this.jobRepository = jobRepository;
         this.emailService = emailService;
+        this.notificationService = notificationService;
+        this.userRepository = userRepository;
     }
 
     public boolean isExistsByEmail(String email) {
@@ -92,7 +98,7 @@ public class SubscriberService {
                 if (listSkills != null && listSkills.size() > 0) {
                     List<Job> listJobs = this.jobRepository.findBySkillsIn(listSkills);
                     if (listJobs != null && listJobs.size() > 0) {
-
+                        // 1. Send Email
                         List<ResEmailJob> arr = listJobs.stream().map(
                                 job -> this.convertJobToSendEmail(job)).collect(Collectors.toList());
 
@@ -102,6 +108,19 @@ public class SubscriberService {
                                 "job",
                                 sub.getName(),
                                 arr);
+
+                        // 2. Send in-app Notification
+                        vn.demo.jobhunter.domain.User user = this.userRepository.findByEmail(sub.getEmail());
+                        if (user != null) {
+                            Job bestMatch = listJobs.get(0);
+                            this.notificationService.createNotification(
+                                user,
+                                "Việc làm mới phù hợp với bạn",
+                                "Có " + listJobs.size() + " công việc mới phù hợp với kỹ năng của bạn. Ví dụ: " + bestMatch.getName(),
+                                "JOB_ALERT",
+                                "{\"jobId\": " + bestMatch.getId() + "}"
+                            );
+                        }
                     }
                 }
             }

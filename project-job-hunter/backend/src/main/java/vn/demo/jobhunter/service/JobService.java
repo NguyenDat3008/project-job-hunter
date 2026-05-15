@@ -17,7 +17,11 @@ import vn.demo.jobhunter.domain.response.job.ResFetchJobDTO;
 import vn.demo.jobhunter.domain.response.job.ResUpdateJobDTO;
 import vn.demo.jobhunter.repository.CompanyRepository;
 import vn.demo.jobhunter.repository.JobRepository;
+import vn.demo.jobhunter.repository.SavedJobRepository;
 import vn.demo.jobhunter.repository.SkillRepository;
+import vn.demo.jobhunter.util.SecurityUtil;
+import vn.demo.jobhunter.domain.User;
+import vn.demo.jobhunter.repository.UserRepository;
 
 @Service
 public class JobService {
@@ -25,13 +29,19 @@ public class JobService {
     private final JobRepository jobRepository;
     private final SkillRepository skillRepository;
     private final CompanyRepository companyRepository;
+    private final SavedJobRepository savedJobRepository;
+    private final UserRepository userRepository;
 
     public JobService(JobRepository jobRepository,
             SkillRepository skillRepository,
-            CompanyRepository companyRepository) {
+            CompanyRepository companyRepository,
+            SavedJobRepository savedJobRepository,
+            UserRepository userRepository) {
         this.jobRepository = jobRepository;
         this.skillRepository = skillRepository;
         this.companyRepository = companyRepository;
+        this.savedJobRepository = savedJobRepository;
+        this.userRepository = userRepository;
     }
 
     public Optional<Job> fetchJobById(long id) {
@@ -74,6 +84,17 @@ public class JobService {
                     job.getCompany().getId(),
                     job.getCompany().getName(),
                     job.getCompany().getLogo()));
+        }
+
+        // Check if saved by current user
+        String email = SecurityUtil.getCurrentUserLogin().orElse("");
+        if (!email.isEmpty()) {
+            User user = this.userRepository.findByEmail(email);
+            if (user != null) {
+                dto.setIsSaved(this.savedJobRepository.existsByUserAndJob(user, job));
+            }
+        } else {
+            dto.setIsSaved(false);
         }
 
         return dto;
@@ -205,7 +226,12 @@ public class JobService {
         mt.setPages(pageUser.getTotalPages());
         mt.setTotal(pageUser.getTotalElements());
         rs.setMeta(mt);
-        rs.setResult(pageUser.getContent());
+
+        // Convert list to DTO
+        List<ResFetchJobDTO> listDTO = pageUser.getContent()
+                .stream().map(this::convertToResFetchJobDTO)
+                .collect(Collectors.toList());
+        rs.setResult(listDTO);
 
         return rs;
     }

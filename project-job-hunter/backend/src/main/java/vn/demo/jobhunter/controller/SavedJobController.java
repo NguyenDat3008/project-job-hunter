@@ -13,7 +13,9 @@ import vn.demo.jobhunter.domain.Job;
 import vn.demo.jobhunter.domain.SavedJob;
 import vn.demo.jobhunter.domain.User;
 import vn.demo.jobhunter.repository.SavedJobRepository;
+import vn.demo.jobhunter.service.JobService;
 import vn.demo.jobhunter.service.UserService;
+import vn.demo.jobhunter.domain.response.job.ResFetchJobDTO;
 import vn.demo.jobhunter.util.SecurityUtil;
 import vn.demo.jobhunter.util.annotation.ApiMessage;
 
@@ -31,32 +33,33 @@ public class SavedJobController {
     
     private final SavedJobRepository savedJobRepository;
     private final UserService userService;
+    private final JobService jobService;
 
-    public SavedJobController(SavedJobRepository savedJobRepository, UserService userService) {
+    public SavedJobController(SavedJobRepository savedJobRepository, 
+                            UserService userService,
+                            JobService jobService) {
         this.savedJobRepository = savedJobRepository;
         this.userService = userService;
+        this.jobService = jobService;
     }
 
     @GetMapping("/jobs/saved")
     @ApiMessage("Get saved jobs for current user")
     @Operation(summary = "Xem việc làm đã lưu", description = "Lấy danh sách tất cả Job mà người dùng đã lưu")
-    public ResponseEntity<List<Job>> getSavedJobs() {
+    public ResponseEntity<List<ResFetchJobDTO>> getSavedJobs() {
         String email = SecurityUtil.getCurrentUserLogin().orElse("");
         User currentUser = this.userService.handleGetUserByUsername(email);
         
         if (currentUser == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-
+    
         List<SavedJob> savedJobs = this.savedJobRepository.findByUser(currentUser);
-        List<Job> jobs = savedJobs.stream()
+        List<ResFetchJobDTO> jobs = savedJobs.stream()
                 .map(SavedJob::getJob)
-                .map(job -> {
-                    job.setIsPremium(job.getIsPremium() == null ? false : job.getIsPremium());
-                    return job;
-                })
+                .map(this.jobService::convertToResFetchJobDTO)
                 .collect(Collectors.toList());
-
+    
         return ResponseEntity.ok(jobs);
     }
 }

@@ -74,51 +74,54 @@ export default function MyJobsScreen() {
   const formatSalary = (salary: number) =>
     salary > 0 ? `${(salary / 1_000_000).toFixed(0)}M VND` : 'Thỏa thuận';
 
-  const renderItem = ({ item }: { item: Job }) => (
-    <View style={styles.card}>
-      <View style={styles.cardTop}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.jobName} numberOfLines={2}>{item.name}</Text>
-          <View style={styles.tagRow}>
-            <View style={styles.tag}>
-              <Ionicons name="location-outline" size={12} color={COLORS.text.secondary} />
-              <Text style={styles.tagText}>{item.location}</Text>
+  const renderItem = ({ item }: { item: Job }) => {
+    if (!item) return null;
+    return (
+      <View style={styles.card}>
+        <View style={styles.cardTop}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.jobName} numberOfLines={2}>{item.name}</Text>
+            <View style={styles.tagRow}>
+              <View style={styles.tag}>
+                <Ionicons name="location-outline" size={12} color={COLORS.text.secondary} />
+                <Text style={styles.tagText}>{item.location}</Text>
+              </View>
+              <View style={styles.tag}>
+                <Ionicons name="cash-outline" size={12} color={COLORS.success} />
+                <Text style={[styles.tagText, { color: COLORS.success }]}>{formatSalary(item.salary)}</Text>
+              </View>
+              <View style={[styles.tag, { backgroundColor: item.active ? '#DEF7EC' : '#FDE8E8' }]}>
+                <Text style={{ fontSize: 11, color: item.active ? '#03543F' : '#9B1C1C', fontWeight: '600' }}>
+                  {item.active ? 'Đang hiển thị' : 'Ẩn'}
+                </Text>
+              </View>
             </View>
-            <View style={styles.tag}>
-              <Ionicons name="cash-outline" size={12} color={COLORS.success} />
-              <Text style={[styles.tagText, { color: COLORS.success }]}>{formatSalary(item.salary)}</Text>
-            </View>
-            <View style={[styles.tag, { backgroundColor: item.active ? '#DEF7EC' : '#FDE8E8' }]}>
-              <Text style={{ fontSize: 11, color: item.active ? '#03543F' : '#9B1C1C', fontWeight: '600' }}>
-                {item.active ? 'Đang hiển thị' : 'Ẩn'}
+            {item.createdAt && (
+              <Text style={styles.dateText}>
+                Đăng ngày: {new Date(item.createdAt).toLocaleDateString('vi-VN')}
               </Text>
-            </View>
+            )}
           </View>
-          {item.createdAt && (
-            <Text style={styles.dateText}>
-              Đăng ngày: {new Date(item.createdAt).toLocaleDateString('vi-VN')}
-            </Text>
-          )}
+        </View>
+        <View style={styles.actions}>
+          <TouchableOpacity
+            style={[styles.actionBtn, { backgroundColor: COLORS.primaryLight }]}
+            onPress={() => router.push({ pathname: '/hr/job-form', params: { id: String(item.id) } })}
+          >
+            <Ionicons name="create-outline" size={16} color={COLORS.primary} />
+            <Text style={[styles.actionText, { color: COLORS.primary }]}>Sửa</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionBtn, { backgroundColor: '#FDE8E8' }]}
+            onPress={() => handleDelete(item)}
+          >
+            <Ionicons name="trash-outline" size={16} color={COLORS.error} />
+            <Text style={[styles.actionText, { color: COLORS.error }]}>Xóa</Text>
+          </TouchableOpacity>
         </View>
       </View>
-      <View style={styles.actions}>
-        <TouchableOpacity
-          style={[styles.actionBtn, { backgroundColor: COLORS.primaryLight }]}
-          onPress={() => router.push({ pathname: '/hr/job-form', params: { id: String(item.id) } })}
-        >
-          <Ionicons name="create-outline" size={16} color={COLORS.primary} />
-          <Text style={[styles.actionText, { color: COLORS.primary }]}>Sửa</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionBtn, { backgroundColor: '#FDE8E8' }]}
-          onPress={() => handleDelete(item)}
-        >
-          <Ionicons name="trash-outline" size={16} color={COLORS.error} />
-          <Text style={[styles.actionText, { color: COLORS.error }]}>Xóa</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -148,7 +151,7 @@ export default function MyJobsScreen() {
         <FlatList
           data={jobs}
           renderItem={renderItem}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item, index) => item?.id?.toString() || index.toString()}
           contentContainerStyle={styles.list}
           refreshControl={
             <RefreshControl

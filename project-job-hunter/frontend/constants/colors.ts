@@ -4,6 +4,11 @@ export const COLORS = {
   primary: '#00B14F',
   primaryLight: '#E6F7ED',
   primaryDark: '#008A3C',
+  
+  // Secondary color - Blue/Teal for secondary actions
+  secondary: '#0EA5E9',
+  secondaryLight: '#E0F2FE',
+  secondaryDark: '#0369A1',
 
   // Neutrals
   white: '#FFFFFF',

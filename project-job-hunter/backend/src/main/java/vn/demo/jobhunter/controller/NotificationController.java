@@ -1,5 +1,7 @@
 package vn.demo.jobhunter.controller;
 
+import org.springframework.data.domain.Pageable;
+import vn.demo.jobhunter.domain.response.ResultPaginationDTO;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -40,7 +42,8 @@ public class NotificationController {
     @GetMapping("/notifications")
     @ApiMessage("Get notifications for user")
     @Operation(summary = "Xem thông báo", description = "Lấy danh sách tất cả thông báo của người dùng hiện tại")
-    public ResponseEntity<List<Notification>> getNotifications() {
+    public ResponseEntity<ResultPaginationDTO> getNotifications(
+            Pageable pageable) {
         String email = SecurityUtil.getCurrentUserLogin().orElse("");
         User currentUser = this.userService.handleGetUserByUsername(email);
         
@@ -48,7 +51,18 @@ public class NotificationController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        return ResponseEntity.ok().body(this.notificationService.fetchByUser(currentUser));
+        org.springframework.data.domain.Page<Notification> pNotification = this.notificationService.fetchByUser(currentUser, pageable);
+        
+        ResultPaginationDTO rs = new ResultPaginationDTO();
+        ResultPaginationDTO.Meta mt = new ResultPaginationDTO.Meta();
+        mt.setPage(pageable.getPageNumber() + 1);
+        mt.setPageSize(pageable.getPageSize());
+        mt.setPages(pNotification.getTotalPages());
+        mt.setTotal(pNotification.getTotalElements());
+        rs.setMeta(mt);
+        rs.setResult(pNotification.getContent());
+
+        return ResponseEntity.ok().body(rs);
     }
 
     @GetMapping("/notifications/unread")
@@ -81,5 +95,23 @@ public class NotificationController {
             this.notificationService.markAllAsRead(currentUser);
         }
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/notifications/broadcast")
+    @ApiMessage("Broadcast notification to all users or specific role")
+    @Operation(summary = "Gửi thông báo toàn hệ thống", description = "Admin gửi thông báo cho tất cả hoặc nhóm đối tượng")
+    public ResponseEntity<Void> broadcast(@jakarta.validation.Valid @org.springframework.web.bind.annotation.RequestBody BroadcastRequest req) {
+        this.notificationService.broadcastNotification(req.getTitle(), req.getBody(), "SYSTEM", req.getRoleName());
+        return ResponseEntity.ok().build();
+    }
+
+    @lombok.Getter
+    @lombok.Setter
+    public static class BroadcastRequest {
+        @jakarta.validation.constraints.NotBlank(message = "Title không được để trống")
+        private String title;
+        @jakarta.validation.constraints.NotBlank(message = "Body không được để trống")
+        private String body;
+        private String roleName; // Có thể null để gửi cho tất cả
     }
 }

@@ -35,6 +35,7 @@ public class ResumeService {
     private final ResumeRepository resumeRepository;
     private final UserRepository userRepository;
     private final JobRepository jobRepository;
+    private final NotificationService notificationService;
 
     public ResumeService(
             ResumeRepository resumeRepository,
@@ -42,13 +43,15 @@ public class ResumeService {
             JobRepository jobRepository,
             FilterBuilder fb,
             FilterParser filterParser,
-            FilterSpecificationConverter filterSpecificationConverter) {
+            FilterSpecificationConverter filterSpecificationConverter,
+            NotificationService notificationService) {
         this.resumeRepository = resumeRepository;
         this.userRepository = userRepository;
         this.jobRepository = jobRepository;
         this.fb = fb;
         this.filterParser = filterParser;
         this.filterSpecificationConverter = filterSpecificationConverter;
+        this.notificationService = notificationService;
     }
 
     public Optional<Resume> fetchById(long id) {
@@ -76,6 +79,22 @@ public class ResumeService {
     public ResCreateResumeDTO create(Resume resume) {
         resume = this.resumeRepository.save(resume);
 
+        // Gửi thông báo cho HR/Admin của công ty
+        Optional<Job> jobOptional = this.jobRepository.findById(resume.getJob().getId());
+        if (jobOptional.isPresent()) {
+            Job job = jobOptional.get();
+            User hrUser = this.userRepository.findByEmail(job.getCreatedBy());
+            if (hrUser != null) {
+                this.notificationService.createNotification(
+                    hrUser,
+                    "Ứng tuyển mới",
+                    "Ứng viên " + resume.getEmail() + " đã ứng tuyển vào vị trí " + job.getName(),
+                    "NEW_APPLICATION",
+                    "{\"jobId\": " + job.getId() + "}"
+                );
+            }
+        }
+
         ResCreateResumeDTO res = new ResCreateResumeDTO();
         res.setId(resume.getId());
         res.setCreatedBy(resume.getCreatedBy());
@@ -85,7 +104,24 @@ public class ResumeService {
     }
 
     public ResUpdateResumeDTO update(Resume resume) {
+        Optional<Resume> oldResume = this.resumeRepository.findById(resume.getId());
         resume = this.resumeRepository.save(resume);
+
+        // Gửi thông báo cho ứng viên khi trạng thái thay đổi
+        if (oldResume.isPresent() && !oldResume.get().getStatus().equals(resume.getStatus())) {
+            User candidate = this.userRepository.findById(resume.getUser().getId()).orElse(null);
+            if (candidate != null) {
+                String statusMsg = "Trạng thái ứng tuyển của bạn đã được cập nhật thành: " + resume.getStatus();
+                this.notificationService.createNotification(
+                    candidate,
+                    "Cập nhật trạng thái",
+                    statusMsg,
+                    "APPLICATION_STATUS",
+                    "{\"jobId\": " + resume.getJob().getId() + "}"
+                );
+            }
+        }
+
         ResUpdateResumeDTO res = new ResUpdateResumeDTO();
         res.setUpdatedAt(resume.getUpdatedAt());
         res.setUpdatedBy(resume.getUpdatedBy());

@@ -13,19 +13,39 @@ class NotificationService {
    */
   async getNotifications(params: { page: number; limit: number }) {
     try {
-      const data = await api.get<any>(
+      const response = await api.get<any>(
         `${ENDPOINTS.NOTIFICATIONS.LIST}?page=${params.page}&size=${params.limit}`
       );
-      // Backend có thể trả PaginationResponse hoặc array
-      if (Array.isArray(data)) {
+      
+      // Backend returns RestResponse.data which is an array
+      const rawList = Array.isArray(response) ? response : (response?.result || []);
+      
+      const mappedData: NotificationItem[] = rawList.map((item: any) => {
+        let parsedData = null;
+        if (item.data && typeof item.data === 'string') {
+          try {
+            parsedData = JSON.parse(item.data);
+          } catch (e) {
+            console.warn('Failed to parse notification data:', item.data);
+          }
+        } else {
+          parsedData = item.data;
+        }
+
         return {
-          data: data as NotificationItem[],
-          meta: { total: data.length, page: params.page, limit: params.limit },
+          id: String(item.id),
+          title: item.title || 'Thông báo',
+          body: item.body || '',
+          read: item.read ?? item.isRead ?? false,
+          createdAt: item.createdAt,
+          type: item.type,
+          data: parsedData
         };
-      }
+      });
+
       return {
-        data: (data?.result || []) as NotificationItem[],
-        meta: data?.meta || { total: 0, page: params.page, limit: params.limit },
+        data: mappedData,
+        meta: response?.meta || { total: mappedData.length, page: params.page, limit: params.limit },
       };
     } catch (error) {
       console.error('[NotificationService] getNotifications error:', error);
@@ -57,6 +77,24 @@ class NotificationService {
       await api.post(ENDPOINTS.NOTIFICATIONS.MARK_ALL_READ);
     } catch (error) {
       console.error('[NotificationService] markAllAsRead error:', error);
+    }
+  }
+
+  /**
+   * POST /api/v1/notifications/broadcast
+   * Admin gửi thông báo toàn hệ thống
+   */
+  async broadcastNotification(title: string, body: string, roleName?: string) {
+    try {
+      await api.post(ENDPOINTS.NOTIFICATIONS.BROADCAST, {
+        title,
+        body,
+        roleName
+      });
+      return true;
+    } catch (error) {
+      console.error('[NotificationService] broadcastNotification error:', error);
+      return false;
     }
   }
 
