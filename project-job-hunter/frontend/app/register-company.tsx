@@ -13,6 +13,7 @@ import { Stack, useRouter } from 'expo-router';
 import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY, SHADOW } from '@constants/theme';
 import TextField from '@components/TextField/TextField';
 import Button from '@components/Button/Button';
+import { LocationPicker } from '@components/index';
 import { Ionicons } from '@expo/vector-icons';
 import api from '@services/api';
 import { ENDPOINTS } from '@constants/endpoints';
@@ -27,7 +28,10 @@ const RegisterCompanyScreen = () => {
     description: '',
     industry: '',
     size: '',
+    latitude: 0,
+    longitude: 0,
   });
+  const [showMap, setShowMap] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -84,11 +88,35 @@ const RegisterCompanyScreen = () => {
             value={formData.name}
             onChangeText={(text) => handleInputChange('name', text)}
           />
-          <TextField
-            label="Địa chỉ trụ sở *"
-            placeholder="Số, Đường, Quận, Thành phố"
-            value={formData.address}
-            onChangeText={(text) => handleInputChange('address', text)}
+          <View style={styles.addressContainer}>
+            <View style={{ flex: 1 }}>
+              <TextField
+                label="Địa chỉ trụ sở *"
+                placeholder="Số, Đường, Quận, Thành phố"
+                value={formData.address}
+                onChangeText={(text) => handleInputChange('address', text)}
+              />
+            </View>
+            <TouchableOpacity 
+              style={styles.mapBtn} 
+              onPress={() => setShowMap(true)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="map-outline" size={24} color={COLORS.primary} />
+            </TouchableOpacity>
+          </View>
+
+          <LocationPicker
+            visible={showMap}
+            onClose={() => setShowMap(false)}
+            onSelect={(lat, lng, addr) => {
+              setFormData(prev => ({ 
+                ...prev, 
+                latitude: lat, 
+                longitude: lng,
+                address: addr || prev.address 
+              }));
+            }}
           />
           <TextField
             label="Website"
@@ -171,6 +199,22 @@ const styles = StyleSheet.create({
   },
   submitBtn: {
     marginTop: SPACING.lg,
+  },
+  addressContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: SPACING.sm,
+  },
+  mapBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: COLORS.gray[50],
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: 0, // Align with TextField input
   },
 });
 

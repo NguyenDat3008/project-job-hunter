@@ -21,6 +21,7 @@ import { jobService } from '@services/jobService';
 import api from '@services/api';
 import { ENDPOINTS } from '@constants/endpoints';
 import LoadingSpinner from '@components/LoadingSpinner/LoadingSpinner';
+import { LocationPicker } from '@components/index';
 
 const LEVELS = ['INTERN', 'FRESHER', 'JUNIOR', 'MIDDLE', 'SENIOR', 'LEAD', 'MANAGER'];
 
@@ -43,7 +44,10 @@ export default function JobFormScreen() {
     skills: '',
     startDate: '',
     endDate: '',
+    latitude: 0,
+    longitude: 0,
   });
+  const [showMap, setShowMap] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -66,6 +70,8 @@ export default function JobFormScreen() {
         skills: (job.skills || []).map(s => s.name).join(', '),
         startDate: job.startDate ? job.startDate.split('T')[0] : '',
         endDate: job.endDate ? job.endDate.split('T')[0] : '',
+        latitude: job.latitude || 0,
+        longitude: job.longitude || 0,
       });
     } catch (error) {
       Alert.alert('Lỗi', 'Không thể tải thông tin công việc.');
@@ -105,6 +111,8 @@ export default function JobFormScreen() {
         startDate: formData.startDate ? `${formData.startDate}T00:00:00Z` : undefined,
         endDate: formData.endDate ? `${formData.endDate}T23:59:59Z` : undefined,
         active: true,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
       };
 
       if (isEdit) {
@@ -168,13 +176,35 @@ export default function JobFormScreen() {
 
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Địa điểm làm việc *</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.location}
-            onChangeText={(text) => setFormData(prev => ({ ...prev, location: text }))}
-            placeholder="VD: Hà Nội"
-          />
+          <View style={styles.addressContainer}>
+            <TextInput
+              style={[styles.input, { flex: 1 }]}
+              value={formData.location}
+              onChangeText={(text) => setFormData(prev => ({ ...prev, location: text }))}
+              placeholder="VD: Hà Nội"
+            />
+            <TouchableOpacity 
+              style={styles.mapBtn} 
+              onPress={() => setShowMap(true)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="map-outline" size={20} color={COLORS.primary} />
+            </TouchableOpacity>
+          </View>
         </View>
+
+        <LocationPicker
+          visible={showMap}
+          onClose={() => setShowMap(false)}
+          onSelect={(lat, lng, addr) => {
+            setFormData(prev => ({ 
+              ...prev, 
+              latitude: lat, 
+              longitude: lng,
+              location: addr || prev.location 
+            }));
+          }}
+        />
 
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Cấp bậc</Text>
@@ -341,5 +371,19 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: 16,
     fontWeight: '700',
+  },
+  addressContainer: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  mapBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: COLORS.background.secondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
 });
