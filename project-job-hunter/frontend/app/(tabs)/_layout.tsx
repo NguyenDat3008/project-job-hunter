@@ -87,6 +87,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="applications"
+        options={{
+          title: 'Đơn nộp',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'briefcase' : 'briefcase-outline'} size={24} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: 'Cá nhân',
@@ -95,7 +104,6 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen name="applications" options={{ href: null }} />
     </Tabs>
   );
 }

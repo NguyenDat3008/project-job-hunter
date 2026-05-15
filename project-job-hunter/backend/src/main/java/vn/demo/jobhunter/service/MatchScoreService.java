@@ -74,7 +74,7 @@ public class MatchScoreService {
 
         try {
             // ── Gọi AI Service ──────────────────────────────────────────────
-            Map<String, Object> requestBody = buildAiRequest(user, userSkills, job, jobSkills);
+            Map<String, Object> requestBody = buildAiRequest(user, subscriber, userSkills, job, jobSkills);
             ResponseEntity<Map<String, Object>> response = restTemplate.postForEntity(
                     aiServiceUrl + "/api/match-score",
                     requestBody,
@@ -100,11 +100,25 @@ public class MatchScoreService {
     /**
      * Build request body để gửi sang Python AI service.
      */
-    private Map<String, Object> buildAiRequest(User user, List<String> userSkills,
+    private Map<String, Object> buildAiRequest(User user, Subscriber subscriber, List<String> userSkills,
                                                 Job job, List<String> jobSkills) {
         Map<String, Object> body = new HashMap<>();
         body.put("user_skills", userSkills);
-        body.put("user_address", user.getAddress() != null ? user.getAddress() : "");
+        
+        // Ưu tiên lấy address từ Subscriber nếu User không có
+        String address = user.getAddress();
+        if ((address == null || address.isEmpty()) && subscriber != null) {
+            // Giả sử Subscriber có trường address hoặc lấy location của nó
+            // address = subscriber.getAddress(); 
+        }
+        body.put("user_address", address != null ? address : "");
+        
+        // Thêm user_level từ Subscriber
+        if (subscriber != null && subscriber.getSkills() != null) {
+            // Vì Subscriber không có trường level trực tiếp, ta có thể ước lượng hoặc lấy từ metadata nếu có
+            // Tạm thời để trống để AI tự suy luận từ skills hoặc dùng mặc định JUNIOR
+            body.put("user_level", ""); 
+        }
 
         body.put("job_id", job.getId());
         body.put("job_name", job.getName());
@@ -188,5 +202,31 @@ public class MatchScoreService {
         result.put("reasons", reasons);
         result.put("aiPowered", false); // fallback mode
         return result;
+    }
+
+    /**
+     * Gửi file CV sang AI service để trích xuất kỹ năng.
+     */
+    public Map<String, Object> extractSkillsFromCV(org.springframework.web.multipart.MultipartFile file) {
+        try {
+            String url = aiServiceUrl + "/api/extract-cv";
+
+            org.springframework.util.MultiValueMap<String, Object> body = new org.springframework.util.LinkedMultiValueMap<>();
+            body.add("file", file.getResource());
+
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.setContentType(org.springframework.http.MediaType.MULTIPART_FORM_DATA);
+
+            org.springframework.http.HttpEntity<org.springframework.util.MultiValueMap<String, Object>> requestEntity = new org.springframework.http.HttpEntity<>(body, headers);
+
+            ResponseEntity<Map<String, Object>> response = restTemplate.postForEntity(url, requestEntity, (Class<Map<String, Object>>) (Class<?>) Map.class);
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                return response.getBody();
+            }
+        } catch (Exception e) {
+            System.err.println(">>> [AI Service] Extract CV Error: " + e.getMessage());
+        }
+        return null;
     }
 }

@@ -95,7 +95,9 @@ public class AuthController {
             if (currentUserDB.getCompany() != null) {
                 userLogin.setCompany(new ResLoginDTO.UserCompany(
                     currentUserDB.getCompany().getId(),
-                    currentUserDB.getCompany().getName()
+                    currentUserDB.getCompany().getName(),
+                    currentUserDB.getCompany().getIsPremium(),
+                    currentUserDB.getCompany().getPremiumTier()
                 ));
             }
             // Map skills
@@ -155,7 +157,9 @@ public class AuthController {
             if (currentUserDB.getCompany() != null) {
                 userLogin.setCompany(new ResLoginDTO.UserCompany(
                     currentUserDB.getCompany().getId(),
-                    currentUserDB.getCompany().getName()
+                    currentUserDB.getCompany().getName(),
+                    currentUserDB.getCompany().getIsPremium(),
+                    currentUserDB.getCompany().getPremiumTier()
                 ));
             }
 
@@ -199,7 +203,9 @@ public class AuthController {
             if (currentUserDB.getCompany() != null) {
                 userLogin.setCompany(new ResLoginDTO.UserCompany(
                     currentUserDB.getCompany().getId(),
-                    currentUserDB.getCompany().getName()
+                    currentUserDB.getCompany().getName(),
+                    currentUserDB.getCompany().getIsPremium(),
+                    currentUserDB.getCompany().getPremiumTier()
                 ));
             }
             // Map skills

@@ -23,6 +23,7 @@ export interface Job {
   matchScore?: number;
   latitude?: number;
   longitude?: number;
+  isPremium?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

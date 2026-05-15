@@ -22,6 +22,7 @@ import vn.demo.jobhunter.repository.SkillRepository;
 import vn.demo.jobhunter.util.SecurityUtil;
 import vn.demo.jobhunter.domain.User;
 import vn.demo.jobhunter.repository.UserRepository;
+import vn.demo.jobhunter.repository.ResumeRepository;
 
 @Service
 public class JobService {
@@ -31,17 +32,21 @@ public class JobService {
     private final CompanyRepository companyRepository;
     private final SavedJobRepository savedJobRepository;
     private final UserRepository userRepository;
+    private final ResumeRepository resumeRepository;
 
-    public JobService(JobRepository jobRepository,
+    public JobService(
+            JobRepository jobRepository,
             SkillRepository skillRepository,
             CompanyRepository companyRepository,
             SavedJobRepository savedJobRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            ResumeRepository resumeRepository) {
         this.jobRepository = jobRepository;
         this.skillRepository = skillRepository;
         this.companyRepository = companyRepository;
         this.savedJobRepository = savedJobRepository;
         this.userRepository = userRepository;
+        this.resumeRepository = resumeRepository;
     }
 
     public Optional<Job> fetchJobById(long id) {
@@ -87,17 +92,19 @@ public class JobService {
                     job.getCompany().getLogo()));
         }
 
-        // Check if saved by current user
+        // Check if saved or applied by current user
         String email = SecurityUtil.getCurrentUserLogin().orElse("");
         if (!email.isEmpty()) {
             User user = this.userRepository.findByEmail(email);
             if (user != null) {
                 dto.setIsSaved(this.savedJobRepository.existsByUserAndJob(user, job));
+                dto.setIsApplied(this.resumeRepository.existsByUserIdAndJobId(user.getId(), job.getId()));
             }
         } else {
             dto.setIsSaved(false);
+            dto.setIsApplied(false);
         }
-
+ 
         return dto;
     }
 

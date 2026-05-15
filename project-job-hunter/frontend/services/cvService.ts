@@ -21,7 +21,7 @@ class CVService {
       type: file.type,
     } as unknown as Blob);
     // Có thể thêm folder param nếu backend hỗ trợ
-    formData.append('folder', 'cv');
+    formData.append('folder', 'resume');
 
     const response = await api.upload<{ fileName: string }>(
       ENDPOINTS.FILES.UPLOAD,

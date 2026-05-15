@@ -30,6 +30,8 @@ import vn.demo.jobhunter.domain.response.resume.ResUpdateResumeDTO;
 import vn.demo.jobhunter.service.ResumeService;
 import vn.demo.jobhunter.service.UserService;
 import vn.demo.jobhunter.util.SecurityUtil;
+import vn.demo.jobhunter.util.constant.ResumeStateEnum;
+import vn.demo.jobhunter.domain.request.resume.ReqUpdateResumeDTO;
 import vn.demo.jobhunter.util.annotation.ApiMessage;
 import vn.demo.jobhunter.util.error.IdInvalidException;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -78,15 +80,15 @@ public class ResumeController {
     @PutMapping("/resumes")
     @ApiMessage("Update a resume")
     @Operation(summary = "Cập nhật trạng thái hồ sơ", description = "HR/Admin duyệt hoặc từ chối hồ sơ (chỉ được duyệt Resume của công ty mình)")
-    public ResponseEntity<ResUpdateResumeDTO> update(@RequestBody Resume resume) throws IdInvalidException, vn.demo.jobhunter.util.error.PermissionException {
+    public ResponseEntity<ResUpdateResumeDTO> update(@RequestBody vn.demo.jobhunter.domain.request.resume.ReqUpdateResumeDTO req) throws IdInvalidException, vn.demo.jobhunter.util.error.PermissionException {
         // check id exist
-        Optional<Resume> reqResumeOptional = this.resumeService.fetchById(resume.getId());
+        Optional<Resume> reqResumeOptional = this.resumeService.fetchById(req.getId());
         if (reqResumeOptional.isEmpty()) {
-            throw new IdInvalidException("Resume với id = " + resume.getId() + " không tồn tại");
+            throw new IdInvalidException("Resume với id = " + req.getId() + " không tồn tại");
         }
-
+ 
         Resume reqResume = reqResumeOptional.get();
-
+ 
         // CHECK OWNERSHIP
         String email = SecurityUtil.getCurrentUserLogin().orElse("");
         User currentUser = this.userService.handleGetUserByUsername(email);
@@ -97,10 +99,8 @@ public class ResumeController {
                 }
             }
         }
-
-        reqResume.setStatus(resume.getStatus());
-
-        return ResponseEntity.ok().body(this.resumeService.update(reqResume));
+ 
+        return ResponseEntity.ok().body(this.resumeService.update(reqResume, req.getStatus(), req.getMessage()));
     }
 
     @DeleteMapping("/resumes/{id}")

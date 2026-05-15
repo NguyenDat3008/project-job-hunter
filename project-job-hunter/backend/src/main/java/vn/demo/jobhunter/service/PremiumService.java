@@ -30,13 +30,7 @@ public class PremiumService {
         this.companyRepository.save(company);
 
         // Update jobs
-        List<Job> jobs = company.getJobs();
-        if (jobs != null) {
-            for (Job j : jobs) {
-                j.setIsPremium(true);
-            }
-            this.jobRepository.saveAll(jobs);
-        }
+        this.jobRepository.updateIsPremiumByCompanyId(company.getId(), true);
     }
 
     public boolean isCompanyPremium(Company company) {

@@ -34,12 +34,12 @@ import vn.demo.jobhunter.util.error.IdInvalidException;
 @Tag(name = "Job", description = "API Quản lý Việc làm")
 public class JobController {
 
-    private final JobService jobService;
+    private final vn.demo.jobhunter.service.JobService jobService;
     private final vn.demo.jobhunter.service.UserService userService;
     private final vn.demo.jobhunter.service.MatchScoreService matchScoreService;
     private final vn.demo.jobhunter.repository.SavedJobRepository savedJobRepository;
 
-    public JobController(JobService jobService,
+    public JobController(vn.demo.jobhunter.service.JobService jobService,
             vn.demo.jobhunter.service.UserService userService,
             vn.demo.jobhunter.service.MatchScoreService matchScoreService,
             vn.demo.jobhunter.repository.SavedJobRepository savedJobRepository) {

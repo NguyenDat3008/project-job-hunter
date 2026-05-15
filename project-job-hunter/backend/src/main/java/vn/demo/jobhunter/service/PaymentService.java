@@ -88,12 +88,21 @@ public class PaymentService {
 
             // Parse response
             JsonNode responseBody = this.objectMapper.readTree(response.getBody());
+            
+            // Bóc vỏ lớp 1 (RestResponse)
+            JsonNode restData = responseBody.has("data") ? responseBody.get("data") : responseBody;
 
-            if (responseBody.has("success") && responseBody.get("success").asBoolean()) {
-                JsonNode data = responseBody.get("data");
-                order.setBillId(data.get("billId").asText());
-                order.setQrUrl(data.get("qrUrl").asText());
-                order.setExpiredAt(Instant.parse(data.get("expiredAt").asText()));
+            // Kiểm tra thành công (có thể ở lớp ngoài hoặc trong data)
+            boolean isSuccess = responseBody.path("statusCode").asInt() == 200 || 
+                               restData.path("success").asBoolean() == true;
+
+            if (isSuccess) {
+                // Lấy data thực sự (Lớp 2)
+                JsonNode realData = restData.has("data") ? restData.get("data") : restData;
+                
+                order.setBillId(realData.get("billId").asText());
+                order.setQrUrl(realData.get("qrUrl").asText());
+                order.setExpiredAt(Instant.parse(realData.get("expiredAt").asText()));
                 order = this.orderRepository.save(order);
             } else {
                 order.setStatus("FAILED");

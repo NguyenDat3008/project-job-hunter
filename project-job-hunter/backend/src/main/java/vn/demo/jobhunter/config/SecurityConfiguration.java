@@ -51,9 +51,10 @@ public class SecurityConfiguration {
                 "/v3/api-docs/**",
                 "/swagger-ui/**",
                 "/swagger-ui.html",
-                "/api/v1/premium/packages",
-                "/api/v1/payment/callback",
-                "/api/v1/payment/packages"
+                "/api/v1/payment/**",
+                "/api/v1/premium/**",
+                "/api/v1/subscribers/**",
+                "/api/v1/files/download"
         };
 
         http

@@ -16,6 +16,9 @@ import vn.demo.jobhunter.service.SubscriberService;
 import vn.demo.jobhunter.util.SecurityUtil;
 import vn.demo.jobhunter.util.annotation.ApiMessage;
 import vn.demo.jobhunter.util.error.IdInvalidException;
+import vn.demo.jobhunter.service.MatchScoreService;
+import org.springframework.web.bind.annotation.RequestParam;
+import java.util.Map;
 
 /**
  * @controller SubscriberController
@@ -26,9 +29,11 @@ import vn.demo.jobhunter.util.error.IdInvalidException;
 @Tag(name = "Subscriber", description = "API Đăng ký nhận việc làm theo kỹ năng")
 public class SubscriberController {
     private final SubscriberService subscriberService;
+    private final MatchScoreService matchScoreService;
 
-    public SubscriberController(SubscriberService subscriberService) {
+    public SubscriberController(SubscriberService subscriberService, MatchScoreService matchScoreService) {
         this.subscriberService = subscriberService;
+        this.matchScoreService = matchScoreService;
     }
 
     @PostMapping("/subscribers")
@@ -64,6 +69,21 @@ public class SubscriberController {
                 ? SecurityUtil.getCurrentUserLogin().get()
                 : "";
 
-        return ResponseEntity.ok().body(this.subscriberService.findByEmail(email));
+        Subscriber sub = this.subscriberService.findByEmail(email);
+        if (sub == null) {
+            // Tự động tạo mới nếu chưa có
+            sub = new Subscriber();
+            sub.setEmail(email);
+            sub.setName(email.split("@")[0]); // Tạm lấy phần trước @ làm tên
+            sub = this.subscriberService.create(sub);
+        }
+
+        return ResponseEntity.ok().body(sub);
+    }
+
+    @PostMapping("/subscribers/scan-cv")
+    @ApiMessage("Scan CV and extract skills")
+    public ResponseEntity<Map<String, Object>> scanCV(@RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        return ResponseEntity.ok().body(this.matchScoreService.extractSkillsFromCV(file));
     }
 }

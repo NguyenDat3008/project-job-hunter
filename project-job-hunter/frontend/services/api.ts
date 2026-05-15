@@ -12,15 +12,29 @@ import { AxiosRequestConfig } from 'axios';
  */
 const api = {
   async get<T>(path: string, config?: AxiosRequestConfig): Promise<T> {
-    const response = await apiClient.get(path, config);
-    const json = response.data;
-    return (json?.data ?? json) as T;
+    try {
+      const response = await apiClient.get(path, config);
+      const json = response.data;
+      return (json?.data ?? json) as T;
+    } catch (error: any) {
+      if (__DEV__) {
+        console.log(`[API GET ERROR] ${path}:`, error.response?.data || error.message);
+      }
+      throw error;
+    }
   },
 
   async post<T>(path: string, body?: any, config?: AxiosRequestConfig): Promise<T> {
-    const response = await apiClient.post(path, body, config);
-    const json = response.data;
-    return (json?.data ?? json) as T;
+    try {
+      const response = await apiClient.post(path, body, config);
+      const json = response.data;
+      return (json?.data ?? json) as T;
+    } catch (error: any) {
+      if (__DEV__) {
+        console.log(`[API POST ERROR] ${path}:`, error.response?.data || error.message);
+      }
+      throw error;
+    }
   },
 
   async put<T>(path: string, body?: any, config?: AxiosRequestConfig): Promise<T> {

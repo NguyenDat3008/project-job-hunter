@@ -112,6 +112,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       set({ isLoading: true });
       const response = await authService.getAccount();
       const user = response.user;
+      if (__DEV__) {
+        console.log('[AuthStore] Refreshed User Data:', JSON.stringify(user, null, 2));
+      }
       set({ user, isAuthenticated: true, isLoading: false });
       await generalStorage.set(STORAGE_KEYS.USER_DATA, user);
     } catch (error) {

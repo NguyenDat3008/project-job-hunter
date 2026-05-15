@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   Platform,
@@ -160,17 +161,46 @@ export default function ProfileTab() {
         <View style={styles.profileCard}>
           <View style={styles.profileInfoRow}>
             <View style={styles.avatarWrap}>
-              <View style={styles.avatarCircle}>
-                <Ionicons name="person" size={40} color={COLORS.gray[300]} />
-              </View>
+              {user?.company?.isPremium ? (
+                <LinearGradient
+                  colors={['#FDE047', '#F59E0B', '#B45309']}
+                  style={styles.vipAvatarGradient}
+                >
+                  <View style={styles.avatarCircle}>
+                    <Ionicons name="person" size={35} color={COLORS.gray[300]} />
+                  </View>
+                  <View style={styles.vipCrown}>
+                    <Ionicons name="ribbon" size={12} color="white" />
+                  </View>
+                </LinearGradient>
+              ) : (
+                <View style={styles.avatarCircle}>
+                  <Ionicons name="person" size={40} color={COLORS.gray[300]} />
+                </View>
+              )}
             </View>
             <View style={styles.userInfo}>
-              <Text style={styles.userName}>{user?.name || 'Người dùng'}</Text>
+              <View style={styles.nameRow}>
+                <Text style={styles.userName}>{user?.name || 'Người dùng'}</Text>
+                {user?.company?.isPremium && (
+                  <Ionicons name="checkmark-circle" size={18} color="#F59E0B" style={{ marginLeft: 4 }} />
+                )}
+              </View>
               <Text style={styles.userId}>{user?.email}</Text>
-              <View style={styles.roleTag}>
-                <Text style={styles.roleTagText}>
-                   {isAdmin ? 'Quản trị viên' : isCompanyRep ? 'Đại diện công ty' : isHR ? 'Nhà tuyển dụng' : 'Ứng viên'}
-                </Text>
+              <View style={styles.tagRow}>
+                <View style={styles.roleTag}>
+                  <Text style={styles.roleTagText}>
+                    {isAdmin ? 'Quản trị viên' : isCompanyRep ? 'Đại diện công ty' : isHR ? 'Nhà tuyển dụng' : 'Ứng viên'}
+                  </Text>
+                </View>
+                {user?.company?.isPremium && (
+                  <LinearGradient
+                    colors={['#F59E0B', '#B45309']}
+                    style={styles.premiumTierTag}
+                  >
+                    <Text style={styles.premiumTierText}>{user?.company?.premiumTier || 'PRO'}</Text>
+                  </LinearGradient>
+                )}
               </View>
             </View>
           </View>
@@ -326,6 +356,11 @@ export default function ProfileTab() {
                 iconColor="#EAB308"
                 bgColor="#FEF9C3"
                 onPress={() => router.push('/hr/premium-plans' as any)}
+                rightElement={user?.company?.isPremium ? (
+                  <View style={styles.activeBadge}>
+                    <Text style={styles.activeBadgeText}>ĐANG BẬT</Text>
+                  </View>
+                ) : null}
               />
               <View style={styles.divider} />
               <MenuItem 
@@ -554,6 +589,46 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '800',
     color: COLORS.text.primary,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  tagRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  vipAvatarGradient: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 2,
+  },
+  vipCrown: {
+    position: 'absolute',
+    top: -5,
+    right: -2,
+    backgroundColor: '#F59E0B',
+    borderRadius: 10,
+    width: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: 'white',
+  },
+  premiumTierTag: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  premiumTierText: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: 'white',
   },
   userId: {
     fontSize: 11,

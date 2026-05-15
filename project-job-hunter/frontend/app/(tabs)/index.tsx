@@ -95,7 +95,16 @@ export default function HomeTab() {
         <View style={styles.topHeaderContent}>
           <View style={styles.headerTop}>
             <View style={styles.headerLeftContainer}>
-              {/* Optional: Mascot or Greeting */}
+              <View style={styles.logoAndGreeting}>
+                <Image 
+                  source={require('../../assets/images/logotopCV.jpg')} 
+                  style={styles.miniLogo} 
+                />
+                <View>
+                  <Text style={styles.greetingText}>Chào bạn,</Text>
+                  <Text style={styles.userNameText}>{user?.name || 'Ứng viên'}</Text>
+                </View>
+              </View>
             </View>
             <View style={styles.headerRightContainer}>
               <NotificationBell light onPress={() => router.push('/(tabs)/notifications')} />
@@ -105,16 +114,15 @@ export default function HomeTab() {
             </View>
           </View>
 
-          {/* Search Bar */}
-          <View style={styles.searchContainer}>
-            <Ionicons name="search-outline" size={16} color={COLORS.text.light} style={styles.searchIcon} />
-            <TextInput
-              style={styles.searchInputField}
-              placeholder="Tìm kiếm việc làm, công ty..."
-              placeholderTextColor={COLORS.text.light}
-              defaultValue="thực tập sinh"
-            />
-          </View>
+          {/* Search Bar - Navigate to Search Screen */}
+          <TouchableOpacity 
+            style={styles.searchContainer} 
+            activeOpacity={0.9}
+            onPress={() => router.push('/search')}
+          >
+            <Ionicons name="search-outline" size={16} color={COLORS.text.secondary} style={styles.searchIcon} />
+            <Text style={styles.searchInputPlaceholder}>Tìm kiếm việc làm, công ty...</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -256,7 +264,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 10,
     paddingBottom: 20,
-    backgroundColor: 'rgba(0,0,0,0.05)',
+    // Removed overlay color to keep it clean
   },
   headerTop: {
     flexDirection: 'row',
@@ -266,6 +274,28 @@ const styles = StyleSheet.create({
   },
   headerLeftContainer: {
     flex: 1,
+  },
+  logoAndGreeting: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  miniLogo: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  greetingText: {
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.8)',
+    fontWeight: '500',
+  },
+  userNameText: {
+    fontSize: 14,
+    color: COLORS.white,
+    fontWeight: '700',
   },
   headerRightContainer: {
     flexDirection: 'row',
@@ -307,10 +337,10 @@ const styles = StyleSheet.create({
   searchIcon: {
     marginRight: 8,
   },
-  searchInputField: { 
+  searchInputPlaceholder: { 
     flex: 1, 
     fontSize: 14,
-    color: COLORS.text.primary,
+    color: COLORS.text.secondary,
   },
   navIconsRow: { 
     paddingHorizontal: 16,

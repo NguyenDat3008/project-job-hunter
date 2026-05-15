@@ -77,6 +77,13 @@ public class ResumeService {
     }
 
     public ResCreateResumeDTO create(Resume resume) {
+        // Prevent duplicate application
+        if (resume.getUser() != null && resume.getJob() != null) {
+            boolean exists = this.resumeRepository.existsByUserIdAndJobId(resume.getUser().getId(), resume.getJob().getId());
+            if (exists) {
+                throw new RuntimeException("Bạn đã ứng tuyển vào công việc này rồi.");
+            }
+        }
         resume = this.resumeRepository.save(resume);
 
         // Gửi thông báo cho HR/Admin của công ty
@@ -103,15 +110,19 @@ public class ResumeService {
         return res;
     }
 
-    public ResUpdateResumeDTO update(Resume resume) {
-        Optional<Resume> oldResume = this.resumeRepository.findById(resume.getId());
+    public ResUpdateResumeDTO update(Resume resume, vn.demo.jobhunter.util.constant.ResumeStateEnum newStatus, String message) {
+        vn.demo.jobhunter.util.constant.ResumeStateEnum oldStatus = resume.getStatus();
+        resume.setStatus(newStatus);
         resume = this.resumeRepository.save(resume);
 
         // Gửi thông báo cho ứng viên khi trạng thái thay đổi
-        if (oldResume.isPresent() && !oldResume.get().getStatus().equals(resume.getStatus())) {
+        if (oldStatus != newStatus) {
             User candidate = this.userRepository.findById(resume.getUser().getId()).orElse(null);
             if (candidate != null) {
-                String statusMsg = "Trạng thái ứng tuyển của bạn đã được cập nhật thành: " + resume.getStatus();
+                String statusMsg = (message != null && !message.isEmpty()) 
+                    ? message 
+                    : "Trạng thái ứng tuyển của bạn tại " + resume.getJob().getName() + " đã được cập nhật thành: " + resume.getStatus();
+                
                 this.notificationService.createNotification(
                     candidate,
                     "Cập nhật trạng thái",
@@ -177,13 +188,14 @@ public class ResumeService {
     }
 
     public ResultPaginationDTO fetchResumeByUser(Pageable pageable) {
-        // query builder
-        String email = SecurityUtil.getCurrentUserLogin().isPresent() == true
-                ? SecurityUtil.getCurrentUserLogin().get()
-                : "";
-        FilterNode node = filterParser.parse("email='" + email + "'");
-        FilterSpecification<Resume> spec = filterSpecificationConverter.convert(node);
-        Page<Resume> pageResume = this.resumeRepository.findAll(spec, pageable);
+        String email = SecurityUtil.getCurrentUserLogin().orElse("");
+        User currentUser = this.userRepository.findByEmail(email);
+        
+        if (currentUser == null) {
+            return new ResultPaginationDTO();
+        }
+
+        Page<Resume> pageResume = this.resumeRepository.findByUserId(currentUser.getId(), pageable);
 
         ResultPaginationDTO rs = new ResultPaginationDTO();
         ResultPaginationDTO.Meta mt = new ResultPaginationDTO.Meta();

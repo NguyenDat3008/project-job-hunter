@@ -171,12 +171,17 @@ export default function PremiumPlans() {
               </View>
               
               <TouchableOpacity 
-                style={[styles.subscribeBtn, { backgroundColor: pkg.color }]}
+                style={[
+                  styles.subscribeBtn, 
+                  { backgroundColor: pkg.id === 'BASIC' && !user?.company?.isPremium ? '#94A3B8' : (user?.company?.premiumTier === pkg.id ? '#10B981' : pkg.color) }
+                ]}
                 onPress={() => handleSubscribe(pkg)}
-                disabled={loading}
+                disabled={loading || (user?.company?.isPremium && user?.company?.premiumTier === pkg.id)}
               >
                 <Text style={styles.subscribeBtnText}>
-                  {pkg.id === 'BASIC' ? 'Đang sử dụng' : 'Đăng ký ngay'}
+                  {user?.company?.isPremium 
+                    ? (user?.company?.premiumTier === pkg.id ? 'Đang sử dụng' : 'Nâng cấp ngay')
+                    : (pkg.id === 'BASIC' ? 'Đang sử dụng' : 'Đăng ký ngay')}
                 </Text>
               </TouchableOpacity>
             </View>

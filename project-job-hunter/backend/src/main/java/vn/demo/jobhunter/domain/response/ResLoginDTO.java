@@ -40,6 +40,9 @@ public class ResLoginDTO {
     public static class UserCompany {
         private long id;
         private String name;
+        @JsonProperty("isPremium")
+        private boolean isPremium;
+        private String premiumTier;
     }
 
     @Getter

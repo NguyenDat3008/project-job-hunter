@@ -277,7 +277,7 @@ const AdminDashboard = () => {
                 <View style={styles.detailLogoWrap}>
                   {selectedCompany?.logo ? (
                     <Image 
-                      source={{ uri: selectedCompany.logo.startsWith('http') ? selectedCompany.logo : (API_CONFIG.BASE_URL.replace('/api', '') + '/storage/' + selectedCompany.logo) }} 
+                      source={{ uri: selectedCompany.logo.startsWith('http') ? selectedCompany.logo : (`${API_CONFIG.BASE_URL}/${API_CONFIG.VERSION}/files/download?fileName=${selectedCompany.logo}`) }} 
                       style={styles.detailLogo} 
                     />
                   ) : (
@@ -355,7 +355,7 @@ const AdminDashboard = () => {
                         <Text style={styles.pendingLabel}>Logo mới:</Text>
                         <View style={styles.pendingLogoBox}>
                           <Image 
-                            source={{ uri: selectedCompany.pendingLogo.startsWith('http') ? selectedCompany.pendingLogo : (`${API_CONFIG.BASE_URL}/files/download?fileName=${selectedCompany.pendingLogo}`) }} 
+                            source={{ uri: selectedCompany.pendingLogo.startsWith('http') ? selectedCompany.pendingLogo : (`${API_CONFIG.BASE_URL}/${API_CONFIG.VERSION}/files/download?fileName=${selectedCompany.pendingLogo}`) }} 
                             style={styles.pendingLogoImg} 
                           />
                         </View>

@@ -115,6 +115,27 @@ export const jobService = {
     if (Array.isArray(data)) return data;
     return (data as PaginationResponse<Resume>)?.result || [];
   },
+
+  /**
+   * Tìm kiếm cơ bản bằng từ khóa (Không dùng AI)
+   */
+  basicSearch: async (params: {
+    query: string;
+    location?: string;
+    level?: string;
+  }): Promise<PaginationResponse<Job>> => {
+    let filter = `name ~ '*${params.query}*' or description ~ '*${params.query}*'`;
+    
+    // Thêm các bộ lọc nếu có
+    if (params.location && params.location !== 'Toàn quốc') {
+      filter = `(${filter}) and location ~ '*${params.location}*'`;
+    }
+    if (params.level && params.level !== 'Tất cả cấp bậc') {
+      filter = `(${filter}) and level = '${params.level}'`;
+    }
+
+    return api.get<PaginationResponse<Job>>(`/jobs?page=1&size=50&filter=${encodeURIComponent(filter)}&sort=createdAt,desc`);
+  },
 };
 
 export default jobService;

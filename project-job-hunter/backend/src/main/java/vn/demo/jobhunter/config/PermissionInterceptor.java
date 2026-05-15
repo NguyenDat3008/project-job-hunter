@@ -42,16 +42,24 @@ public class PermissionInterceptor implements HandlerInterceptor {
             return true;
         }
 
-        // 2. Skip whitelist paths manually as a fallback
-        String lowerURI = requestURI.toLowerCase();
-        if (lowerURI.contains("auth") || 
-            lowerURI.contains("notifications") ||
-            lowerURI.contains("stats") ||
-            lowerURI.contains("payment") ||
-            lowerURI.contains("premium") ||
-            lowerURI.contains("v3/api-docs") ||
-            lowerURI.contains("swagger-ui")) {
-            System.out.println(">>> [DEBUG] Whitelist Skip (Aggressive): " + requestURI);
+        // 2. Skip whitelist paths manually
+        String checkPath = path != null ? path.toLowerCase() : requestURI.toLowerCase();
+        boolean isWhitelisted = checkPath.contains("auth") || 
+                                checkPath.contains("notifications") ||
+                                checkPath.contains("stats") ||
+                                checkPath.contains("payment") ||
+                                checkPath.contains("premium") ||
+                                checkPath.contains("subscribers") ||
+                                checkPath.contains("files") ||
+                                checkPath.contains("jobs/recommend") ||
+                                checkPath.contains("resumes") ||
+                                checkPath.contains("companies/logo") ||
+                                checkPath.contains("saved-jobs") ||
+                                checkPath.contains("v3/api-docs") ||
+                                checkPath.contains("swagger-ui");
+
+        if (isWhitelisted) {
+            System.out.println(">>> [DEBUG] Whitelist Skip SUCCESS: " + checkPath);
             return true;
         }
 

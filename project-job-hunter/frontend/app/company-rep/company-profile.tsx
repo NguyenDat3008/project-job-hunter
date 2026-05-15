@@ -265,7 +265,7 @@ export default function CompanyProfileScreen() {
         <View style={styles.header}>
           <TouchableOpacity style={styles.logoContainer} onPress={handlePickLogo} disabled={uploadingLogo}>
             {logo ? (
-              <Image source={{ uri: `${API_CONFIG.BASE_URL}/files/download?fileName=${logo}` }} style={styles.logo} />
+              <Image source={{ uri: `${API_CONFIG.BASE_URL}/${API_CONFIG.VERSION}/files/download?fileName=${logo}` }} style={styles.logo} />
             ) : (
               <View style={styles.logoPlaceholder}>
                 <Ionicons name="business" size={40} color={COLORS.textGray} />
