@@ -68,6 +68,17 @@ public class MinioService {
         }
     }
 
+    public InputStream getFileStream(String fileName) throws Exception {
+        if (!isReady) {
+            throw new RuntimeException("MinIO service không khả dụng.");
+        }
+        return minioClient.getObject(
+            GetObjectArgs.builder()
+                .bucket(bucketName)
+                .object(fileName)
+                .build());
+    }
+
     public boolean isReady() {
         return isReady;
     }

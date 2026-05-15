@@ -65,7 +65,7 @@ export default function PremiumScreen() {
       </View>
 
       <View style={styles.packagesContainer}>
-        {packages.map(pkg => {
+        {(packages || []).map(pkg => {
           const tierColor = TIER_COLORS[pkg.tier] || COLORS.primary;
           return (
             <View
@@ -91,7 +91,7 @@ export default function PremiumScreen() {
               </View>
 
               <View style={styles.featuresList}>
-                {pkg.features.map((feature, idx) => (
+                {(pkg.features || []).map((feature, idx) => (
                   <View key={idx} style={styles.featureItem}>
                     <View style={[
                       styles.featureCheck,
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
     padding: SPACING.xl, paddingTop: 40, paddingBottom: 60,
     alignItems: 'center',
   },
-  headerTitle: { ...TYPOGRAPHY.h1, color: COLORS.gold, marginBottom: SPACING.sm, textAlign: 'center' },
+  headerTitle: { ...TYPOGRAPHY.h1, color: COLORS.warning, marginBottom: SPACING.sm, textAlign: 'center' },
   headerSubtitle: { ...TYPOGRAPHY.body2, color: COLORS.white, opacity: 0.8, textAlign: 'center' },
   packagesContainer: { padding: SPACING.lg, marginTop: -40 },
   packageCard: {

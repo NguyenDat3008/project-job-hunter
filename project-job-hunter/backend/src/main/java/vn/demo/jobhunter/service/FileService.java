@@ -67,6 +67,10 @@ public class FileService {
         return fileName;
     }
 
+    public java.io.InputStream download(String fileName) throws Exception {
+        return minioService.getFileStream(fileName);
+    }
+
     public String getFileUrl(String fileName) {
         return minioService.getFileUrl(fileName);
     }

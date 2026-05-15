@@ -112,6 +112,13 @@ export default function MyJobsScreen() {
             <Text style={[styles.actionText, { color: COLORS.primary }]}>Sửa</Text>
           </TouchableOpacity>
           <TouchableOpacity
+            style={[styles.actionBtn, { backgroundColor: '#E0F2FE' }]}
+            onPress={() => router.push({ pathname: '/hr/applications', params: { jobId: String(item.id) } })}
+          >
+            <Ionicons name="people-outline" size={16} color="#0284C7" />
+            <Text style={[styles.actionText, { color: '#0284C7' }]}>Ứng viên</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
             style={[styles.actionBtn, { backgroundColor: '#FDE8E8' }]}
             onPress={() => handleDelete(item)}
           >

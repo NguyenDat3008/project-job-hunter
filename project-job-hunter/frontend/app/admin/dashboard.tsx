@@ -16,7 +16,7 @@ import { Stack, router } from 'expo-router';
 import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY, SHADOW } from '@constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import api from '@services/api';
-import { ENDPOINTS } from '@constants/endpoints';
+import { ENDPOINTS, API_CONFIG } from '@constants/endpoints';
 import LoadingSpinner from '@components/LoadingSpinner/LoadingSpinner';
 
 interface Company {
@@ -36,6 +36,7 @@ interface Company {
   pendingName?: string;
   pendingLogo?: string;
   updateReason?: string;
+  premiumExpiryDate?: string;
 }
 
 interface Stats {
@@ -92,14 +93,19 @@ const AdminDashboard = () => {
           text: 'Phê duyệt',
           onPress: async () => {
             try {
+              console.log('>>> [DASHBOARD] Approving company ID:', company.id);
               await api.put(ENDPOINTS.COMPANIES.UPDATE, {
-                ...company,
+                id: company.id,
                 active: true,
+                isPremium: company.isPremium,
+                premiumTier: company.premiumTier,
+                premiumExpiryDate: company.premiumExpiryDate
               });
-              Alert.alert('Thành công', 'Công ty đã được kích hoạt.');
+              Alert.alert('Thành công', 'Đã phê duyệt các thay đổi thành công.');
               setShowDetailModal(false);
               fetchData();
             } catch (error: any) {
+              console.error('>>> [DASHBOARD] Approve error:', error);
               Alert.alert('Lỗi', error.message || 'Không thể phê duyệt.');
             }
           },
@@ -270,7 +276,10 @@ const AdminDashboard = () => {
               <View style={styles.detailHero}>
                 <View style={styles.detailLogoWrap}>
                   {selectedCompany?.logo ? (
-                    <Image source={{ uri: selectedCompany.logo }} style={styles.detailLogo} />
+                    <Image 
+                      source={{ uri: selectedCompany.logo.startsWith('http') ? selectedCompany.logo : (API_CONFIG.BASE_URL.replace('/api', '') + '/storage/' + selectedCompany.logo) }} 
+                      style={styles.detailLogo} 
+                    />
                   ) : (
                     <Ionicons name="business" size={40} color={COLORS.primary} />
                   )}
@@ -346,7 +355,7 @@ const AdminDashboard = () => {
                         <Text style={styles.pendingLabel}>Logo mới:</Text>
                         <View style={styles.pendingLogoBox}>
                           <Image 
-                            source={{ uri: selectedCompany.pendingLogo }} 
+                            source={{ uri: selectedCompany.pendingLogo.startsWith('http') ? selectedCompany.pendingLogo : (`${API_CONFIG.BASE_URL}/files/download?fileName=${selectedCompany.pendingLogo}`) }} 
                             style={styles.pendingLogoImg} 
                           />
                         </View>

@@ -98,109 +98,103 @@ public class CompanyService {
         if (companyOptional.isPresent()) {
             Company currentCompany = companyOptional.get();
             String email = SecurityUtil.getCurrentUserLogin().orElse("");
-            User currentUser = this.userRepository.findByEmail(email);
+                       User currentUser = this.userRepository.findByEmail(email);
 
             if (currentUser != null && currentUser.getRole() != null) {
                 String roleName = currentUser.getRole().getName();
+                System.out.println(">>> [DEBUG] handleUpdateCompany - User: " + email + ", Role: " + roleName);
 
                 if (roleName.equals("SUPER_ADMIN")) {
-                    // Khi Admin Duyệt
-                    if (!currentCompany.isActive() && c.isActive()) {
-                        User creator = this.userRepository.findByEmail(currentCompany.getCreatedBy());
-                        if (creator != null) {
-                            creator.setCompany(currentCompany);
-                            // Gán role COMPANY_REPRESENTATIVE (người đại diện công ty)
-                            Role repRole = this.roleRepository.findByName("COMPANY_REPRESENTATIVE");
-                            if (repRole != null)
-                                creator.setRole(repRole);
-                            this.userRepository.save(creator);
+                    System.out.println(">>> [ADMIN_ACTION] Approving Company ID: " + c.getId());
+                    System.out.println(">>> [BEFORE] Name: " + currentCompany.getName() + ", PendingName: " + currentCompany.getPendingName());
+                    System.out.println(">>> [BEFORE] Logo: " + currentCompany.getLogo() + ", PendingLogo: " + currentCompany.getPendingLogo());
 
-                            // Gửi thông báo cho người dùng
-                            this.notificationService.createNotification(
-                                    creator,
-                                    "Phê duyệt doanh nghiệp",
-                                    "Chúc mừng! Doanh nghiệp " + currentCompany.getName()
-                                            + " của bạn đã được phê duyệt. Bạn là Người đại diện công ty.",
-                                    "COMPANY_APPROVED");
-                        }
-                    }
-                    
-                    // Nếu Admin duyệt các thay đổi quan trọng (Name, Logo)
-                    if (currentCompany.getPendingName() != null || currentCompany.getPendingLogo() != null) {
-                        if (c.isActive()) { // Admin gửi active=true để phê duyệt thay đổi
-                            if (currentCompany.getPendingName() != null) 
-                                currentCompany.setName(currentCompany.getPendingName());
-                            if (currentCompany.getPendingLogo() != null)
-                                currentCompany.setLogo(currentCompany.getPendingLogo());
-                            
+                    // TRƯỜNG HỢP 1: Phê duyệt thay đổi thông tin (Dành cho cty đã Active)
+                    if (c.isActive()) {
+                        boolean hasChanges = false;
+                        if (currentCompany.getPendingName() != null) {
+                            System.out.println(">>> [UPDATE] Applying Pending Name: " + currentCompany.getPendingName());
+                            currentCompany.setName(currentCompany.getPendingName());
                             currentCompany.setPendingName(null);
+                            hasChanges = true;
+                        }
+                        if (currentCompany.getPendingLogo() != null) {
+                            System.out.println(">>> [UPDATE] Applying Pending Logo: " + currentCompany.getPendingLogo());
+                            currentCompany.setLogo(currentCompany.getPendingLogo());
                             currentCompany.setPendingLogo(null);
+                            hasChanges = true;
+                        }
+                        
+                        if (hasChanges) {
                             currentCompany.setUpdateReason(null);
                         }
                     }
+
+                    // TRƯỜNG HỢP 2: Phê duyệt kích hoạt tài khoản mới
+                    if (!currentCompany.isActive() && c.isActive()) {
+                        System.out.println(">>> [UPDATE] Activating NEW Company");
+                        User creator = this.userRepository.findByEmail(currentCompany.getCreatedBy());
+                        if (creator != null) {
+                            creator.setCompany(currentCompany);
+                            Role repRole = this.roleRepository.findByName("COMPANY_REPRESENTATIVE");
+                            if (repRole != null) creator.setRole(repRole);
+                            this.userRepository.save(creator);
+
+                            this.notificationService.createNotification(
+                                creator,
+                                "Tài khoản đã kích hoạt",
+                                "Chúc mừng! Công ty " + currentCompany.getName() + " của bạn đã sẵn sàng hoạt động.",
+                                "COMPANY_APPROVED"
+                            );
+                        }
+                    }
+
                     currentCompany.setActive(c.isActive());
 
-                    // Khi Admin Từ chối (Active vẫn false nhưng có updateReason mới)
+                    // Xử lý Từ chối
                     if (!c.isActive() && c.getUpdateReason() != null && c.getUpdateReason().startsWith("Từ chối:")) {
+                        System.out.println(">>> [UPDATE] Admin REJECTED");
                         User creator = this.userRepository.findByEmail(currentCompany.getCreatedBy());
                         if (creator != null) {
                             this.notificationService.createNotification(
                                 creator,
-                                "Yêu cầu đăng ký bị từ chối",
-                                "Yêu cầu đăng ký công ty " + currentCompany.getName() + " bị từ chối. Lý do: " + c.getUpdateReason().replace("Từ chối: ", ""),
+                                "Yêu cầu bị từ chối",
+                                "Lý do: " + c.getUpdateReason().replace("Từ chối: ", ""),
                                 "COMPANY_REJECTED"
                             );
                         }
                     }
-                    
-                    // Thông báo nâng cấp Premium
-                    if (!currentCompany.getIsPremium() && c.getIsPremium()) {
-                        User creator = this.userRepository.findByEmail(currentCompany.getCreatedBy());
-                        if (creator != null) {
-                            this.notificationService.createNotification(
-                                creator,
-                                "Nâng cấp Premium thành công",
-                                "Chúc mừng! Công ty " + currentCompany.getName() + " đã được nâng cấp lên gói Premium.",
-                                "PREMIUM_UPGRADE"
-                            );
-                        }
-                    }
 
+                    // Cập nhật Premium (nếu có)
                     currentCompany.setIsPremium(c.getIsPremium());
                     currentCompany.setPremiumTier(c.getPremiumTier());
                     currentCompany.setPremiumExpiryDate(c.getPremiumExpiryDate());
                 } else {
+                    // LUỒNG HR (Người đại diện cập nhật)
+                    System.out.println(">>> [HR_ACTION] Requesting Update for Company ID: " + c.getId());
                     if (currentUser.getCompany() == null || currentUser.getCompany().getId() != c.getId()) {
-                        throw new PermissionException("Bạn không có quyền chỉnh sửa thông tin của công ty khác.");
+                        throw new PermissionException("Bạn không có quyền chỉnh sửa công ty này.");
                     }
                     
-                    // Kiểm tra các thay đổi quan trọng cần duyệt (Tên và Logo)
-                    boolean isNameChanged = c.getName() != null && !c.getName().trim().isEmpty() && !c.getName().equals(currentCompany.getName());
-                    boolean isLogoChanged = c.getLogo() != null && !c.getLogo().trim().isEmpty() && !c.getLogo().equals(currentCompany.getLogo());
+                    // Phát hiện thay đổi quan trọng
+                    boolean nameChanged = c.getName() != null && !c.getName().trim().isEmpty() && !c.getName().equals(currentCompany.getName());
+                    boolean logoChanged = c.getLogo() != null && !c.getLogo().trim().isEmpty() && !c.getLogo().equals(currentCompany.getLogo());
 
-                    if (isNameChanged || isLogoChanged) {
-                        // Nếu có thay đổi quan trọng, lưu vào trường Pending và giữ nguyên trường chính
-                        if (isNameChanged) currentCompany.setPendingName(c.getName());
-                        if (isLogoChanged) currentCompany.setPendingLogo(c.getLogo());
-                        
+                    if (nameChanged || logoChanged) {
+                        if (nameChanged) currentCompany.setPendingName(c.getName());
+                        if (logoChanged) currentCompany.setPendingLogo(c.getLogo());
                         currentCompany.setUpdateReason(c.getUpdateReason());
                         
-                        // Nội dung thông báo chi tiết
-                        String msg = "Công ty " + currentCompany.getName() + " yêu cầu thay đổi: ";
-                        if (isNameChanged && isLogoChanged) msg += "Tên và Logo";
-                        else if (isNameChanged) msg += "Tên công ty";
-                        else msg += "Logo công ty";
-
-                        // Gửi thông báo cho admin
+                        // Thông báo cho admin
                         this.notificationService.createNotification(
                             this.userRepository.findByEmail("admin@gmail.com"), 
-                            "Yêu cầu thay đổi thông tin",
-                            msg,
+                            "Yêu cầu phê duyệt thay đổi",
+                            "Công ty " + currentCompany.getName() + " vừa cập nhật " + (nameChanged && logoChanged ? "Tên & Logo" : nameChanged ? "Tên" : "Logo"),
                             "COMPANY_UPDATE_REQUEST"
                         );
                     }
 
-                    // Các thông tin khác cập nhật ngay lập tức (không cần duyệt)
+                    // Cập nhật các thông tin phụ ngay lập tức
                     if (c.getDescription() != null) currentCompany.setDescription(c.getDescription());
                     if (c.getAddress() != null) currentCompany.setAddress(c.getAddress());
                     if (c.getWebsite() != null) currentCompany.setWebsite(c.getWebsite());
@@ -211,7 +205,9 @@ public class CompanyService {
                 }
             }
 
-            return this.companyRepository.save(currentCompany);
+            Company saved = this.companyRepository.save(currentCompany);
+            System.out.println(">>> [AFTER_SAVE] Name: " + saved.getName() + ", Logo: " + saved.getLogo());
+            return saved;
         }
         return null;
     }

@@ -79,6 +79,26 @@ public class FileController {
         return ResponseEntity.ok().body(res);
     }
 
+    @GetMapping("/files/download")
+    @ApiMessage("Download file from MinIO")
+    @Operation(summary = "Tải/Xem file", description = "Proxy file từ MinIO qua Backend để tránh lỗi CORS và đường dẫn cục bộ")
+    public ResponseEntity<org.springframework.core.io.Resource> download(
+            @RequestParam(name = "fileName") String fileName) throws Exception {
+        
+        java.io.InputStream inputStream = this.fileService.download(fileName);
+        org.springframework.core.io.Resource resource = new org.springframework.core.io.InputStreamResource(inputStream);
+
+        String contentType = "application/octet-stream";
+        if (fileName.toLowerCase().endsWith(".pdf")) contentType = "application/pdf";
+        else if (fileName.toLowerCase().endsWith(".jpg") || fileName.toLowerCase().endsWith(".jpeg")) contentType = "image/jpeg";
+        else if (fileName.toLowerCase().endsWith(".png")) contentType = "image/png";
+
+        return ResponseEntity.ok()
+                .contentType(org.springframework.http.MediaType.parseMediaType(contentType))
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileName + "\"")
+                .body(resource);
+    }
+
     @GetMapping("/files")
     @ApiMessage("Get file URL from MinIO")
     @Operation(summary = "Lấy link tải file", description = "Lấy đường dẫn URL trực tiếp từ MinIO để xem hoặc tải file")

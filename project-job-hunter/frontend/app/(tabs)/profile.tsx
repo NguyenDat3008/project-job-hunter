@@ -281,6 +281,14 @@ export default function ProfileTab() {
               />
               <View style={styles.divider} />
               <MenuItem 
+                icon="documents" 
+                label="Hồ sơ ứng tuyển" 
+                onPress={() => router.push('/hr/applications')}
+                iconColor={COLORS.primary}
+                bgColor="#F0FDF4"
+              />
+              <View style={styles.divider} />
+              <MenuItem 
                 icon="star" 
                 label="Gói dịch vụ Premium" 
                 description="Nâng cấp để ưu tiên hiển thị tin tuyển dụng"
@@ -333,7 +341,7 @@ export default function ProfileTab() {
                 label="Hồ sơ ứng tuyển" 
                 iconColor={COLORS.primary}
                 bgColor="#F0FDF4"
-                onPress={() => router.push('/admin/resumes')}
+                onPress={() => router.push('/hr/applications')}
               />
             </View>
           </>
