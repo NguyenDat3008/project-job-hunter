@@ -126,6 +126,26 @@ public class DatabaseInitializer implements CommandLineRunner {
             this.permissionRepository.saveAll(arr);
         }
 
+        // Add BLOGS permissions if missing
+        if (!this.permissionRepository.existsByModuleAndApiPathAndMethod("BLOGS", "/api/v1/blogs", "POST")) {
+            List<Permission> blogPerms = new ArrayList<>();
+            blogPerms.add(new Permission("Create a blog", "/api/v1/blogs", "POST", "BLOGS"));
+            blogPerms.add(new Permission("Update a blog", "/api/v1/blogs", "PUT", "BLOGS"));
+            blogPerms.add(new Permission("Delete a blog", "/api/v1/blogs/{id}", "DELETE", "BLOGS"));
+            blogPerms.add(new Permission("Get a blog by id", "/api/v1/blogs/{id}", "GET", "BLOGS"));
+            blogPerms.add(new Permission("Get blogs with pagination", "/api/v1/blogs", "GET", "BLOGS"));
+            this.permissionRepository.saveAll(blogPerms);
+
+            // Sync with SUPER_ADMIN
+            Role adminRole = this.roleRepository.findByName("SUPER_ADMIN");
+            if (adminRole != null) {
+                List<Permission> allPermissions = this.permissionRepository.findAll();
+                adminRole.setPermissions(allPermissions);
+                this.roleRepository.save(adminRole);
+                System.out.println(">>> UPDATED SUPER_ADMIN PERMISSIONS WITH BLOGS");
+            }
+        }
+
         if (countRoles == 0) {
             List<Permission> allPermissions = this.permissionRepository.findAll();
 

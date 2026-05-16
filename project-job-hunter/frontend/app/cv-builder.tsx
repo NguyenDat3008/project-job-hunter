@@ -9,6 +9,7 @@ import { useRouter } from 'expo-router';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import React, { useEffect, useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -34,6 +35,7 @@ const SECTION_TYPES = [
 
 export default function CVBuilderScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { state } = useAuth();
   const user = state.user;
 
@@ -65,8 +67,8 @@ export default function CVBuilderScreen() {
   const loadData = async () => {
     try {
       const [tpls, cvs] = await Promise.all([
-        cvService.getTemplates(),
-        cvService.getCVs(),
+        cvService.getTemplates() as Promise<CVTemplate[]>,
+        cvService.getCVs() as Promise<{ result: CV[] }>,
       ]);
       setTemplates(tpls);
       setExistingCVs(cvs.result);
@@ -281,7 +283,7 @@ export default function CVBuilderScreen() {
   if (loading) return <LoadingSpinner fullScreen message="Đang tải..." />;
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={[styles.container, { paddingTop: insets.top }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       {/* Progress Bar */}
       <View style={styles.progressBar}>
         {['Mẫu CV', 'Thông tin', 'Nội dung', 'Xem trước'].map((label, idx) => (

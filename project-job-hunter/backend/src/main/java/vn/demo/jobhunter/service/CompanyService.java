@@ -102,9 +102,9 @@ public class CompanyService {
 
             if (currentUser != null && currentUser.getRole() != null) {
                 String roleName = currentUser.getRole().getName();
-                System.out.println(">>> [DEBUG] handleUpdateCompany - User: " + email + ", Role: " + roleName);
+                System.out.println(">>> [DEBUG] handleUpdateCompany - User: " + email + ", Role: '" + roleName + "'");
 
-                if (roleName.equals("SUPER_ADMIN")) {
+                if (roleName != null && roleName.trim().equalsIgnoreCase("SUPER_ADMIN")) {
                     System.out.println(">>> [ADMIN_ACTION] Approving Company ID: " + c.getId());
                     System.out.println(">>> [BEFORE] Name: " + currentCompany.getName() + ", PendingName: " + currentCompany.getPendingName());
                     System.out.println(">>> [BEFORE] Logo: " + currentCompany.getLogo() + ", PendingLogo: " + currentCompany.getPendingLogo());

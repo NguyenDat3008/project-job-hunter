@@ -38,8 +38,8 @@ class CompanyService {
    * PUT /api/v1/companies
    * Update status or other info
    */
-  async updateStatus(id: number, active: boolean): Promise<Company> {
-    return api.put<Company>(ENDPOINTS.COMPANIES.UPDATE, { id, active });
+  async updateStatus(id: number, active: boolean, name: string): Promise<Company> {
+    return api.put<Company>(ENDPOINTS.COMPANIES.UPDATE, { id, active, name });
   }
 
   /**

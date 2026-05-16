@@ -139,6 +139,13 @@ export const ENDPOINTS = {
     SHARE: (id: string) => `/cv/${id}/share`,
     ANALYTICS: (id: string) => `/cv/${id}/analytics`,
   },
+
+  // Blog endpoints (Spring: BlogController)
+  BLOG: {
+    BASE: '/blogs',
+    LIST: '/blogs',
+    DETAIL: (id: number) => `/blogs/${id}`,
+  },
 };
 
 export default { API_CONFIG, ENDPOINTS };

@@ -161,7 +161,7 @@ export default function ProfileTab() {
         <View style={styles.profileCard}>
           <View style={styles.profileInfoRow}>
             <View style={styles.avatarWrap}>
-              {user?.company?.isPremium ? (
+              {(user?.company?.isPremium || user?.isPremiumCandidate) ? (
                 <LinearGradient
                   colors={['#FDE047', '#F59E0B', '#B45309']}
                   style={styles.vipAvatarGradient}
@@ -182,7 +182,7 @@ export default function ProfileTab() {
             <View style={styles.userInfo}>
               <View style={styles.nameRow}>
                 <Text style={styles.userName}>{user?.name || 'Người dùng'}</Text>
-                {user?.company?.isPremium && (
+                {(user?.company?.isPremium || user?.isPremiumCandidate) && (
                   <Ionicons name="checkmark-circle" size={18} color="#F59E0B" style={{ marginLeft: 4 }} />
                 )}
               </View>
@@ -193,12 +193,14 @@ export default function ProfileTab() {
                     {isAdmin ? 'Quản trị viên' : isCompanyRep ? 'Đại diện công ty' : isHR ? 'Nhà tuyển dụng' : 'Ứng viên'}
                   </Text>
                 </View>
-                {user?.company?.isPremium && (
+                {(user?.company?.isPremium || user?.isPremiumCandidate) && (
                   <LinearGradient
                     colors={['#F59E0B', '#B45309']}
                     style={styles.premiumTierTag}
                   >
-                    <Text style={styles.premiumTierText}>{user?.company?.premiumTier || 'PRO'}</Text>
+                    <Text style={styles.premiumTierText}>
+                      {user?.isPremiumCandidate ? 'PREMIUM' : (user?.company?.premiumTier || 'PRO')}
+                    </Text>
                   </LinearGradient>
                 )}
               </View>
@@ -265,6 +267,14 @@ export default function ProfileTab() {
                 iconColor={COLORS.primary}
                 bgColor="#F0FDF4"
               />
+              <View style={styles.divider} />
+              <MenuItem 
+                icon="newspaper" 
+                label="Quản lý Blog" 
+                onPress={() => router.push('/admin/blog-management')}
+                iconColor={COLORS.primary}
+                bgColor="#F0FDF4"
+              />
             </View>
           </>
         )}
@@ -319,12 +329,12 @@ export default function ProfileTab() {
               />
               <View style={styles.divider} />
               <MenuItem 
-                icon="star" 
+                icon="diamond" 
                 label="Gói dịch vụ Premium" 
                 description="Nâng cấp để ưu tiên hiển thị tin tuyển dụng"
                 onPress={() => router.push('/hr/premium-plans' as any)}
-                iconColor="#EAB308"
-                bgColor="#FEF9C3"
+                iconColor="#F59E0B"
+                bgColor="#FFFBEB"
                 rightElement={user?.company?.isPremium ? (
                   <View style={styles.activeBadge}>
                     <Text style={styles.activeBadgeText}>ĐANG BẬT</Text>
@@ -351,10 +361,10 @@ export default function ProfileTab() {
               />
               <View style={styles.divider} />
               <MenuItem 
-                icon="star" 
+                icon="diamond" 
                 label="Mua gói Premium" 
-                iconColor="#EAB308"
-                bgColor="#FEF9C3"
+                iconColor="#F59E0B"
+                bgColor="#FFFBEB"
                 onPress={() => router.push('/hr/premium-plans' as any)}
                 rightElement={user?.company?.isPremium ? (
                   <View style={styles.activeBadge}>
@@ -396,6 +406,20 @@ export default function ProfileTab() {
                 onPress={() => router.push('/register-company')}
                 iconColor={COLORS.primary}
                 bgColor="#F0FDF4"
+              />
+              <View style={styles.divider} />
+              <MenuItem 
+                icon="diamond" 
+                label="Nâng cấp Premium" 
+                description="Huy hiệu VIP và ưu tiên tìm việc"
+                onPress={() => router.push('/candidate/premium-plans')}
+                iconColor="#F59E0B"
+                bgColor="#FFFBEB"
+                rightElement={user?.isPremiumCandidate ? (
+                  <View style={styles.activeBadge}>
+                    <Text style={styles.activeBadgeText}>VIP</Text>
+                  </View>
+                ) : null}
               />
             </View>
           </>

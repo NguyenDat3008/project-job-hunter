@@ -31,6 +31,10 @@ public class ResLoginDTO {
         private String address;
         private java.util.List<String> skills;
         private UserCompany company;
+
+        @JsonProperty("isPremiumCandidate")
+        private boolean isPremiumCandidate;
+        private java.time.Instant premiumCandidateExpiryDate;
     }
 
     @Getter

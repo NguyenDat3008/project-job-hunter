@@ -58,6 +58,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         address: loginUser.address,
         skills: loginUser.skills,
         company: loginUser.company,
+        isPremiumCandidate: loginUser.isPremiumCandidate,
+        premiumCandidateExpiryDate: loginUser.premiumCandidateExpiryDate,
       };
 
       // Access Token → SecureStore

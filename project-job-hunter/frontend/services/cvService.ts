@@ -43,26 +43,23 @@ class CVService {
   /**
    * GET /api/v1/cv/templates (mock-only endpoint hiện tại)
    */
-  async getTemplates() {
-    try {
-      return await api.get(ENDPOINTS.CV.TEMPLATES);
-    } catch {
-      // Fallback mock data nếu endpoint chưa tồn tại
-      return [
-        {
-          id: 'tpl-modern',
-          name: 'Hiện đại',
-          description: 'Mẫu thiết kế sạch sẽ, chuyên nghiệp',
-          colors: ['#1a56db', '#057a55', '#c81e1e', '#1e293b'],
-        },
-        {
-          id: 'tpl-classic',
-          name: 'Truyền thống',
-          description: 'Mẫu chuẩn cho các ngành nghề truyền thống',
-          colors: ['#333333', '#1e3a8a', '#374151'],
-        },
-      ];
-    }
+  async getTemplates(): Promise<CVTemplate[]> {
+    // Hiện tại Backend chưa có endpoint /api/v1/cv/templates, 
+    // trả về mock data trực tiếp để tránh lỗi 404 trong log
+    return [
+      {
+        id: 'tpl-modern',
+        name: 'Hiện đại',
+        description: 'Mẫu thiết kế sạch sẽ, chuyên nghiệp',
+        colors: ['#1a56db', '#057a55', '#c81e1e', '#1e293b'],
+      },
+      {
+        id: 'tpl-classic',
+        name: 'Truyền thống',
+        description: 'Mẫu chuẩn cho các ngành nghề truyền thống',
+        colors: ['#333333', '#1e3a8a', '#374151'],
+      },
+    ];
   }
 
   /**

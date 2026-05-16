@@ -96,6 +96,7 @@ const AdminDashboard = () => {
               console.log('>>> [DASHBOARD] Approving company ID:', company.id);
               await api.put(ENDPOINTS.COMPANIES.UPDATE, {
                 id: company.id,
+                name: company.name,
                 active: true,
                 isPremium: company.isPremium,
                 premiumTier: company.premiumTier,
@@ -106,7 +107,8 @@ const AdminDashboard = () => {
               fetchData();
             } catch (error: any) {
               console.error('>>> [DASHBOARD] Approve error:', error);
-              Alert.alert('Lỗi', error.message || 'Không thể phê duyệt.');
+              const msg = error.response?.data?.message || error.message || 'Không thể phê duyệt.';
+              Alert.alert('Lỗi', msg);
             }
           },
         },

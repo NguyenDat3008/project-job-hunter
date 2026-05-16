@@ -52,11 +52,11 @@ export default function HomeTab() {
   if (loading) return <LoadingSpinner fullScreen message="Đang tải..." />;
 
   const categories = [
-    { title: 'Việc làm', img: require('../../assets/images/ViecLam.jpg'), route: '/(tabs)' },
-    { title: 'TopCV Pro', img: require('../../assets/images/TopCVpro.jpg'), route: '/premium' },
+    { title: 'Việc làm', img: require('../../assets/images/ViecLam.jpg'), route: '/suggested-jobs' },
+    { title: 'TopCV Pro', img: require('../../assets/images/TopCVpro.jpg'), route: '/topcv-pro-jobs' },
     { title: 'Tạo CV', img: require('../../assets/images/Tạo CV.jpg'), route: '/cv-builder' },
-    { title: 'Công cụ', img: require('../../assets/images/Công cụ.jpg'), route: '/account-settings' },
-    { title: 'Blog', img: require('../../assets/images/Blog.jpg'), route: null },
+    { title: 'Công cụ', img: require('../../assets/images/Công cụ.jpg'), route: '/tax-calculator' },
+    { title: 'Blog', img: require('../../assets/images/Blog.jpg'), route: '/blog' },
   ];
 
   const bannerImage = require('../../assets/images/Banner trên cùng mới.jpg');

@@ -85,10 +85,12 @@ public class PaymentController {
                         .body(Map.of("error", "Bạn chưa đăng nhập."));
             }
 
+            /* 
             if (currentUser.getCompany() == null) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of("error", "Chỉ tài khoản công ty mới có thể mua gói Premium."));
             }
+            */
 
             // 2. Validate tier
             String tier = body.get("tier");
@@ -111,7 +113,11 @@ public class PaymentController {
             response.put("status", order.getStatus());
             response.put("expiredAt", order.getExpiredAt() != null ? order.getExpiredAt().toString() : null);
 
-            return ResponseEntity.ok(response);
+            vn.demo.jobhunter.domain.response.RestResponse<Object> res = new vn.demo.jobhunter.domain.response.RestResponse<>();
+            res.setStatusCode(HttpStatus.OK.value());
+            res.setData(response);
+            res.setMessage("Order created successfully");
+            return ResponseEntity.ok(res);
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -137,7 +143,11 @@ public class PaymentController {
             this.paymentService.handleCallback(body, signature, timestamp);
 
             System.out.println("[BE] ✅ Payment callback processed successfully");
-            return ResponseEntity.ok(Map.of("message", "Callback processed successfully"));
+            vn.demo.jobhunter.domain.response.RestResponse<Object> res = new vn.demo.jobhunter.domain.response.RestResponse<>();
+            res.setStatusCode(HttpStatus.OK.value());
+            res.setMessage("Callback processed successfully");
+            res.setData(Map.of("message", "Callback processed successfully"));
+            return ResponseEntity.ok(res);
 
         } catch (Exception e) {
             System.out.println("[BE] ❌ Payment callback error: " + e.getMessage());
@@ -164,7 +174,11 @@ public class PaymentController {
         response.put("tier", order.getTier());
         response.put("paidAt", order.getPaidAt() != null ? order.getPaidAt().toString() : null);
 
-        return ResponseEntity.ok(response);
+        vn.demo.jobhunter.domain.response.RestResponse<Object> res = new vn.demo.jobhunter.domain.response.RestResponse<>();
+        res.setStatusCode(HttpStatus.OK.value());
+        res.setData(response);
+        res.setMessage("Order status fetched");
+        return ResponseEntity.ok(res);
     }
 
     // === MOCK GATEWAY ENDPOINTS (FOR TESTING) ===
@@ -186,6 +200,7 @@ public class PaymentController {
     }
 
     @PostMapping("/mock/simulate-success/{orderCode}")
+    @ApiMessage("Simulate payment success")
     @Operation(summary = "Mock: Giả lập thanh toán thành công", description = "Gọi callback để kích hoạt Premium cho một đơn hàng")
     public ResponseEntity<?> simulateSuccess(@PathVariable String orderCode) {
         Order order = this.paymentService.getOrderByCode(orderCode);

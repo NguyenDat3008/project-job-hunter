@@ -22,6 +22,8 @@ const formatSalary = (salary: number): string => {
 
 import { LinearGradient } from 'expo-linear-gradient';
 
+import { API_CONFIG } from '@/constants/endpoints';
+
 const JobCard: React.FC<JobCardProps> = ({ 
   job, 
   onPress, 
@@ -31,12 +33,19 @@ const JobCard: React.FC<JobCardProps> = ({
 }) => {
   const isPremium = job.isPremium;
 
+  const getLogoUri = () => {
+    const logo = job.company?.logo;
+    if (!logo) return null;
+    if (logo.startsWith('http')) return logo;
+    return `${API_CONFIG.BASE_URL}/${API_CONFIG.VERSION}/files/download?fileName=${logo}`;
+  };
+
   const CardContent = (
     <View style={styles.contentWrapper}>
       <View style={styles.header}>
         <View style={styles.logoContainer}>
-          {job.company?.logo ? (
-            <Image source={{ uri: job.company.logo }} style={styles.logo} />
+          {getLogoUri() ? (
+            <Image source={{ uri: getLogoUri()! }} style={styles.logo} />
           ) : (
             <View style={styles.logoPlaceholder}>
               <Text style={styles.logoLetter}>

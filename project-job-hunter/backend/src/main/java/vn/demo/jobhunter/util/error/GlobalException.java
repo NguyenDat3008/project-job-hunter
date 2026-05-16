@@ -37,7 +37,13 @@ public class GlobalException {
     public ResponseEntity<RestResponse<Object>> handleIdException(Exception ex) {
         RestResponse<Object> res = new RestResponse<Object>();
         res.setStatusCode(HttpStatus.BAD_REQUEST.value());
-        res.setMessage(ex.getMessage());
+        
+        String message = ex.getMessage();
+        if (ex instanceof BadCredentialsException) {
+            message = "Email hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại.";
+        }
+        
+        res.setMessage(message);
         res.setError("Exception occurs...");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
     }

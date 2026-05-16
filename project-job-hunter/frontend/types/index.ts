@@ -36,6 +36,8 @@ export interface User {
     isPremium?: boolean;
     premiumTier?: string;
   };
+  isPremiumCandidate?: boolean;
+  premiumCandidateExpiryDate?: string;
 }
 
 // ─── Auth State ───────────────────────────────────────────────────────────────
@@ -90,6 +92,8 @@ export interface LoginResponse {
       isPremium?: boolean;
       premiumTier?: string;
     };
+    isPremiumCandidate?: boolean;
+    premiumCandidateExpiryDate?: string;
   };
 }
 

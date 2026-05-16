@@ -195,7 +195,12 @@ export default function ApplicationsTab() {
                 </View>
               ) : (
                 filtered.map(app => {
-                  const config = STATUS_CONFIG[app.status];
+                  const config = STATUS_CONFIG[app.status] || {
+                    label: 'Không xác định',
+                    color: '#6B7280',
+                    bgColor: '#F3F4F6',
+                    icon: 'help-circle-outline'
+                  };
                   return (
                     <TouchableOpacity
                       key={app.id}

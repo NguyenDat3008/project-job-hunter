@@ -28,6 +28,7 @@ public class PaymentService {
 
     private final OrderRepository orderRepository;
     private final PremiumService premiumService;
+    private final vn.demo.jobhunter.repository.UserRepository userRepository;
     private final ObjectMapper objectMapper;
     private final RestTemplate restTemplate;
 
@@ -40,9 +41,10 @@ public class PaymentService {
     @Value("${payment.gateway.callback-url}")
     private String callbackUrl;
 
-    public PaymentService(OrderRepository orderRepository, PremiumService premiumService) {
+    public PaymentService(OrderRepository orderRepository, PremiumService premiumService, vn.demo.jobhunter.repository.UserRepository userRepository) {
         this.orderRepository = orderRepository;
         this.premiumService = premiumService;
+        this.userRepository = userRepository;
         this.objectMapper = new ObjectMapper();
         this.restTemplate = new RestTemplate();
     }
@@ -162,6 +164,17 @@ public class PaymentService {
                 int days = tier.contains("YEAR") || tier.equals("ENTERPRISE") ? 365 : 30;
                 this.premiumService.subscribePremium(order.getCompany(), tier, days);
                 System.out.println("[BE] Premium " + tier + " activated for company: " + order.getCompany().getName());
+            } else {
+                // Kích hoạt cho Cá nhân (Ứng viên)
+                User user = order.getUser();
+                if (user != null) {
+                    user.setIsPremiumCandidate(true);
+                    String tier = order.getTier().toUpperCase();
+                    int days = tier.contains("YEAR") ? 365 : 30;
+                    user.setPremiumCandidateExpiryDate(Instant.now().plus(days, java.time.temporal.ChronoUnit.DAYS));
+                    this.userRepository.save(user);
+                    System.out.println("[BE] Premium activated for candidate: " + user.getEmail());
+                }
             }
         } else {
             order.setStatus("FAILED");

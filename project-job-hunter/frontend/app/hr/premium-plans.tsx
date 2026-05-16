@@ -71,35 +71,71 @@ export default function PremiumPlans() {
   const { user } = useAuthStore();
   const [loading, setLoading] = useState(false);
 
+  const getTierRank = (tier: string | undefined) => {
+    if (!tier || tier === 'BASIC') return 0;
+    if (tier === 'PRO' || tier === 'MONTHLY') return 1;
+    if (tier === 'ENTERPRISE' || tier === 'YEARLY') return 2;
+    return 0;
+  };
+
   const handleSubscribe = async (pkg: typeof PACKAGES[0]) => {
-    if (pkg.id === 'BASIC') {
-      Alert.alert('Thông báo', 'Bạn đang sử dụng gói Cơ bản mặc định.');
+    const currentTier = user?.company?.isPremium ? user?.company?.premiumTier : 'BASIC';
+    const currentRank = getTierRank(currentTier);
+    const targetRank = getTierRank(pkg.id);
+
+    if (currentRank === targetRank) {
+      Alert.alert('Thông báo', `Bạn đang sử dụng ${pkg.name}.`);
       return;
     }
 
+    if (currentRank > targetRank) {
+      Alert.alert('Thông báo', 'Bạn không thể hạ cấp gói dịch vụ khi gói hiện tại còn hiệu lực.');
+      return;
+    }
+
+    // Upgrade logic
+    const upgradeMsg = currentRank === 0 
+      ? `Bạn chọn đăng ký ${pkg.name}.`
+      : `Bạn đang sử dụng gói ${currentTier}. Bạn có chắc muốn nâng cấp lên ${pkg.name}?`;
+
     Alert.alert(
       'Xác nhận đăng ký',
-      `Bạn chọn đăng ký ${pkg.name}. Bạn sẽ được chuyển hướng đến cổng thanh toán VNPay.`,
+      upgradeMsg,
       [
         { text: 'Hủy', style: 'cancel' },
         { 
-          text: 'Thanh toán ngay', 
+          text: 'Tiến hành', 
           onPress: async () => {
             try {
               setLoading(true);
-              // Call API to create order
               const res = await api.post('/payment/create-order', {
                 tier: pkg.id === 'ENTERPRISE' ? 'YEARLY' : 'MONTHLY',
                 packageId: pkg.id
               }) as any;
               
               if (res.qrUrl) {
-                // In real app, we would open a WebView or deep link to Banking App
-                // Here we show the payment info
                 Alert.alert(
                   'Đơn hàng đã tạo',
-                  `Mã đơn: ${res.orderCode}\nSố tiền: ${res.amount.toLocaleString()}đ\n\n(Trong bản demo, Admin sẽ duyệt Premium cho bạn ngay lập tức)`,
-                  [{ text: 'OK', onPress: () => router.back() }]
+                  `Mã đơn: ${res.orderCode}\nSố tiền: ${res.amount.toLocaleString()}đ\n\nBạn có thể nhấn nút dưới đây để giả lập thanh toán test.`,
+                  [
+                    { text: 'Đóng', style: 'cancel' },
+                    { 
+                      text: 'Thanh toán giả lập (TEST)', 
+                      onPress: async () => {
+                        try {
+                          setLoading(true);
+                          await api.post(`/payment/mock/simulate-success/${res.orderCode}`);
+                          Alert.alert('Thành công', 'Nâng cấp thành công! Vui lòng đăng nhập lại để cập nhật quyền lợi.', [
+                            { text: 'OK', onPress: () => router.push('/(tabs)/profile') }
+                          ]);
+                        } catch (e: any) {
+                          Alert.alert('Lỗi', 'Không thể giả lập: ' + e.message);
+                        } finally {
+                          setLoading(false);
+                        }
+                      }
+                    }
+                  ]
                 );
               }
             } catch (error: any) {
@@ -170,20 +206,31 @@ export default function PremiumPlans() {
                 ))}
               </View>
               
-              <TouchableOpacity 
-                style={[
-                  styles.subscribeBtn, 
-                  { backgroundColor: pkg.id === 'BASIC' && !user?.company?.isPremium ? '#94A3B8' : (user?.company?.premiumTier === pkg.id ? '#10B981' : pkg.color) }
-                ]}
-                onPress={() => handleSubscribe(pkg)}
-                disabled={loading || (user?.company?.isPremium && user?.company?.premiumTier === pkg.id)}
-              >
-                <Text style={styles.subscribeBtnText}>
-                  {user?.company?.isPremium 
-                    ? (user?.company?.premiumTier === pkg.id ? 'Đang sử dụng' : 'Nâng cấp ngay')
-                    : (pkg.id === 'BASIC' ? 'Đang sử dụng' : 'Đăng ký ngay')}
-                </Text>
-              </TouchableOpacity>
+              {(() => {
+                const currentTier = user?.company?.isPremium ? user?.company?.premiumTier : 'BASIC';
+                const currentRank = getTierRank(currentTier);
+                const targetRank = getTierRank(pkg.id);
+                const isActive = currentRank === targetRank;
+                const isDowngrade = currentRank > targetRank;
+
+                return (
+                  <TouchableOpacity 
+                    style={[
+                      styles.subscribeBtn, 
+                      { 
+                        backgroundColor: isActive ? '#10B981' : (isDowngrade ? '#94A3B8' : pkg.color),
+                        opacity: loading ? 0.6 : 1
+                      }
+                    ]}
+                    onPress={() => handleSubscribe(pkg)}
+                    disabled={loading || isActive || isDowngrade}
+                  >
+                    <Text style={styles.subscribeBtnText}>
+                      {isActive ? 'Đang sử dụng' : (isDowngrade ? 'Đã sở hữu' : 'Nâng cấp ngay')}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })()}
             </View>
           ))}
         </View>

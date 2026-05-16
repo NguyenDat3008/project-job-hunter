@@ -18,9 +18,14 @@ public class FileService {
         String originalName = file.getOriginalFilename();
         String finalName = System.currentTimeMillis() + "-" + originalName;
 
-        // Nếu là hình ảnh, thực hiện tối ưu hóa
+        // 1. Tối ưu hóa Hình ảnh (Logo, Blog Banner)
         if (contentType != null && contentType.startsWith("image/")) {
             return storeOptimizedImage(file, finalName);
+        }
+
+        // 2. Tối ưu hóa PDF (CV)
+        if (contentType != null && contentType.equals("application/pdf")) {
+            return storeOptimizedPdf(file, finalName);
         }
 
         minioService.uploadFile(finalName, file.getInputStream(), file.getSize(), contentType);
@@ -28,43 +33,48 @@ public class FileService {
     }
 
     private String storeOptimizedImage(MultipartFile file, String fileName) throws Exception {
-        java.awt.image.BufferedImage originalImage = javax.imageio.ImageIO.read(file.getInputStream());
-        if (originalImage == null) {
-            // Không đọc được image, upload file gốc
-            minioService.uploadFile(fileName, file.getInputStream(), file.getSize(), file.getContentType());
-            return fileName;
-        }
-
-        // 1. Resize nếu quá lớn (max width 800px)
-        int targetWidth = 800;
-        int targetHeight = (int) (originalImage.getHeight() * ((double) targetWidth / originalImage.getWidth()));
-        if (originalImage.getWidth() < targetWidth) {
-            targetWidth = originalImage.getWidth();
-            targetHeight = originalImage.getHeight();
-        }
-
-        java.awt.Image resultingImage = originalImage.getScaledInstance(targetWidth, targetHeight, java.awt.Image.SCALE_SMOOTH);
-        java.awt.image.BufferedImage outputImage = new java.awt.image.BufferedImage(targetWidth, targetHeight, java.awt.image.BufferedImage.TYPE_INT_RGB);
-        outputImage.getGraphics().drawImage(resultingImage, 0, 0, null);
-
-        // 2. Nén JPEG (0.7 quality) để tiết kiệm dung lượng
         java.io.ByteArrayOutputStream os = new java.io.ByteArrayOutputStream();
-        javax.imageio.IIOImage iioImage = new javax.imageio.IIOImage(outputImage, null, null);
-        javax.imageio.ImageWriter writer = javax.imageio.ImageIO.getImageWritersByFormatName("jpg").next();
-        javax.imageio.ImageWriteParam param = writer.getDefaultWriteParam();
-        param.setCompressionMode(javax.imageio.ImageWriteParam.MODE_EXPLICIT);
-        param.setCompressionQuality(0.7f);
-
-        try (javax.imageio.stream.ImageOutputStream ios = javax.imageio.ImageIO.createImageOutputStream(os)) {
-            writer.setOutput(ios);
-            writer.write(null, iioImage, param);
-        }
-        writer.dispose();
+        
+        // Dùng Thumbnailator để resize và nén
+        // Max width 1200px cho blog, 400px cho logo (tạm thời để 1000px chung)
+        net.coobird.thumbnailator.Thumbnails.of(file.getInputStream())
+            .size(1200, 1200)
+            .outputQuality(0.75) // Chất lượng 75% là điểm cân bằng tốt nhất
+            .outputFormat("jpg")
+            .toOutputStream(os);
 
         byte[] imageBytes = os.toByteArray();
         minioService.uploadFile(fileName, new java.io.ByteArrayInputStream(imageBytes), imageBytes.length, "image/jpeg");
         
+        System.out.println("[STORAGE] Optimized image: " + fileName + " (" + file.getSize() + " -> " + imageBytes.length + " bytes)");
         return fileName;
+    }
+
+    private String storeOptimizedPdf(MultipartFile file, String fileName) throws Exception {
+        // PDFBox 3.0 optimization
+        try (org.apache.pdfbox.pdmodel.PDDocument document = org.apache.pdfbox.Loader.loadPDF(file.getBytes())) {
+            // Đặt version về 1.4 để tương thích rộng
+            document.setVersion(1.4f);
+            
+            java.io.ByteArrayOutputStream os = new java.io.ByteArrayOutputStream();
+            document.save(os);
+            
+            byte[] pdfBytes = os.toByteArray();
+            
+            // Nếu nén xong mà to hơn gốc thì lấy gốc
+            if (pdfBytes.length >= file.getSize()) {
+                minioService.uploadFile(fileName, file.getInputStream(), file.getSize(), "application/pdf");
+                return fileName;
+            }
+
+            minioService.uploadFile(fileName, new java.io.ByteArrayInputStream(pdfBytes), pdfBytes.length, "application/pdf");
+            System.out.println("[STORAGE] Optimized PDF: " + fileName + " (" + file.getSize() + " -> " + pdfBytes.length + " bytes)");
+            return fileName;
+        } catch (Exception e) {
+            // Lỗi thì cứ upload bản gốc cho an toàn
+            minioService.uploadFile(fileName, file.getInputStream(), file.getSize(), "application/pdf");
+            return fileName;
+        }
     }
 
     public java.io.InputStream download(String fileName) throws Exception {

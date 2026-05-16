@@ -26,14 +26,16 @@ export default function AdminCompanyApproval() {
     loadCompanies();
   }, []);
 
-  const handleToggleStatus = async (id: number, currentStatus: boolean) => {
+  const handleToggleStatus = async (id: number, currentStatus: boolean, hasPending: boolean, name: string) => {
     try {
-      const newStatus = !currentStatus;
-      await companyService.updateStatus(id, newStatus);
-      Alert.alert('Thành công', `Đã ${newStatus ? 'kích hoạt' : 'khóa'} công ty`);
+      // Nếu có thay đổi đang chờ duyệt, luôn gửi active: true
+      const newStatus = hasPending ? true : !currentStatus;
+      await companyService.updateStatus(id, newStatus, name);
+      Alert.alert('Thành công', hasPending ? 'Đã phê duyệt thay đổi' : `Đã ${newStatus ? 'kích hoạt' : 'khóa'} công ty`);
       loadCompanies(); // Reload list
-    } catch (error) {
-      Alert.alert('Lỗi', 'Không thể cập nhật trạng thái');
+    } catch (error: any) {
+      const msg = error.response?.data?.message || error.message || 'Không thể cập nhật trạng thái';
+      Alert.alert('Lỗi', msg);
     }
   };
 
@@ -73,7 +75,7 @@ export default function AdminCompanyApproval() {
         </TouchableOpacity>
         <TouchableOpacity 
           style={[styles.button, { backgroundColor: item.active && !hasPendingChanges ? COLORS.error : COLORS.primary }]}
-          onPress={() => handleToggleStatus(item.id, !!item.active)}
+          onPress={() => handleToggleStatus(item.id, !!item.active, !!hasPendingChanges, item.name)}
         >
           <Text style={styles.buttonText}>
             {hasPendingChanges ? 'Duyệt' : (item.active ? 'Khóa' : 'Duyệt')}

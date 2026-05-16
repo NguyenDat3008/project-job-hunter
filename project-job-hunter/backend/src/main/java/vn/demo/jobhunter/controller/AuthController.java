@@ -91,6 +91,8 @@ public class AuthController {
             userLogin.setAge(currentUserDB.getAge());
             userLogin.setGender(currentUserDB.getGender());
             userLogin.setAddress(currentUserDB.getAddress());
+            userLogin.setPremiumCandidate(currentUserDB.getIsPremiumCandidate() != null ? currentUserDB.getIsPremiumCandidate() : false);
+            userLogin.setPremiumCandidateExpiryDate(currentUserDB.getPremiumCandidateExpiryDate());
             // Map company
             if (currentUserDB.getCompany() != null) {
                 userLogin.setCompany(new ResLoginDTO.UserCompany(
@@ -152,6 +154,8 @@ public class AuthController {
             userLogin.setEmail(currentUserDB.getEmail());
             userLogin.setName(currentUserDB.getName());
             userLogin.setRole(currentUserDB.getRole());
+            userLogin.setPremiumCandidate(currentUserDB.getIsPremiumCandidate() != null ? currentUserDB.getIsPremiumCandidate() : false);
+            userLogin.setPremiumCandidateExpiryDate(currentUserDB.getPremiumCandidateExpiryDate());
             
             // Map company
             if (currentUserDB.getCompany() != null) {
@@ -199,6 +203,8 @@ public class AuthController {
             userLogin.setAge(currentUserDB.getAge());
             userLogin.setGender(currentUserDB.getGender());
             userLogin.setAddress(currentUserDB.getAddress());
+            userLogin.setPremiumCandidate(currentUserDB.getIsPremiumCandidate() != null ? currentUserDB.getIsPremiumCandidate() : false);
+            userLogin.setPremiumCandidateExpiryDate(currentUserDB.getPremiumCandidateExpiryDate());
             // Map company
             if (currentUserDB.getCompany() != null) {
                 userLogin.setCompany(new ResLoginDTO.UserCompany(
