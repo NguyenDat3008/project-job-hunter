@@ -85,4 +85,14 @@ public class NotificationService {
             this.notificationRepository.saveAll(notifications);
         }
     }
+
+    @org.springframework.transaction.annotation.Transactional
+    public void deleteNotification(long id, User user) {
+        this.notificationRepository.deleteByIdAndUser(id, user);
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public void deleteReadNotifications(User user) {
+        this.notificationRepository.deleteByUserAndIsRead(user, true);
+    }
 }

@@ -1,4 +1,4 @@
-// Notifications Tab - Matching example6.jpg exactly
+// Notifications Tab - Redesigned to support single delete & clear-read
 import { COLORS, SHADOW } from '@constants/theme';
 import { notificationService } from '@services/notificationService';
 import { NotificationGroup, NotificationItem } from '@/types/notification.types';
@@ -13,6 +13,8 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Alert,
+  RefreshControl,
 } from 'react-native';
 import { LoadingSpinner, LoginRequired } from '@components/index';
 import { Ionicons } from '@expo/vector-icons';
@@ -38,16 +40,10 @@ export default function NotificationsTab() {
   const { isAuthenticated } = useAuthStore();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(isAuthenticated);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      loadNotifications();
-      // Mark all as read when entering the screen
-      notificationService.markAllAsRead();
-    }
-  }, [isAuthenticated]);
-
-  const loadNotifications = async () => {
+  const loadNotifications = async (showLoadingSpinner = false) => {
+    if (showLoadingSpinner) setLoading(true);
     try {
       const result = await notificationService.getNotifications({ page: 1, limit: 50 });
       setNotifications(result.data || []);
@@ -55,7 +51,21 @@ export default function NotificationsTab() {
       console.error('Error loading notifications:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadNotifications(true);
+      // Mark all as read when entering the screen
+      notificationService.markAllAsRead();
+    }
+  }, [isAuthenticated]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadNotifications(false);
   };
 
   const handlePress = async (notification: NotificationItem) => {
@@ -91,40 +101,95 @@ export default function NotificationsTab() {
       default:
         // System notifications or unknown types
         if (notification.data?.url) {
-          // Xử lý mở URL nếu có (ví dụ link bài viết)
           console.log('Open URL:', notification.data.url);
         }
         break;
     }
   };
 
+  const handleDeleteSingle = (id: string, e: any) => {
+    e.stopPropagation(); // Ngăn chặn sự kiện chạm thẻ mở chi tiết hoặc markRead
+    Alert.alert(
+      'Xóa thông báo',
+      'Bạn có chắc chắn muốn xóa thông báo này?',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Xóa',
+          style: 'destructive',
+          onPress: async () => {
+            const success = await notificationService.deleteNotification(id);
+            if (success) {
+              setNotifications(prev => prev.filter(n => n.id !== id));
+            } else {
+              Alert.alert('Lỗi', 'Không thể xóa thông báo này.');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleCleanRead = () => {
+    Alert.alert(
+      'Xóa thông báo đã đọc',
+      'Bạn có chắc chắn muốn xóa tất cả thông báo đã đọc khỏi danh sách?',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Xóa tất cả',
+          style: 'destructive',
+          onPress: async () => {
+            const success = await notificationService.deleteReadNotifications();
+            if (success) {
+              setNotifications(prev => prev.filter(n => !n.read));
+              Alert.alert('Thành công', 'Đã xóa tất cả thông báo đã đọc.');
+            } else {
+              Alert.alert('Lỗi', 'Không thể dọn dẹp các thông báo.');
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const renderItem = ({ item }: { item: NotificationItem }) => (
-    <TouchableOpacity
-      style={[styles.notifItem, !item.read && styles.notifUnread]}
-      onPress={() => handlePress(item)}
-      activeOpacity={0.7}
-    >
-      <View style={styles.logoContainer}>
-        <View style={styles.logoBorder}>
-          <Image
-            source={require('../../assets/images/icon.png')}
-            style={styles.companyLogo}
-            resizeMode="contain"
-          />
+    <View style={[styles.notifWrapper, !item.read && styles.notifUnread]}>
+      <TouchableOpacity
+        style={styles.notifItem}
+        onPress={() => handlePress(item)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.logoContainer}>
+          <View style={styles.logoBorder}>
+            <Image
+              source={require('../../assets/images/icon.png')}
+              style={styles.companyLogo}
+              resizeMode="contain"
+            />
+          </View>
         </View>
-      </View>
-      <View style={styles.notifContent}>
-        <Text style={styles.notifTitle} numberOfLines={2}>
-          {item.title}
-        </Text>
-        <Text style={styles.notifBody} numberOfLines={3}>
-          {item.body}
-        </Text>
-        <Text style={styles.notifTime}>
-          {getTimeAgo(item.createdAt)}
-        </Text>
-      </View>
-    </TouchableOpacity>
+        <View style={styles.notifContent}>
+          <Text style={styles.notifTitle} numberOfLines={2}>
+            {item.title}
+          </Text>
+          <Text style={styles.notifBody} numberOfLines={3}>
+            {item.body}
+          </Text>
+          <Text style={styles.notifTime}>
+            {getTimeAgo(item.createdAt)}
+          </Text>
+        </View>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.deleteBtn}
+        onPress={(e) => handleDeleteSingle(item.id, e)}
+        activeOpacity={0.6}
+      >
+        <Ionicons name="trash-outline" size={18} color="#94A3B8" />
+      </TouchableOpacity>
+    </View>
   );
 
   if (!isAuthenticated) return <LoginRequired message="Bạn cần đăng nhập để xem thông báo" />;
@@ -132,17 +197,23 @@ export default function NotificationsTab() {
     return <LoadingSpinner fullScreen message="Đang tải..." />;
   }
 
+  const hasReadNotifications = notifications.some(n => n.read);
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
       
-      {/* Header matching Example 6 */}
+      {/* Header matching premium spec */}
       <View style={styles.header}>
         <View style={styles.headerSpacer} />
         <Text style={styles.headerTitle}>Thông báo</Text>
-        <TouchableOpacity style={styles.headerIcon}>
-          <Ionicons name="list" size={24} color={COLORS.text.primary} />
-        </TouchableOpacity>
+        {hasReadNotifications ? (
+          <TouchableOpacity style={styles.headerIcon} onPress={handleCleanRead} activeOpacity={0.7}>
+            <Ionicons name="trash-bin-outline" size={20} color="#EF4444" />
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.headerSpacer} />
+        )}
       </View>
 
       <FlatList
@@ -154,8 +225,16 @@ export default function NotificationsTab() {
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={
           <View style={styles.empty}>
+            <Ionicons name="notifications-off-outline" size={48} color="#CBD5E1" />
             <Text style={styles.emptyText}>Không có thông báo nào</Text>
           </View>
+        }
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={COLORS.primary}
+          />
         }
       />
     </SafeAreaView>
@@ -178,7 +257,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#EEEEEE',
   },
   headerSpacer: {
-    width: 24,
+    width: 32,
   },
   headerTitle: {
     fontSize: 18,
@@ -186,17 +265,24 @@ const styles = StyleSheet.create({
     color: '#334155',
   },
   headerIcon: {
-    width: 24,
+    width: 32,
     alignItems: 'flex-end',
+    justifyContent: 'center',
   },
   listContent: {
     flexGrow: 1,
   },
+  notifWrapper: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.white,
+    alignItems: 'center',
+    paddingRight: 8,
+  },
   notifItem: {
+    flex: 1,
     flexDirection: 'row',
     paddingHorizontal: 16,
     paddingVertical: 14,
-    backgroundColor: COLORS.white,
   },
   notifUnread: {
     backgroundColor: '#F8FAFC', // Very light blue/gray tint
@@ -240,6 +326,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#94A3B8',
   },
+  deleteBtn: {
+    padding: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   separator: {
     height: 0.5,
     backgroundColor: '#F1F5F9',
@@ -250,6 +341,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingTop: 100,
+    gap: 12,
   },
   emptyText: {
     fontSize: 14,

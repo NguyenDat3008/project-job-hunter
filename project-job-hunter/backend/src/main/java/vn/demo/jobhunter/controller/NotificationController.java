@@ -96,6 +96,32 @@ public class NotificationController {
         return ResponseEntity.ok().build();
     }
 
+    @org.springframework.web.bind.annotation.DeleteMapping("/notifications/{id}")
+    @ApiMessage("Delete notification")
+    @Operation(summary = "Xóa thông báo", description = "Xóa một thông báo cụ thể của người dùng")
+    public ResponseEntity<Void> deleteNotification(@PathVariable("id") long id) {
+        String email = SecurityUtil.getCurrentUserLogin().orElse("");
+        User currentUser = this.userService.handleGetUserByUsername(email);
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        this.notificationService.deleteNotification(id, currentUser);
+        return ResponseEntity.ok().build();
+    }
+
+    @org.springframework.web.bind.annotation.DeleteMapping("/notifications/read")
+    @ApiMessage("Clean read notifications")
+    @Operation(summary = "Xóa các thông báo đã đọc", description = "Xóa toàn bộ các thông báo đã đọc của người dùng hiện tại")
+    public ResponseEntity<Void> deleteReadNotifications() {
+        String email = SecurityUtil.getCurrentUserLogin().orElse("");
+        User currentUser = this.userService.handleGetUserByUsername(email);
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        this.notificationService.deleteReadNotifications(currentUser);
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("/notifications/broadcast")
     @ApiMessage("Broadcast notification to all users or specific role")
     @Operation(summary = "Gửi thông báo toàn hệ thống", description = "Admin gửi thông báo cho tất cả hoặc nhóm đối tượng")

@@ -94,6 +94,8 @@ export const ENDPOINTS = {
     MARK_ALL_READ: '/notifications/read-all',
     COUNT_UNREAD: '/notifications/unread',
     BROADCAST: '/notifications/broadcast',
+    DELETE: (id: number) => `/notifications/${id}`,
+    CLEAN_READ: '/notifications/read',
   },
 
   // Reviews (Spring: ReviewController)

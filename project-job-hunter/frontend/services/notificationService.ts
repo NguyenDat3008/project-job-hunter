@@ -98,16 +98,40 @@ class NotificationService {
     }
   }
 
-  /**
-   * GET /api/v1/notifications/unread
-   * Đếm số thông báo chưa đọc
-   */
   async getUnreadCount(): Promise<number> {
     try {
       const data = await api.get<number>(ENDPOINTS.NOTIFICATIONS.COUNT_UNREAD);
       return typeof data === 'number' ? data : 0;
     } catch {
       return 0;
+    }
+  }
+
+  /**
+   * DELETE /api/v1/notifications/{id}
+   * Xóa một thông báo cụ thể
+   */
+  async deleteNotification(id: string): Promise<boolean> {
+    try {
+      await api.delete(ENDPOINTS.NOTIFICATIONS.DELETE(Number(id)));
+      return true;
+    } catch (error) {
+      console.error('[NotificationService] deleteNotification error:', error);
+      return false;
+    }
+  }
+
+  /**
+   * DELETE /api/v1/notifications/read
+   * Xóa tất cả các thông báo đã đọc
+   */
+  async deleteReadNotifications(): Promise<boolean> {
+    try {
+      await api.delete(ENDPOINTS.NOTIFICATIONS.CLEAN_READ);
+      return true;
+    } catch (error) {
+      console.error('[NotificationService] deleteReadNotifications error:', error);
+      return false;
     }
   }
 }
