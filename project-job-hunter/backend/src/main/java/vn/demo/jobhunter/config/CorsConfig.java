@@ -18,7 +18,16 @@ public class CorsConfig {
         // cho phép các URL nào có thể kết nối tới backend
         // Expo web/dev server thường chạy trên localhost:19000/19001/19006
         configuration.setAllowedOriginPatterns(
-                Arrays.asList("http://localhost:*", "http://127.0.0.1:*", "http://192.168.1.*:*"));
+                Arrays.asList(
+                        "http://localhost:*",
+                        "http://127.0.0.1:*",
+                        "http://192.168.1.*:*",
+                        "http://192.168.*:*",
+                        "http://172.20.*:*",
+                        "http://172.16.*:*",
+                        "http://172.30.*:*",
+                        "http://172.31.*:*"
+                ));
 
         // các method nào đc kết nối
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));

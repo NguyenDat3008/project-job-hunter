@@ -1,0 +1,10 @@
+# Job Hunter - Ignore files
+GUIDE_JOB_HUNTER.md
+.env
+node_modules/
+.expo/
+target/
+.idea/
+.vscode/
+*.class
+*.log

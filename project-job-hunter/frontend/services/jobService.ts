@@ -96,12 +96,17 @@ export const jobService = {
     email: string;
     url: string;
     userId?: number;
+    location?: string;
+    coverLetter?: string;
   }): Promise<Resume> => {
     const payload = {
       email: data.email,
       url: data.url,
       user: data.userId ? { id: data.userId } : undefined,
       job: { id: data.jobId },
+      // Optional fields for detailed application
+      location: data.location,
+      coverLetter: data.coverLetter,
     };
     return api.post<Resume>(ENDPOINTS.RESUMES.CREATE, payload);
   },

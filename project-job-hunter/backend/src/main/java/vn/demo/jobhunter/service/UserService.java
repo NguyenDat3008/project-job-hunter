@@ -66,7 +66,9 @@ public class UserService {
         return null;
     }
 
-    public ResultPaginationDTO fetchAllUser(Specification<User> spec, Pageable pageable) {
+    public ResultPaginationDTO fetchAllUser(
+            @org.springframework.lang.NonNull Specification<User> spec,
+            @org.springframework.lang.NonNull Pageable pageable) {
         Page<User> pageUser = this.userRepository.findAll(spec, pageable);
         ResultPaginationDTO rs = new ResultPaginationDTO();
         ResultPaginationDTO.Meta mt = new ResultPaginationDTO.Meta();

@@ -8,12 +8,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-import com.turkraft.springfilter.builder.FilterBuilder;
-import com.turkraft.springfilter.converter.FilterSpecification;
-import com.turkraft.springfilter.converter.FilterSpecificationConverter;
-import com.turkraft.springfilter.parser.FilterParser;
-import com.turkraft.springfilter.parser.node.FilterNode;
-
 import vn.demo.jobhunter.domain.Job;
 import vn.demo.jobhunter.domain.Resume;
 import vn.demo.jobhunter.domain.User;
@@ -28,10 +22,6 @@ import vn.demo.jobhunter.util.SecurityUtil;
 
 @Service
 public class ResumeService {
-
-    private final FilterBuilder fb;
-    private final FilterParser filterParser;
-    private final FilterSpecificationConverter filterSpecificationConverter;
     private final ResumeRepository resumeRepository;
     private final UserRepository userRepository;
     private final JobRepository jobRepository;
@@ -41,16 +31,10 @@ public class ResumeService {
             ResumeRepository resumeRepository,
             UserRepository userRepository,
             JobRepository jobRepository,
-            FilterBuilder fb,
-            FilterParser filterParser,
-            FilterSpecificationConverter filterSpecificationConverter,
             NotificationService notificationService) {
         this.resumeRepository = resumeRepository;
         this.userRepository = userRepository;
         this.jobRepository = jobRepository;
-        this.fb = fb;
-        this.filterParser = filterParser;
-        this.filterSpecificationConverter = filterSpecificationConverter;
         this.notificationService = notificationService;
     }
 
@@ -84,6 +68,7 @@ public class ResumeService {
                 throw new RuntimeException("Bạn đã ứng tuyển vào công việc này rồi.");
             }
         }
+        resume.setStatus(vn.demo.jobhunter.util.constant.ResumeStateEnum.PENDING);
         resume = this.resumeRepository.save(resume);
 
         // Gửi thông báo cho HR/Admin của công ty
@@ -148,6 +133,8 @@ public class ResumeService {
         res.setId(resume.getId());
         res.setEmail(resume.getEmail());
         res.setUrl(resume.getUrl());
+        res.setLocation(resume.getLocation());
+        res.setCoverLetter(resume.getCoverLetter());
         res.setStatus(resume.getStatus());
         res.setCreatedAt(resume.getCreatedAt());
         res.setCreatedBy(resume.getCreatedBy());
@@ -164,7 +151,9 @@ public class ResumeService {
         return res;
     }
 
-    public ResultPaginationDTO fetchAllResume(Specification<Resume> spec, Pageable pageable) {
+    public ResultPaginationDTO fetchAllResume(
+            @org.springframework.lang.NonNull Specification<Resume> spec,
+            @org.springframework.lang.NonNull Pageable pageable) {
         Page<Resume> pageUser = this.resumeRepository.findAll(spec, pageable);
         ResultPaginationDTO rs = new ResultPaginationDTO();
         ResultPaginationDTO.Meta mt = new ResultPaginationDTO.Meta();

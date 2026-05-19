@@ -56,6 +56,11 @@ public class Job {
     @Column(columnDefinition = "MEDIUMTEXT")
     private String requirements;
 
+    @Column(columnDefinition = "MEDIUMTEXT")
+    private String benefits;
+
+    private String workingTime;
+
     private Instant startDate;
     private Instant endDate;
     private boolean active;
@@ -78,6 +83,16 @@ public class Job {
     @JsonIgnoreProperties(value = { "jobs" })
     @JoinTable(name = "job_skill", joinColumns = @JoinColumn(name = "job_id"), inverseJoinColumns = @JoinColumn(name = "skill_id"))
     private List<Skill> skills;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JsonIgnoreProperties(value = { "jobs" })
+    @JoinTable(name = "job_required_skill", joinColumns = @JoinColumn(name = "job_id"), inverseJoinColumns = @JoinColumn(name = "skill_id"))
+    private List<Skill> requiredSkills;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JsonIgnoreProperties(value = { "jobs" })
+    @JoinTable(name = "job_preferred_skill", joinColumns = @JoinColumn(name = "job_id"), inverseJoinColumns = @JoinColumn(name = "skill_id"))
+    private List<Skill> preferredSkills;
 
     @OneToMany(mappedBy = "job", fetch = FetchType.LAZY)
     @JsonIgnore

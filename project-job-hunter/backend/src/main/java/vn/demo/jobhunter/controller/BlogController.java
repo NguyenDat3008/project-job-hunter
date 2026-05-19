@@ -37,7 +37,7 @@ public class BlogController {
     @PostMapping("/blogs")
     @ApiMessage("Create a blog")
     @Operation(summary = "Tạo mới bài viết blog", description = "Tạo bài viết mới (Admin)")
-    public ResponseEntity<Blog> create(@Valid @RequestBody Blog blog) {
+    public ResponseEntity<Blog> create(@Valid @RequestBody @org.springframework.lang.NonNull Blog blog) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(this.blogService.create(blog));
     }
@@ -80,8 +80,8 @@ public class BlogController {
     @ApiMessage("Get blogs with pagination")
     @Operation(summary = "Danh sách bài viết blog", description = "Lấy danh sách bài viết với phân trang và bộ lọc")
     public ResponseEntity<ResultPaginationDTO> getAllBlog(
-            @Filter Specification<Blog> spec,
-            Pageable pageable) {
+            @Filter @org.springframework.lang.NonNull Specification<Blog> spec,
+            @org.springframework.lang.NonNull Pageable pageable) {
         return ResponseEntity.ok().body(this.blogService.fetchAll(spec, pageable));
     }
 }

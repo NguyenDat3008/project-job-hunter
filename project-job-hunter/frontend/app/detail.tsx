@@ -61,7 +61,7 @@ export default function JobDetailScreen() {
     }
   };
 
-  const handleApply = async () => {
+  const handleApply = () => {
     if (!job) return;
     if (!isAuthenticated) {
       Alert.alert('Yêu cầu đăng nhập', 'Bạn cần đăng nhập để ứng tuyển công việc này.', [
@@ -71,48 +71,11 @@ export default function JobDetailScreen() {
       return;
     }
 
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
-        copyToCacheDirectory: true,
-      });
-
-      if (result.canceled || !result.assets || result.assets.length === 0) {
-        return; // User canceled picking
-      }
-
-      const file = result.assets[0];
-      if (file.size && file.size > 5 * 1024 * 1024) {
-        Alert.alert('Lỗi', 'File không được vượt quá 5MB');
-        return;
-      }
-
-      setIsApplying(true);
-
-      // 1. Upload CV to MinIO
-      const fileToUpload = {
-        uri: file.uri,
-        name: file.name,
-        type: file.mimeType || 'application/pdf',
-      };
-      const fileNameOnServer = await cvService.uploadCV(fileToUpload);
-
-      // 2. Submit application with the returned URL
-      await jobService.applyJob({
-        jobId: job.id,
-        email: user?.email || 'user@example.com',
-        url: fileNameOnServer,
-        userId: user?.id,
-      });
-
-      Alert.alert('Thành công', 'Đã nộp đơn ứng tuyển thành công!');
-      loadData();
-    } catch (error: any) {
-      console.error('Apply Job Error:', error);
-      Alert.alert('Lỗi', error?.message || 'Không thể ứng tuyển lúc này. Vui lòng thử lại sau.');
-    } finally {
-      setIsApplying(false);
-    }
+    // Redirect to the new application interface
+    router.push({
+      pathname: '/apply',
+      params: { jobId: job.id.toString(), jobName: job.name }
+    });
   };
 
   const handleSaveJob = async () => {
@@ -147,17 +110,71 @@ export default function JobDetailScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.headerCard}>
-          <Text style={styles.jobTitle}>{job.name}</Text>
-          <View style={styles.salaryRow}>
-            <Text style={styles.salary}>{formatSalary(job.salary)} VND</Text>
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>{job.level}</Text>
+          <View style={styles.headerTop}>
+            <View style={styles.headerLogoContainer}>
+              {job.company?.logo ? (
+                <Image source={{ uri: job.company.logo }} style={styles.headerLogo} />
+              ) : (
+                <View style={styles.headerLogoPlaceholder}>
+                  <Text style={styles.headerLogoLetter}>{job.company?.name?.charAt(0) || 'C'}</Text>
+                </View>
+              )}
+            </View>
+            <View style={styles.headerMainInfo}>
+              <Text style={styles.jobTitle}>{job.name}</Text>
+              <TouchableOpacity 
+                onPress={() => job.company && router.push(`/company-detail?companyId=${job.company.id}`)}
+              >
+                <Text style={styles.companyLink}>{job.company?.name} ›</Text>
+              </TouchableOpacity>
             </View>
           </View>
           
-          <View style={styles.locationRow}>
-            <Ionicons name="location-outline" size={16} color={COLORS.text.secondary} />
-            <Text style={styles.locationText}>{job.location}</Text>
+          <View style={styles.salaryHighlight}>
+            <Ionicons name="cash-outline" size={20} color={COLORS.primary} />
+            <Text style={styles.salaryText}>{formatSalary(job.salary)} VND</Text>
+            <View style={styles.urgentBadge}>
+              <Text style={styles.urgentText}>HOT</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.infoGrid}>
+          <View style={styles.infoItem}>
+            <View style={styles.infoIconBox}>
+              <Ionicons name="people-outline" size={18} color={COLORS.primary} />
+            </View>
+            <View>
+              <Text style={styles.infoLabel}>Số lượng</Text>
+              <Text style={styles.infoValue}>{job.quantity} người</Text>
+            </View>
+          </View>
+          <View style={styles.infoItem}>
+            <View style={styles.infoIconBox}>
+              <Ionicons name="briefcase-outline" size={18} color={COLORS.primary} />
+            </View>
+            <View>
+              <Text style={styles.infoLabel}>Cấp bậc</Text>
+              <Text style={styles.infoValue}>{job.level}</Text>
+            </View>
+          </View>
+          <View style={styles.infoItem}>
+            <View style={styles.infoIconBox}>
+              <Ionicons name="time-outline" size={18} color={COLORS.primary} />
+            </View>
+            <View>
+              <Text style={styles.infoLabel}>Giờ làm việc</Text>
+              <Text style={styles.infoValue}>{job.workingTime || 'Thoả thuận'}</Text>
+            </View>
+          </View>
+          <View style={styles.infoItem}>
+            <View style={styles.infoIconBox}>
+              <Ionicons name="location-outline" size={18} color={COLORS.primary} />
+            </View>
+            <View>
+              <Text style={styles.infoLabel}>Khu vực</Text>
+              <Text style={styles.infoValue}>{job.location}</Text>
+            </View>
           </View>
         </View>
 
@@ -184,50 +201,48 @@ export default function JobDetailScreen() {
           </View>
         )}
 
-        <TouchableOpacity 
-          style={styles.companyCard}
-          onPress={() => job.company && router.push(`/company-detail?companyId=${job.company.id}`)}
-        >
-          <View style={styles.logoContainer}>
-            {job.company?.logo ? (
-              <Image source={{ uri: job.company.logo }} style={styles.logo} />
-            ) : (
-              <View style={styles.logoPlaceholder}>
-                <Text style={styles.logoLetter}>{job.company?.name?.charAt(0) || 'C'}</Text>
-              </View>
-            )}
-          </View>
-          <View style={styles.companyInfo}>
-            <View style={styles.companyHeader}>
-              <Text style={styles.companyName} numberOfLines={1}>{job.company?.name || 'Công ty'}</Text>
-              {job.company?.isPremium && <PremiumBadge tier={job.company.premiumTier as any} size="small" />}
-            </View>
-            <Text style={styles.viewCompany}>Xem trang công ty ›</Text>
-          </View>
-        </TouchableOpacity>
-
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Mô tả công việc</Text>
           <Text style={styles.sectionContent}>{job.description}</Text>
         </View>
 
-        {job.requirements && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Yêu cầu công việc</Text>
+          <Text style={styles.sectionContent}>{job.requirements}</Text>
+          
+          {job.requiredSkills && job.requiredSkills.length > 0 && (
+            <View style={styles.skillsSubsection}>
+              <Text style={styles.subsectionTitle}>Kỹ năng bắt buộc:</Text>
+              <View style={styles.skillsRow}>
+                {job.requiredSkills.map((skill, idx) => (
+                  <View key={`req-${skill.id || idx}`} style={styles.skillTag}>
+                    <Text style={styles.skillText}>{skill.name}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {job.preferredSkills && job.preferredSkills.length > 0 && (
+            <View style={styles.skillsSubsection}>
+              <Text style={styles.subsectionTitle}>Kỹ năng ưu tiên:</Text>
+              <View style={styles.skillsRow}>
+                {job.preferredSkills.map((skill, idx) => (
+                  <View key={`pref-${skill.id || idx}`} style={[styles.skillTag, { backgroundColor: '#EFF6FF' }]}>
+                    <Text style={[styles.skillText, { color: '#1D4ED8' }]}>{skill.name}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+        </View>
+
+        {job.benefits && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Yêu cầu công việc</Text>
-            <Text style={styles.sectionContent}>{job.requirements}</Text>
+            <Text style={styles.sectionTitle}>Quyền lợi</Text>
+            <Text style={styles.sectionContent}>{job.benefits}</Text>
           </View>
         )}
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Yêu cầu kỹ năng</Text>
-          <View style={styles.skillsRow}>
-            {(job.skills || []).map((skill, idx) => (
-              <View key={skill.id || idx} style={styles.skillTag}>
-                <Text style={styles.skillText}>{skill.name}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
 
         <View style={{ height: 100 }} />
       </ScrollView>
@@ -281,14 +296,26 @@ const styles = StyleSheet.create({
   navTitle: { fontSize: 15, fontWeight: '700', color: COLORS.text.primary, flex: 1, textAlign: 'center' },
   scrollContent: { paddingBottom: 40 },
   headerCard: { backgroundColor: COLORS.white, padding: 24, paddingHorizontal: 28, marginBottom: 8 },
-  jobTitle: { fontSize: 18, fontWeight: '800', color: COLORS.text.primary, marginBottom: 10, lineHeight: 24 },
-  salaryRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
-  salary: { fontSize: 16, color: COLORS.primary, fontWeight: '800' },
-  tag: { backgroundColor: '#F0FDF4', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20 },
-  tagText: { color: COLORS.primary, fontSize: 10, fontWeight: '700' },
-  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
-  locationText: { fontSize: 12, color: COLORS.text.secondary, fontWeight: '500' },
+  headerTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  headerLogoContainer: { marginRight: 16, ...SHADOW.sm },
+  headerLogo: { width: 64, height: 64, borderRadius: BORDER_RADIUS.md, borderWidth: 1, borderColor: '#F0F0F0' },
+  headerLogoPlaceholder: { width: 64, height: 64, borderRadius: BORDER_RADIUS.md, backgroundColor: COLORS.gray[50], justifyContent: 'center', alignItems: 'center' },
+  headerLogoLetter: { fontSize: 28, fontWeight: '800', color: COLORS.primary },
+  headerMainInfo: { flex: 1 },
+  jobTitle: { fontSize: 20, fontWeight: '800', color: COLORS.text.primary, marginBottom: 4, lineHeight: 28 },
+  companyLink: { fontSize: 14, color: COLORS.text.secondary, fontWeight: '600' },
   
+  salaryHighlight: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#F0FDF4', padding: 12, borderRadius: 12 },
+  salaryText: { fontSize: 18, color: COLORS.primary, fontWeight: '800' },
+  urgentBadge: { backgroundColor: COLORS.error, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4, marginLeft: 'auto' },
+  urgentText: { color: COLORS.white, fontSize: 10, fontWeight: '800' },
+
+  infoGrid: { flexDirection: 'row', flexWrap: 'wrap', backgroundColor: COLORS.white, paddingHorizontal: 28, paddingVertical: 16, marginBottom: 8, gap: 16 },
+  infoItem: { width: '46%', flexDirection: 'row', alignItems: 'center', gap: 10 },
+  infoIconBox: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#F0FDF4', justifyContent: 'center', alignItems: 'center' },
+  infoLabel: { fontSize: 10, color: COLORS.text.secondary, marginBottom: 2 },
+  infoValue: { fontSize: 13, fontWeight: '700', color: COLORS.text.primary },
+
   aiCard: { backgroundColor: '#F0FDF4', marginHorizontal: 28, borderRadius: 14, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#DCFCE7' },
   aiHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   aiTitle: { fontSize: 13, fontWeight: '800', color: '#166534' },
@@ -299,22 +326,15 @@ const styles = StyleSheet.create({
   aiStatLabel: { fontSize: 10, color: '#166534' },
   aiStatDivider: { width: 1, height: 20, backgroundColor: '#DCFCE7' },
   
-  companyCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, padding: 16, marginHorizontal: 28, borderRadius: 14, marginBottom: 12, ...SHADOW.sm, borderWidth: 0.5, borderColor: '#F5F5F5' },
-  logoContainer: { marginRight: 12 },
-  logo: { width: 44, height: 44, borderRadius: 8 },
-  logoPlaceholder: { width: 44, height: 44, borderRadius: 8, backgroundColor: COLORS.gray[50], justifyContent: 'center', alignItems: 'center' },
-  logoLetter: { fontSize: 18, fontWeight: '800', color: COLORS.primary },
-  companyInfo: { flex: 1 },
-  companyHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 },
-  companyName: { fontSize: 13, fontWeight: '700', color: COLORS.text.primary, flexShrink: 1 },
-  viewCompany: { fontSize: 11, color: COLORS.primary, fontWeight: '600' },
-  
   section: { backgroundColor: COLORS.white, padding: 20, paddingHorizontal: 28, marginBottom: 8 },
-  sectionTitle: { fontSize: 14, fontWeight: '800', color: COLORS.text.primary, marginBottom: 12, borderLeftWidth: 3, borderLeftColor: COLORS.primary, paddingLeft: 10 },
-  sectionContent: { fontSize: 13, color: COLORS.text.secondary, lineHeight: 20, fontWeight: '400' },
-  skillsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  skillTag: { backgroundColor: '#F3F4F6', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
-  skillText: { fontSize: 10, color: COLORS.text.secondary, fontWeight: '600' },
+  sectionTitle: { fontSize: 16, fontWeight: '800', color: COLORS.text.primary, marginBottom: 12, borderLeftWidth: 4, borderLeftColor: COLORS.primary, paddingLeft: 12 },
+  sectionContent: { fontSize: 14, color: COLORS.text.secondary, lineHeight: 22, fontWeight: '400' },
+  
+  skillsSubsection: { marginTop: 16 },
+  subsectionTitle: { fontSize: 13, fontWeight: '700', color: COLORS.text.primary, marginBottom: 8 },
+  skillsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  skillTag: { backgroundColor: '#F0FDF4', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  skillText: { fontSize: 11, color: COLORS.primary, fontWeight: '600' },
   
   footer: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', backgroundColor: COLORS.white, paddingHorizontal: 28, paddingTop: 10, paddingBottom: Platform.OS === 'ios' ? 30 : 16, gap: 12, borderTopWidth: 0.5, borderTopColor: '#F0F0F0' },
   saveBtn: { width: 48, height: 48, borderRadius: 12, borderWidth: 1, borderColor: '#F0F0F0', justifyContent: 'center', alignItems: 'center', backgroundColor: '#F9FAFB' },

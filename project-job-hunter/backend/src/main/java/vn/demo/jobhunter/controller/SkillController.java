@@ -83,9 +83,9 @@ public class SkillController {
     @GetMapping("/skills")
     @ApiMessage("fetch all skills")
     @Operation(summary = "Danh sách kỹ năng", description = "Lấy danh sách tất cả kỹ năng với phân trang (công khai)")
-    public ResponseEntity<ResultPaginationDTO> getAll(
-            @Filter Specification<Skill> spec,
-            Pageable pageable) {
+    public ResponseEntity<ResultPaginationDTO> fetchAll(
+            @Filter @org.springframework.lang.NonNull Specification<Skill> spec,
+            @org.springframework.lang.NonNull Pageable pageable) {
 
         return ResponseEntity.status(HttpStatus.OK).body(
                 this.skillService.fetchAllSkills(spec, pageable));

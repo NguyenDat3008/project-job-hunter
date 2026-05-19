@@ -42,9 +42,9 @@ public class EmailService {
         MimeMessage mimeMessage = this.javaMailSender.createMimeMessage();
         try {
             MimeMessageHelper message = new MimeMessageHelper(mimeMessage, isMultipart, StandardCharsets.UTF_8.name());
-            message.setTo(to);
-            message.setSubject(subject);
-            message.setText(content, isHtml);
+            message.setTo(to != null ? to : "");
+            message.setSubject(subject != null ? subject : "");
+            message.setText(content != null ? content : "", isHtml);
             this.javaMailSender.send(mimeMessage);
         } catch (MailException | MessagingException e) {
             System.out.println("ERROR SEND EMAIL: " + e);

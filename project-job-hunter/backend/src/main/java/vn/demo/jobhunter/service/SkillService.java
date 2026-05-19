@@ -30,11 +30,13 @@ public class SkillService {
         return null;
     }
 
-    public Skill createSkill(Skill s) {
+    @org.springframework.lang.NonNull
+    public Skill createSkill(@org.springframework.lang.NonNull Skill s) {
         return this.skillRepository.save(s);
     }
 
-    public Skill updateSkill(Skill s) {
+    @org.springframework.lang.NonNull
+    public Skill updateSkill(@org.springframework.lang.NonNull Skill s) {
         return this.skillRepository.save(s);
     }
 
@@ -51,7 +53,9 @@ public class SkillService {
         this.skillRepository.delete(currentSkill);
     }
 
-    public ResultPaginationDTO fetchAllSkills(Specification<Skill> spec, Pageable pageable) {
+    public ResultPaginationDTO fetchAllSkills(
+            @org.springframework.lang.NonNull Specification<Skill> spec,
+            @org.springframework.lang.NonNull Pageable pageable) {
         Page<Skill> pageUser = this.skillRepository.findAll(spec, pageable);
 
         ResultPaginationDTO rs = new ResultPaginationDTO();

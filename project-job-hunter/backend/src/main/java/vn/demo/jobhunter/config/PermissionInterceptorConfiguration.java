@@ -16,12 +16,13 @@ public class PermissionInterceptorConfiguration implements WebMvcConfigurer {
     }
 
     @Bean
+    @org.springframework.lang.NonNull
     PermissionInterceptor getPermissionInterceptor() {
         return new PermissionInterceptor(userService);
     }
 
     @Override
-    public void addInterceptors(InterceptorRegistry registry) {
+    public void addInterceptors(@org.springframework.lang.NonNull InterceptorRegistry registry) {
         String[] whiteList = {
                 "/",
                 // Auth endpoints

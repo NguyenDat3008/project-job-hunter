@@ -30,8 +30,6 @@ import vn.demo.jobhunter.domain.response.resume.ResUpdateResumeDTO;
 import vn.demo.jobhunter.service.ResumeService;
 import vn.demo.jobhunter.service.UserService;
 import vn.demo.jobhunter.util.SecurityUtil;
-import vn.demo.jobhunter.util.constant.ResumeStateEnum;
-import vn.demo.jobhunter.domain.request.resume.ReqUpdateResumeDTO;
 import vn.demo.jobhunter.util.annotation.ApiMessage;
 import vn.demo.jobhunter.util.error.IdInvalidException;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -145,8 +143,8 @@ public class ResumeController {
     @ApiMessage("Fetch all resume with paginate")
     @Operation(summary = "Danh sách hồ sơ", description = "HR/Admin xem danh sách Resume có phân trang (lọc theo Job của công ty mình)")
     public ResponseEntity<ResultPaginationDTO> fetchAll(
-            @Filter Specification<Resume> spec,
-            Pageable pageable) {
+            @Filter @org.springframework.lang.NonNull Specification<Resume> spec,
+            @org.springframework.lang.NonNull Pageable pageable) {
 
         List<Long> arrJobIds = null;
         String email = SecurityUtil.getCurrentUserLogin().isPresent() == true
@@ -189,8 +187,9 @@ public class ResumeController {
             // SUPER_ADMIN xem tất cả resumes, chỉ áp dụng filter từ request
             finalSpec = spec;
         } else {
+            @SuppressWarnings("null")
             Specification<Resume> jobInSpec = filterSpecificationConverter.convert(filterBuilder.field("job")
-                    .in(filterBuilder.input(arrJobIds)).get());
+                    .in(filterBuilder.input(arrJobIds != null ? arrJobIds : java.util.Collections.emptyList())).get());
             finalSpec = jobInSpec.and(spec);
         }
 
@@ -201,7 +200,7 @@ public class ResumeController {
     @GetMapping("/resumes/by-user")
     @ApiMessage("Get list resumes by user")
     @Operation(summary = "Xem Resume của tôi", description = "Ứng viên xem danh sách hồ sơ mình đã nộp")
-    public ResponseEntity<ResultPaginationDTO> fetchResumeByUser(Pageable pageable) {
+    public ResponseEntity<ResultPaginationDTO> fetchResumeByUser(@org.springframework.lang.NonNull Pageable pageable) {
 
         return ResponseEntity.ok().body(this.resumeService.fetchResumeByUser(pageable));
     }

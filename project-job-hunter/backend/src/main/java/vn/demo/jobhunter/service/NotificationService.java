@@ -56,7 +56,9 @@ public class NotificationService {
         this.notificationRepository.saveAll(notifications);
     }
 
-    public org.springframework.data.domain.Page<Notification> fetchByUser(User user, org.springframework.data.domain.Pageable pageable) {
+    public org.springframework.data.domain.Page<Notification> fetchByUser(
+            @org.springframework.lang.NonNull User user,
+            @org.springframework.lang.NonNull org.springframework.data.domain.Pageable pageable) {
         return this.notificationRepository.findAll((root, query, criteriaBuilder) -> 
             criteriaBuilder.equal(root.get("user"), user), pageable);
     }
@@ -79,6 +81,8 @@ public class NotificationService {
         for (Notification notification : notifications) {
             notification.setRead(true);
         }
-        this.notificationRepository.saveAll(notifications);
+        if (!notifications.isEmpty()) {
+            this.notificationRepository.saveAll(notifications);
+        }
     }
 }

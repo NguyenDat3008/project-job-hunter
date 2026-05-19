@@ -2,12 +2,9 @@ package vn.demo.jobhunter.service;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
-
 import org.springframework.stereotype.Service;
 
 import vn.demo.jobhunter.domain.Company;
-import vn.demo.jobhunter.domain.Job;
 import vn.demo.jobhunter.repository.CompanyRepository;
 import vn.demo.jobhunter.repository.JobRepository;
 

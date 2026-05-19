@@ -40,7 +40,7 @@ public class PermissionController {
     @PostMapping("/permissions")
     @ApiMessage("Create a permission")
     @Operation(summary = "Tạo quyền hạn mới", description = "Tạo Permission mới với API path, method và module")
-    public ResponseEntity<Permission> create(@Valid @RequestBody Permission p) throws IdInvalidException {
+    public ResponseEntity<Permission> create(@Valid @RequestBody @org.springframework.lang.NonNull Permission p) throws IdInvalidException {
         // check exist
         if (this.permissionService.isPermissionExist(p)) {
             throw new IdInvalidException("Permission đã tồn tại.");
@@ -53,7 +53,7 @@ public class PermissionController {
     @PutMapping("/permissions")
     @ApiMessage("Update a permission")
     @Operation(summary = "Cập nhật quyền hạn", description = "Sửa thông tin Permission theo ID")
-    public ResponseEntity<Permission> update(@Valid @RequestBody Permission p) throws IdInvalidException {
+    public ResponseEntity<Permission> update(@Valid @RequestBody @org.springframework.lang.NonNull Permission p) throws IdInvalidException {
         // check exist by id
         if (this.permissionService.fetchById(p.getId()) == null) {
             throw new IdInvalidException("Permission với id = " + p.getId() + " không tồn tại.");
@@ -87,7 +87,8 @@ public class PermissionController {
     @ApiMessage("Fetch permissions")
     @Operation(summary = "Danh sách quyền hạn", description = "Lấy danh sách tất cả Permission với phân trang và bộ lọc")
     public ResponseEntity<ResultPaginationDTO> getPermissions(
-            @Filter Specification<Permission> spec, Pageable pageable) {
+            @Filter @org.springframework.lang.NonNull Specification<Permission> spec,
+            @org.springframework.lang.NonNull Pageable pageable) {
 
         return ResponseEntity.ok(this.permissionService.getPermissions(spec, pageable));
     }

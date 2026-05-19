@@ -1,5 +1,5 @@
 // Applications Tab — Premium UI for tracking job applications
-import { JobCard, LoadingSpinner } from '@components/index';
+import { JobCard, LoadingSpinner, LoginRequired } from '@components/index';
 import { COLORS, SPACING, TYPOGRAPHY } from '@constants/theme';
 import { jobService } from '@services/jobService';
 import { Job, Resume, ResumeStatus } from '@/types/job.types';
@@ -34,15 +34,15 @@ export default function ApplicationsTab() {
   const { isAuthenticated } = useAuthStore();
   const [applications, setApplications] = useState<Resume[]>([]);
   const [savedJobs, setSavedJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(isAuthenticated);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'APPLIED' | 'SAVED'>('APPLIED');
   const [filter, setFilter] = useState<ResumeStatus | 'ALL'>('ALL');
 
   useFocusEffect(
     React.useCallback(() => {
-      loadData();
-    }, [])
+      if (isAuthenticated) loadData();
+    }, [isAuthenticated])
   );
 
   const loadData = async (isRefreshing = false) => {
@@ -84,6 +84,7 @@ export default function ApplicationsTab() {
     ? applications
     : applications.filter(a => a.status === filter);
 
+  if (!isAuthenticated) return <LoginRequired message="Bạn cần đăng nhập để theo dõi hành trình nghề nghiệp" />;
   if (loading && !refreshing) {
     return <LoadingSpinner fullScreen message="Đang tải dữ liệu của bạn..." />;
   }

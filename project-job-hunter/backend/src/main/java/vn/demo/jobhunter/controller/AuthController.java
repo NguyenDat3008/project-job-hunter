@@ -125,7 +125,7 @@ public class AuthController {
 
         // set cookies
         ResponseCookie resCookies = ResponseCookie
-                .from("refresh_token", refresh_token)
+                .from("refresh_token", refresh_token != null ? refresh_token : "")
                 .httpOnly(true)
                 .secure(COOKIE_SECURE)
                 .path("/")
@@ -237,7 +237,7 @@ public class AuthController {
 
         // set cookies
         ResponseCookie resCookies = ResponseCookie
-                .from("refresh_token", new_refresh_token)
+                .from("refresh_token", new_refresh_token != null ? new_refresh_token : "")
                 .httpOnly(true)
                 .secure(COOKIE_SECURE)
                 .path("/")
@@ -264,7 +264,7 @@ public class AuthController {
 
         // remove refresh token cookie
         ResponseCookie deleteSpringCookie = ResponseCookie
-                .from("refresh_token", null)
+                .from("refresh_token", "")
                 .httpOnly(true)
                 .secure(COOKIE_SECURE)
                 .path("/")

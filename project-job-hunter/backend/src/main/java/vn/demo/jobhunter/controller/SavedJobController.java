@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import vn.demo.jobhunter.domain.Job;
 import vn.demo.jobhunter.domain.SavedJob;
 import vn.demo.jobhunter.domain.User;
 import vn.demo.jobhunter.repository.SavedJobRepository;

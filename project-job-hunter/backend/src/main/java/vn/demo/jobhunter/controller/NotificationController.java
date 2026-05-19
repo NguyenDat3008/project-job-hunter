@@ -2,7 +2,6 @@ package vn.demo.jobhunter.controller;
 
 import org.springframework.data.domain.Pageable;
 import vn.demo.jobhunter.domain.response.ResultPaginationDTO;
-import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -43,7 +42,7 @@ public class NotificationController {
     @ApiMessage("Get notifications for user")
     @Operation(summary = "Xem thông báo", description = "Lấy danh sách tất cả thông báo của người dùng hiện tại")
     public ResponseEntity<ResultPaginationDTO> getNotifications(
-            Pageable pageable) {
+            @org.springframework.lang.NonNull Pageable pageable) {
         String email = SecurityUtil.getCurrentUserLogin().orElse("");
         User currentUser = this.userService.handleGetUserByUsername(email);
         

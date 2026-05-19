@@ -5,12 +5,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import vn.demo.jobhunter.domain.Company;
 import vn.demo.jobhunter.domain.Job;
-import vn.demo.jobhunter.domain.Skill;
 import vn.demo.jobhunter.domain.response.ResultPaginationDTO;
 import vn.demo.jobhunter.domain.response.job.ResCreateJobDTO;
 import vn.demo.jobhunter.domain.response.job.ResFetchJobDTO;
@@ -66,6 +64,8 @@ public class JobService {
         dto.setLevel(job.getLevel());
         dto.setDescription(job.getDescription());
         dto.setRequirements(job.getRequirements());
+        dto.setBenefits(job.getBenefits());
+        dto.setWorkingTime(job.getWorkingTime());
         dto.setStartDate(job.getStartDate());
         dto.setEndDate(job.getEndDate());
         dto.setActive(job.isActive());
@@ -78,11 +78,16 @@ public class JobService {
         dto.setCreatedBy(job.getCreatedBy());
         dto.setUpdatedBy(job.getUpdatedBy());
 
-        if (job.getSkills() != null) {
-            List<String> skills = job.getSkills()
-                    .stream().map(Skill::getName)
-                    .collect(Collectors.toList());
-            dto.setSkills(skills);
+        if (job.getRequiredSkills() != null) {
+            dto.setRequiredSkills(job.getRequiredSkills().stream()
+                .map(s -> new ResFetchJobDTO.JobSkill(s.getId(), s.getName()))
+                .collect(Collectors.toList()));
+        }
+
+        if (job.getPreferredSkills() != null) {
+            dto.setPreferredSkills(job.getPreferredSkills().stream()
+                .map(s -> new ResFetchJobDTO.JobSkill(s.getId(), s.getName()))
+                .collect(Collectors.toList()));
         }
 
         if (job.getCompany() != null) {
@@ -122,12 +127,16 @@ public class JobService {
     public ResCreateJobDTO create(Job j) {
         // check skills
         if (j.getSkills() != null) {
-            List<Long> reqSkills = j.getSkills()
-                    .stream().map(x -> x.getId())
-                    .collect(Collectors.toList());
-
-            List<Skill> dbSkills = this.skillRepository.findByIdIn(reqSkills);
-            j.setSkills(dbSkills);
+            List<String> names = j.getSkills().stream().map(x -> x.getName()).collect(Collectors.toList());
+            j.setSkills(this.skillRepository.findByNameIn(names));
+        }
+        if (j.getRequiredSkills() != null) {
+            List<String> names = j.getRequiredSkills().stream().map(x -> x.getName()).collect(Collectors.toList());
+            j.setRequiredSkills(this.skillRepository.findByNameIn(names));
+        }
+        if (j.getPreferredSkills() != null) {
+            List<String> names = j.getPreferredSkills().stream().map(x -> x.getName()).collect(Collectors.toList());
+            j.setPreferredSkills(this.skillRepository.findByNameIn(names));
         }
 
         // check company
@@ -150,6 +159,8 @@ public class JobService {
         dto.setLocation(currentJob.getLocation());
         dto.setLevel(currentJob.getLevel());
         dto.setRequirements(currentJob.getRequirements());
+        dto.setBenefits(currentJob.getBenefits());
+        dto.setWorkingTime(currentJob.getWorkingTime());
         dto.setStartDate(currentJob.getStartDate());
         dto.setEndDate(currentJob.getEndDate());
         dto.setActive(currentJob.isActive());
@@ -169,12 +180,16 @@ public class JobService {
 
         // check skills
         if (j.getSkills() != null) {
-            List<Long> reqSkills = j.getSkills()
-                    .stream().map(x -> x.getId())
-                    .collect(Collectors.toList());
-
-            List<Skill> dbSkills = this.skillRepository.findByIdIn(reqSkills);
-            jobInDB.setSkills(dbSkills);
+            List<String> names = j.getSkills().stream().map(x -> x.getName()).collect(Collectors.toList());
+            jobInDB.setSkills(this.skillRepository.findByNameIn(names));
+        }
+        if (j.getRequiredSkills() != null) {
+            List<String> names = j.getRequiredSkills().stream().map(x -> x.getName()).collect(Collectors.toList());
+            jobInDB.setRequiredSkills(this.skillRepository.findByNameIn(names));
+        }
+        if (j.getPreferredSkills() != null) {
+            List<String> names = j.getPreferredSkills().stream().map(x -> x.getName()).collect(Collectors.toList());
+            jobInDB.setPreferredSkills(this.skillRepository.findByNameIn(names));
         }
 
         // check company
@@ -193,6 +208,8 @@ public class JobService {
         jobInDB.setLevel(j.getLevel());
         jobInDB.setDescription(j.getDescription());
         jobInDB.setRequirements(j.getRequirements());
+        jobInDB.setBenefits(j.getBenefits());
+        jobInDB.setWorkingTime(j.getWorkingTime());
         jobInDB.setStartDate(j.getStartDate());
         jobInDB.setEndDate(j.getEndDate());
         jobInDB.setActive(j.isActive());
@@ -209,6 +226,8 @@ public class JobService {
         dto.setLocation(currentJob.getLocation());
         dto.setLevel(currentJob.getLevel());
         dto.setRequirements(currentJob.getRequirements());
+        dto.setBenefits(currentJob.getBenefits());
+        dto.setWorkingTime(currentJob.getWorkingTime());
         dto.setStartDate(currentJob.getStartDate());
         dto.setEndDate(currentJob.getEndDate());
         dto.setActive(currentJob.isActive());
@@ -229,7 +248,7 @@ public class JobService {
         this.jobRepository.deleteById(id);
     }
 
-    public ResultPaginationDTO fetchAll(Specification<Job> spec, org.springframework.data.domain.Pageable pageable) {
+    public ResultPaginationDTO fetchAll(@org.springframework.lang.NonNull Specification<Job> spec, @org.springframework.lang.NonNull org.springframework.data.domain.Pageable pageable) {
         // Ưu tiên cty Premium lên đầu, sau đó mới đến các tiêu chí sort khác
         org.springframework.data.domain.Sort premiumSort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "company.isPremium")
                 .and(pageable.getSort());
@@ -258,11 +277,17 @@ public class JobService {
         return rs;
     }
 
-    public List<Job> findJobsNearby(double lat, double lng, double radiusKm) {
+    public List<Job> findJobsNearby(double lat, double lng, double radiusKm, String name) {
         // Lấy tất cả job đang active
         List<Job> allJobs = this.jobRepository.findByActiveTrue();
         return allJobs.stream()
             .filter(j -> j.getCompany() != null && j.getCompany().getLatitude() != null && j.getCompany().getLongitude() != null)
+            .filter(j -> {
+                if (name != null && !name.isEmpty()) {
+                    return j.getName().toLowerCase().contains(name.toLowerCase());
+                }
+                return true;
+            })
             .filter(j -> {
                 double distance = calculateDistance(lat, lng, j.getCompany().getLatitude(), j.getCompany().getLongitude());
                 return distance <= radiusKm;

@@ -58,7 +58,7 @@ public class MatchScoreService {
      * @return Map gồm: job, matchScore, matchedSkills, missingSkills, reasons,
      *         skillScore, semanticScore, locationScore, aiPowered
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("null")
     public Map<String, Object> calculateMatchScore(User user, Job job) {
         // Chuẩn bị dữ liệu user skills từ Subscriber
         Subscriber subscriber = user.getEmail() != null
@@ -75,10 +75,13 @@ public class MatchScoreService {
         try {
             // ── Gọi AI Service ──────────────────────────────────────────────
             Map<String, Object> requestBody = buildAiRequest(user, subscriber, userSkills, job, jobSkills);
-            ResponseEntity<Map<String, Object>> response = restTemplate.postForEntity(
+            
+            org.springframework.http.HttpEntity<Map<String, Object>> requestEntity = new org.springframework.http.HttpEntity<>(requestBody);
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
                     aiServiceUrl + "/api/match-score",
-                    requestBody,
-                    (Class<Map<String, Object>>) (Class<?>) Map.class);
+                    org.springframework.http.HttpMethod.POST,
+                    requestEntity,
+                    new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 return buildResultFromAiResponse(job, response.getBody());
@@ -135,7 +138,6 @@ public class MatchScoreService {
     /**
      * Map response từ AI service sang format chuẩn trả về cho JobController.
      */
-    @SuppressWarnings("unchecked")
     private Map<String, Object> buildResultFromAiResponse(Job job, Map<String, Object> aiResponse) {
         Map<String, Object> result = new HashMap<>();
         result.put("job", job);
@@ -207,6 +209,7 @@ public class MatchScoreService {
     /**
      * Gửi file CV sang AI service để trích xuất kỹ năng.
      */
+    @SuppressWarnings("null")
     public Map<String, Object> extractSkillsFromCV(org.springframework.web.multipart.MultipartFile file) {
         try {
             String url = aiServiceUrl + "/api/extract-cv";
@@ -219,7 +222,11 @@ public class MatchScoreService {
 
             org.springframework.http.HttpEntity<org.springframework.util.MultiValueMap<String, Object>> requestEntity = new org.springframework.http.HttpEntity<>(body, headers);
 
-            ResponseEntity<Map<String, Object>> response = restTemplate.postForEntity(url, requestEntity, (Class<Map<String, Object>>) (Class<?>) Map.class);
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    url,
+                    org.springframework.http.HttpMethod.POST,
+                    requestEntity,
+                    new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 return response.getBody();

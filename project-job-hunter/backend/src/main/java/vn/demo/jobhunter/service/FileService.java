@@ -1,6 +1,5 @@
 package vn.demo.jobhunter.service;
 
-import java.io.IOException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 

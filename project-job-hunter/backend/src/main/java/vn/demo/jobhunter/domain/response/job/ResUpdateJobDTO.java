@@ -17,6 +17,8 @@ public class ResUpdateJobDTO {
     private int quantity;
     private LevelEnum level;
     private String requirements;
+    private String benefits;
+    private String workingTime;
     private Instant startDate;
     private Instant endDate;
     private boolean isActive;

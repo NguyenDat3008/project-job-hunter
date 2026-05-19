@@ -1,4 +1,4 @@
-import { JobCard, LoadingSpinner } from '@components/index';
+import { JobCard, LoadingSpinner, LoginRequired } from '@components/index';
 import { COLORS } from '@constants/theme';
 import { jobService } from '@services/jobService';
 import { Job } from '@/types/job.types';
@@ -7,11 +7,13 @@ import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import useAuthStore from '@store/authStore';
 
 export default function SavedJobsScreen() {
   const router = useRouter();
+  const { isAuthenticated } = useAuthStore();
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(isAuthenticated);
 
   const loadData = async () => {
     try {
@@ -24,7 +26,9 @@ export default function SavedJobsScreen() {
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { 
+    if (isAuthenticated) loadData(); 
+  }, [isAuthenticated]);
 
   const handleSaveJob = async (job: Job) => {
     try {
@@ -35,6 +39,7 @@ export default function SavedJobsScreen() {
     }
   };
 
+  if (!isAuthenticated) return <LoginRequired message="Bạn cần đăng nhập để xem danh sách việc làm đã lưu" />;
   if (loading) return <LoadingSpinner fullScreen />;
 
   return (

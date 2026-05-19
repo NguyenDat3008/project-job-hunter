@@ -8,6 +8,8 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  TextInput,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, Stack } from 'expo-router';
@@ -31,6 +33,7 @@ export default function NearbyJobsScreen() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [searching, setSearching] = useState(false);
   const [radius, setRadius] = useState(10); // 10km radius default
+  const [keyword, setKeyword] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -44,7 +47,7 @@ export default function NearbyJobsScreen() {
       try {
         let currentLocation = await Location.getCurrentPositionAsync({});
         setLocation(currentLocation);
-        fetchNearbyJobs(currentLocation.coords.latitude, currentLocation.coords.longitude);
+        fetchNearbyJobs(currentLocation.coords.latitude, currentLocation.coords.longitude, keyword);
       } catch (error) {
         console.error('Get location error:', error);
         setErrorMsg('Không thể lấy vị trí hiện tại');
@@ -53,10 +56,11 @@ export default function NearbyJobsScreen() {
     })();
   }, []);
 
-  const fetchNearbyJobs = async (lat: number, lng: number) => {
+  const fetchNearbyJobs = async (lat: number, lng: number, name?: string) => {
     try {
       setSearching(true);
-      const data = await api.get<Job[]>(`/jobs/nearby?lat=${lat}&lng=${lng}&radius=${radius}`);
+      const url = `/jobs/nearby?lat=${lat}&lng=${lng}&radius=${radius}${name ? `&name=${encodeURIComponent(name)}` : ''}`;
+      const data = await api.get<Job[]>(url);
       setJobs(data || []);
     } catch (error) {
       console.error('Fetch nearby jobs error:', error);
@@ -77,8 +81,10 @@ export default function NearbyJobsScreen() {
     }
   };
 
-  const handleRegionChange = (region: any) => {
-    // Optional: Auto re-fetch when map moves significantly
+  const handleSearch = () => {
+    if (location) {
+      fetchNearbyJobs(location.coords.latitude, location.coords.longitude, keyword);
+    }
   };
 
   const handleSearchThisArea = () => {
@@ -167,6 +173,26 @@ export default function NearbyJobsScreen() {
             <Text style={styles.searchingText}>Đang tìm việc làm...</Text>
           </View>
         )}
+
+        {/* Floating Search Bar */}
+        <View style={styles.searchBarContainer}>
+          <View style={styles.searchBar}>
+            <Ionicons name="search" size={20} color={COLORS.gray[400]} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Tìm theo kỹ năng, vị trí..."
+              value={keyword}
+              onChangeText={setKeyword}
+              onSubmitEditing={handleSearch}
+              returnKeyType="search"
+            />
+            {keyword.length > 0 && (
+              <TouchableOpacity onPress={() => { setKeyword(''); handleSearch(); }}>
+                <Ionicons name="close-circle" size={18} color={COLORS.gray[400]} />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
       </View>
 
       <View style={styles.listWrapper}>
@@ -324,5 +350,29 @@ const styles = StyleSheet.create({
     marginTop: 10,
     color: '#999',
     fontSize: 14,
+  },
+  searchBarContainer: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 50 : 20,
+    left: 20,
+    right: 20,
+    zIndex: 10,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    height: 50,
+    ...SHADOW.md,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 10,
+    fontSize: 15,
+    color: COLORS.black,
   },
 });

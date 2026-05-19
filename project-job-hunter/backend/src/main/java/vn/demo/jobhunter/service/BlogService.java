@@ -18,7 +18,8 @@ public class BlogService {
         this.blogRepository = blogRepository;
     }
 
-    public Blog create(Blog b) {
+    @org.springframework.lang.NonNull
+    public Blog create(@org.springframework.lang.NonNull Blog b) {
         return this.blogRepository.save(b);
     }
 
@@ -43,7 +44,9 @@ public class BlogService {
         return this.blogRepository.findById(id);
     }
 
-    public ResultPaginationDTO fetchAll(Specification<Blog> spec, Pageable pageable) {
+    public ResultPaginationDTO fetchAll(
+            @org.springframework.lang.NonNull Specification<Blog> spec,
+            @org.springframework.lang.NonNull Pageable pageable) {
         Page<Blog> pageBlog = this.blogRepository.findAll(spec, pageable);
         ResultPaginationDTO rs = new ResultPaginationDTO();
         ResultPaginationDTO.Meta mt = new ResultPaginationDTO.Meta();

@@ -81,8 +81,9 @@ public class RoleController {
     @GetMapping("/roles")
     @ApiMessage("Fetch roles")
     @Operation(summary = "Danh sách vai trò", description = "Lấy danh sách tất cả Role với phân trang")
-    public ResponseEntity<ResultPaginationDTO> getPermissions(
-            @Filter Specification<Role> spec, Pageable pageable) {
+    public ResponseEntity<ResultPaginationDTO> getRoles(
+            @Filter @org.springframework.lang.NonNull Specification<Role> spec,
+            @org.springframework.lang.NonNull Pageable pageable) {
 
         return ResponseEntity.ok(this.roleService.getRoles(spec, pageable));
     }

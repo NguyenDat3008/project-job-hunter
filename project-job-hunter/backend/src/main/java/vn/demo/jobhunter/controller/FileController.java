@@ -86,6 +86,9 @@ public class FileController {
             @RequestParam(name = "fileName") String fileName) throws Exception {
         
         java.io.InputStream inputStream = this.fileService.download(fileName);
+        if (inputStream == null) {
+            return ResponseEntity.notFound().build();
+        }
         org.springframework.core.io.Resource resource = new org.springframework.core.io.InputStreamResource(inputStream);
 
         String contentType = "application/octet-stream";

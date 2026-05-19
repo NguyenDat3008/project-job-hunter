@@ -5,7 +5,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
@@ -40,7 +39,8 @@ public class OpenAPIConfig {
         return new Info()
                 .title("Job Hunter API")
                 .version("1.0")
-                .description("This API exposes all endpoints (job hunter)");
+                .description("This API exposes all endpoints (job hunter)")
+                .license(createLicense());
     }
 
     @Bean

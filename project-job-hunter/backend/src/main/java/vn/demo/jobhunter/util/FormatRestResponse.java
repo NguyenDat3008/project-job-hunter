@@ -17,18 +17,21 @@ import vn.demo.jobhunter.util.annotation.ApiMessage;
 public class FormatRestResponse implements ResponseBodyAdvice<Object> {
 
     @Override
-    public boolean supports(MethodParameter returnType, Class converterType) {
+    public boolean supports(
+            @org.springframework.lang.NonNull MethodParameter returnType,
+            @org.springframework.lang.NonNull Class<? extends org.springframework.http.converter.HttpMessageConverter<?>> converterType) {
         return true;
     }
 
     @Override
+    @org.springframework.lang.Nullable
     public Object beforeBodyWrite(
-            Object body,
-            MethodParameter returnType,
-            MediaType selectedContentType,
-            Class selectedConverterType,
-            ServerHttpRequest request,
-            ServerHttpResponse response) {
+            @org.springframework.lang.Nullable Object body,
+            @org.springframework.lang.NonNull MethodParameter returnType,
+            @org.springframework.lang.NonNull MediaType selectedContentType,
+            @org.springframework.lang.NonNull Class<? extends org.springframework.http.converter.HttpMessageConverter<?>> selectedConverterType,
+            @org.springframework.lang.NonNull ServerHttpRequest request,
+            @org.springframework.lang.NonNull ServerHttpResponse response) {
         HttpServletResponse servletResponse = ((ServletServerHttpResponse) response).getServletResponse();
         int status = servletResponse.getStatus();
 

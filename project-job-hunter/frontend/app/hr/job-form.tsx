@@ -57,14 +57,24 @@ export default function JobFormScreen() {
     level: 'JUNIOR',
     description: '',
     requirements: '',
-    skills: '',
+    benefits: '',
+    workingTime: '',
+    skills: '', // Legacy support
+    requiredSkills: [] as any[],
+    preferredSkills: [] as any[],
     startDate: '',
     endDate: '',
     latitude: 0,
     longitude: 0,
   });
-  const [showMap, setShowMap] = useState(false);
 
+  const SUGGESTED_SKILLS = [
+    'Java', 'Spring Boot', 'React Native', 'ReactJS', 'Node.js', 'Python', 'SQL', 
+    'AWS', 'Docker', 'Kubernetes', 'Flutter', 'Swift', 'Kotlin', 'PHP', 'Laravel',
+    'Tiếng Anh (IELTS)', 'Tiếng Anh (TOEIC)', 'Tiếng Nhật (JLPT)', 'Tiếng Trung (HSK)', 'Tiếng Hàn (TOPIK)'
+  ];
+
+  const [showMap, setShowMap] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   
   // Date Picker State
@@ -88,7 +98,11 @@ export default function JobFormScreen() {
         level: job.level,
         description: job.description,
         requirements: job.requirements || '',
+        benefits: job.benefits || '',
+        workingTime: job.workingTime || '',
         skills: (job.skills || []).map(s => s.name).join(', '),
+        requiredSkills: job.requiredSkills || [],
+        preferredSkills: job.preferredSkills || [],
         startDate: job.startDate ? job.startDate.split('T')[0] : '',
         endDate: job.endDate ? job.endDate.split('T')[0] : '',
         latitude: job.latitude || 0,
@@ -106,9 +120,10 @@ export default function JobFormScreen() {
     const newErrors: Record<string, string> = {};
     if (!formData.name) newErrors.name = 'Vui lòng nhập tên công việc';
     if (!formData.salary) newErrors.salary = 'Vui lòng nhập lương';
-    if (!formData.skills) newErrors.skills = 'Vui lòng nhập ít nhất 1 kỹ năng';
+    if (formData.requiredSkills.length === 0) newErrors.requiredSkills = 'Vui lòng chọn ít nhất 1 kỹ năng cần có';
     if (!formData.description) newErrors.description = 'Vui lòng nhập mô tả';
     if (!formData.requirements) newErrors.requirements = 'Vui lòng nhập yêu cầu công việc';
+    if (!formData.benefits) newErrors.benefits = 'Vui lòng nhập quyền lợi';
     
     // Date validation
     if (!formData.startDate) {
@@ -126,12 +141,30 @@ export default function JobFormScreen() {
       if (diff <= 0) {
         newErrors.endDate = 'Ngày kết thúc phải sau ngày bắt đầu';
       } else if (diff > maxDays) {
-        newErrors.endDate = `Gói ${currentTier} chỉ cho phép đăng tin tối đa ${maxDays} ngày. Hãy nâng cấp để đăng tin lâu hơn!`;
+        newErrors.endDate = `Gói ${currentTier} chỉ cho phép đăng tin tối đa ${maxDays} ngày.`;
       }
     }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const toggleSkill = (skillName: string, type: 'required' | 'preferred') => {
+    const field = type === 'required' ? 'requiredSkills' : 'preferredSkills';
+    const current = formData[field];
+    const exists = current.find((s: any) => s.name === skillName);
+
+    if (exists) {
+      setFormData(prev => ({
+        ...prev,
+        [field]: current.filter((s: any) => s.name !== skillName)
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [field]: [...current, { name: skillName }]
+      }));
+    }
   };
 
   const handleSubmit = async () => {
@@ -140,8 +173,6 @@ export default function JobFormScreen() {
     try {
       setSubmitting(true);
       
-      const skillsArray = formData.skills.split(',').map(s => ({ name: s.trim() })).filter(s => s.name);
-
       const payload = {
         name: formData.name,
         salary: Number(formData.salary),
@@ -150,7 +181,10 @@ export default function JobFormScreen() {
         level: formData.level,
         description: formData.description,
         requirements: formData.requirements,
-        skills: skillsArray,
+        benefits: formData.benefits,
+        workingTime: formData.workingTime,
+        requiredSkills: formData.requiredSkills,
+        preferredSkills: formData.preferredSkills,
         startDate: formData.startDate ? `${formData.startDate}T00:00:00Z` : undefined,
         endDate: formData.endDate ? `${formData.endDate}T23:59:59Z` : undefined,
         active: true,
@@ -267,14 +301,46 @@ export default function JobFormScreen() {
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Kỹ năng (cách nhau bằng dấu phẩy) *</Text>
-          <TextInput
-            style={[styles.input, !!errors.skills && styles.inputError]}
-            value={formData.skills}
-            onChangeText={(text) => setFormData(prev => ({ ...prev, skills: text }))}
-            placeholder="VD: Java, Spring Boot, SQL"
-          />
-          {errors.skills && <Text style={styles.errorText}>{errors.skills}</Text>}
+          <Text style={styles.label}>Kỹ năng cần có *</Text>
+          <View style={styles.skillList}>
+            {SUGGESTED_SKILLS.map(skill => (
+              <TouchableOpacity
+                key={`req-${skill}`}
+                style={[
+                  styles.skillChip,
+                  formData.requiredSkills.find(s => s.name === skill) && styles.skillChipActive
+                ]}
+                onPress={() => toggleSkill(skill, 'required')}
+              >
+                <Text style={[
+                  styles.skillChipText,
+                  formData.requiredSkills.find(s => s.name === skill) && styles.skillChipTextActive
+                ]}>{skill}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          {errors.requiredSkills && <Text style={styles.errorText}>{errors.requiredSkills}</Text>}
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Kỹ năng nên có (Ưu tiên)</Text>
+          <View style={styles.skillList}>
+            {SUGGESTED_SKILLS.map(skill => (
+              <TouchableOpacity
+                key={`pref-${skill}`}
+                style={[
+                  styles.skillChip,
+                  formData.preferredSkills.find(s => s.name === skill) && styles.skillChipActive
+                ]}
+                onPress={() => toggleSkill(skill, 'preferred')}
+              >
+                <Text style={[
+                  styles.skillChipText,
+                  formData.preferredSkills.find(s => s.name === skill) && styles.skillChipTextActive
+                ]}>{skill}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
         <View style={styles.inputGroup}>
@@ -286,7 +352,7 @@ export default function JobFormScreen() {
             multiline
             numberOfLines={6}
             textAlignVertical="top"
-            placeholder="Mô tả chi tiết công việc, yêu cầu và quyền lợi..."
+            placeholder="Mô tả chi tiết công việc..."
           />
           {errors.description && <Text style={styles.errorText}>{errors.description}</Text>}
         </View>
@@ -300,9 +366,33 @@ export default function JobFormScreen() {
             multiline
             numberOfLines={6}
             textAlignVertical="top"
-            placeholder="Yêu cầu về kinh nghiệm, kỹ năng, thái độ..."
+            placeholder="Yêu cầu về kinh nghiệm, thái độ..."
           />
           {errors.requirements && <Text style={styles.errorText}>{errors.requirements}</Text>}
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Quyền lợi ứng viên *</Text>
+          <TextInput
+            style={[styles.input, styles.textArea, !!errors.benefits && styles.inputError]}
+            value={formData.benefits}
+            onChangeText={(text) => setFormData(prev => ({ ...prev, benefits: text }))}
+            multiline
+            numberOfLines={4}
+            textAlignVertical="top"
+            placeholder="Chế độ bảo hiểm, lương thưởng, du lịch..."
+          />
+          {errors.benefits && <Text style={styles.errorText}>{errors.benefits}</Text>}
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Thời gian làm việc</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.workingTime}
+            onChangeText={(text) => setFormData(prev => ({ ...prev, workingTime: text }))}
+            placeholder="VD: Thứ 2 - Thứ 6 (08:30 - 18:00)"
+          />
         </View>
 
         <View style={styles.limitInfo}>
@@ -438,6 +528,32 @@ const styles = StyleSheet.create({
     color: COLORS.error,
     fontSize: 12,
     marginTop: 4,
+  },
+  skillList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 4,
+  },
+  skillChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: COLORS.background.secondary,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  skillChipActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  skillChipText: {
+    fontSize: 12,
+    color: COLORS.text.secondary,
+  },
+  skillChipTextActive: {
+    color: COLORS.white,
+    fontWeight: '600',
   },
   row: {
     flexDirection: 'row',

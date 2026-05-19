@@ -14,9 +14,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { LoadingSpinner } from '@components/index';
+import { LoadingSpinner, LoginRequired } from '@components/index';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import useAuthStore from '@store/authStore';
 
 const getTimeAgo = (dateStr: string): string => {
   const now = new Date();
@@ -34,14 +35,17 @@ const getTimeAgo = (dateStr: string): string => {
 
 export default function NotificationsTab() {
   const router = useRouter();
+  const { isAuthenticated } = useAuthStore();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(isAuthenticated);
 
   useEffect(() => {
-    loadNotifications();
-    // Mark all as read when entering the screen
-    notificationService.markAllAsRead();
-  }, []);
+    if (isAuthenticated) {
+      loadNotifications();
+      // Mark all as read when entering the screen
+      notificationService.markAllAsRead();
+    }
+  }, [isAuthenticated]);
 
   const loadNotifications = async () => {
     try {
@@ -123,6 +127,7 @@ export default function NotificationsTab() {
     </TouchableOpacity>
   );
 
+  if (!isAuthenticated) return <LoginRequired message="Bạn cần đăng nhập để xem thông báo" />;
   if (loading) {
     return <LoadingSpinner fullScreen message="Đang tải..." />;
   }

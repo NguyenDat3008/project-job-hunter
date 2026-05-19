@@ -117,11 +117,9 @@ public class UserController {
     @ApiMessage("fetch all users")
     @Operation(summary = "Lấy danh sách người dùng", description = "Lấy danh sách tất cả người dùng với phân trang và bộ lọc nâng cao")
     public ResponseEntity<ResultPaginationDTO> getAllUser(
-            @Filter Specification<User> spec,
-            Pageable pageable) {
-
-        return ResponseEntity.status(HttpStatus.OK).body(
-                this.userService.fetchAllUser(spec, pageable));
+            @Filter @org.springframework.lang.NonNull Specification<User> spec,
+            @org.springframework.lang.NonNull Pageable pageable) {
+        return ResponseEntity.status(HttpStatus.OK).body(this.userService.fetchAllUser(spec, pageable));
     }
 
     @PutMapping("/users")

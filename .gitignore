@@ -12,3 +12,7 @@ project-job-hunter/backend/target/
 .env
 .env.local
 .DS_Store
+
+ARCHITECTURE.md
+node_modules
+venv

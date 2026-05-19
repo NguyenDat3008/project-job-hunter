@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import vn.demo.jobhunter.domain.Job;
@@ -68,6 +67,7 @@ public class SubscriberService {
             List<Skill> dbSkills = this.skillRepository.findByIdIn(reqSkills);
             subsDB.setSkills(dbSkills);
         }
+        if (subsDB == null) return null;
         return this.subscriberRepository.save(subsDB);
     }
 

@@ -75,7 +75,9 @@ public class RoleService {
         this.roleRepository.deleteById(id);
     }
 
-    public ResultPaginationDTO getRoles(Specification<Role> spec, Pageable pageable) {
+    public ResultPaginationDTO getRoles(
+            @org.springframework.lang.NonNull Specification<Role> spec,
+            @org.springframework.lang.NonNull Pageable pageable) {
         Page<Role> pRole = this.roleRepository.findAll(spec, pageable);
         ResultPaginationDTO rs = new ResultPaginationDTO();
         ResultPaginationDTO.Meta mt = new ResultPaginationDTO.Meta();

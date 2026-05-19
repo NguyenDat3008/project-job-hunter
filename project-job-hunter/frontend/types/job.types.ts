@@ -13,10 +13,14 @@ export interface Job {
   level: LevelEnum;
   description: string;
   requirements?: string;
+  benefits?: string;
+  workingTime?: string;
   active: boolean;
   startDate?: string;
   endDate?: string;
   skills?: Skill[];
+  requiredSkills?: Skill[];
+  preferredSkills?: Skill[];
   company?: Company;
   isSaved?: boolean;
   isApplied?: boolean;
@@ -72,6 +76,8 @@ export interface Resume {
   id: number;
   email: string;
   url?: string;
+  location?: string;
+  coverLetter?: string;
   status: ResumeStatus;
   createdAt?: string;
   updatedAt?: string;

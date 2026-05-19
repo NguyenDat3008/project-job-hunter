@@ -2,7 +2,6 @@ package vn.demo.jobhunter.config;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.HandlerMapping;
@@ -27,8 +26,9 @@ public class PermissionInterceptor implements HandlerInterceptor {
     @Override
     @Transactional
     public boolean preHandle(
-            HttpServletRequest request,
-            HttpServletResponse response, Object handler)
+            @org.springframework.lang.NonNull HttpServletRequest request,
+            @org.springframework.lang.NonNull HttpServletResponse response,
+            @org.springframework.lang.NonNull Object handler)
             throws Exception {
 
         String path = (String) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
@@ -61,6 +61,16 @@ public class PermissionInterceptor implements HandlerInterceptor {
         if (isWhitelisted) {
             System.out.println(">>> [DEBUG] Whitelist Skip SUCCESS: " + checkPath);
             return true;
+        }
+
+        // 3. Skip GET for public resources
+        if ("GET".equalsIgnoreCase(httpMethod)) {
+            if (checkPath.contains("blogs") || 
+                checkPath.contains("companies") || 
+                checkPath.contains("jobs") || 
+                checkPath.contains("skills")) {
+                return true;
+            }
         }
 
         System.out.println(">>> RUN preHandle");

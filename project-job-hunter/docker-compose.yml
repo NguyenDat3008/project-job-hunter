@@ -35,6 +35,11 @@ services:
       - minio_data:/data
     networks:
       - jobhunter-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # ─── AI Matching Service (Python FastAPI) ─────────────
   ai-service:
@@ -58,9 +63,12 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      network: host
     container_name: jobhunter-backend
     depends_on:
       mysql:
+        condition: service_healthy
+      minio:
         condition: service_healthy
       ai-service:
         condition: service_started

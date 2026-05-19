@@ -121,6 +121,16 @@ apiClient.interceptors.response.use(
       }
     }
 
+    // Xử lý lỗi 400 (Bạn không có refresh token ở cookie) — force logout
+    if (error.response?.status === 400) {
+      const backendData = error.response.data as any;
+      if (backendData?.message?.includes('refresh token')) {
+        await secureStorage.remove(STORAGE_KEYS.ACCESS_TOKEN);
+        // Có thể emit event hoặc dùng store để redirect
+        return Promise.reject(new Error('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.'));
+      }
+    }
+
     // Parse error message từ backend cho dễ đọc
     if (error.response?.data) {
       const backendData = error.response.data as any;

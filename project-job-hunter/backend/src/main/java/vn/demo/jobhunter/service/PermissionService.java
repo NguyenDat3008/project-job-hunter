@@ -32,7 +32,8 @@ public class PermissionService {
         return null;
     }
 
-    public Permission create(Permission p) {
+    @org.springframework.lang.NonNull
+    public Permission create(@org.springframework.lang.NonNull Permission p) {
         return this.permissionRepository.save(p);
     }
 
@@ -61,7 +62,9 @@ public class PermissionService {
         this.permissionRepository.delete(currentPermission);
     }
 
-    public ResultPaginationDTO getPermissions(Specification<Permission> spec, Pageable pageable) {
+    public ResultPaginationDTO getPermissions(
+            @org.springframework.lang.NonNull Specification<Permission> spec,
+            @org.springframework.lang.NonNull Pageable pageable) {
         Page<Permission> pPermissions = this.permissionRepository.findAll(spec, pageable);
         ResultPaginationDTO rs = new ResultPaginationDTO();
         ResultPaginationDTO.Meta mt = new ResultPaginationDTO.Meta();

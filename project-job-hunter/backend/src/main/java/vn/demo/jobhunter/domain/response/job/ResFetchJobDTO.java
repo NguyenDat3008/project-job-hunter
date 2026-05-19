@@ -21,6 +21,8 @@ public class ResFetchJobDTO {
     private LevelEnum level;
     private String description;
     private String requirements;
+    private String benefits;
+    private String workingTime;
     private Instant startDate;
     private Instant endDate;
     private boolean active;
@@ -30,7 +32,8 @@ public class ResFetchJobDTO {
     private Long applicantCount;
     private Boolean isSaved;
     private Boolean isApplied;
-    private List<String> skills;
+    private List<JobSkill> requiredSkills;
+    private List<JobSkill> preferredSkills;
     private CompanyJob company;
     private Instant createdAt;
     private Instant updatedAt;
@@ -45,5 +48,14 @@ public class ResFetchJobDTO {
         private long id;
         private String name;
         private String logo;
+    }
+
+    @Getter
+    @Setter
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class JobSkill {
+        private long id;
+        private String name;
     }
 }

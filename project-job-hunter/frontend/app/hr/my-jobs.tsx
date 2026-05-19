@@ -1,6 +1,5 @@
 // app/hr/my-jobs.tsx
 // Danh sách việc làm đã đăng — cho HR và COMPANY_REPRESENTATIVE
-// Lọc theo công ty của user hiện tại
 
 import React, { useCallback, useEffect, useState } from 'react';
 import {
@@ -19,12 +18,13 @@ import api from '@services/api';
 import { ENDPOINTS } from '@constants/endpoints';
 import { useAuthStore } from '@store/authStore';
 import { Job } from '@/types/job.types';
+import { LoadingSpinner, LoginRequired } from '@components/index';
 
 export default function MyJobsScreen() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(isAuthenticated);
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchJobs = useCallback(async () => {
@@ -47,7 +47,9 @@ export default function MyJobsScreen() {
     }
   }, [user?.company?.id]);
 
-  useEffect(() => { fetchJobs(); }, [fetchJobs]);
+  useEffect(() => { 
+    if (isAuthenticated) fetchJobs(); 
+  }, [isAuthenticated, fetchJobs]);
 
   const handleDelete = (job: Job) => {
     Alert.alert(
@@ -129,6 +131,9 @@ export default function MyJobsScreen() {
       </View>
     );
   };
+
+  if (!isAuthenticated) return <LoginRequired message="Bạn cần đăng nhập với quyền HR để quản lý tin tuyển dụng" />;
+  if (loading) return <LoadingSpinner fullScreen />;
 
   return (
     <View style={styles.container}>

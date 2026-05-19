@@ -13,6 +13,7 @@ public class ReviewService {
     }
 
     public Review handleCreateReview(Review review) {
+        if (review == null) return null;
         return this.reviewRepository.save(review);
     }
 }

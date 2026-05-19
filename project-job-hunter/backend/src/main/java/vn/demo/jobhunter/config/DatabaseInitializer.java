@@ -103,14 +103,15 @@ public class DatabaseInitializer implements CommandLineRunner {
             arr.add(new Permission("Get a subscriber by id", "/api/v1/subscribers/{id}", "GET", "SUBSCRIBERS"));
             arr.add(new Permission("Get subscribers with pagination", "/api/v1/subscribers", "GET", "SUBSCRIBERS"));
 
-            arr.add(new Permission("Download a file", "/api/v1/files", "POST", "FILES"));
-            arr.add(new Permission("Upload a file", "/api/v1/files", "GET", "FILES"));
+            arr.add(new Permission("Download a file", "/api/v1/files/download", "GET", "FILES"));
+            arr.add(new Permission("Upload a file", "/api/v1/files", "POST", "FILES"));
+            arr.add(new Permission("Get file URL", "/api/v1/files", "GET", "FILES"));
 
             // Additional permissions for new features
             arr.add(new Permission("Get AI recommended jobs", "/api/v1/jobs/recommend", "GET", "JOBS"));
             arr.add(new Permission("Toggle save job", "/api/v1/jobs/{id}/save", "POST", "JOBS"));
             arr.add(new Permission("Get saved jobs", "/api/v1/jobs/saved", "GET", "JOBS"));
-            arr.add(new Permission("Get resumes by user", "/api/v1/resumes/by-user", "POST", "RESUMES"));
+            arr.add(new Permission("Get resumes by user", "/api/v1/resumes/by-user", "GET", "RESUMES"));
             // User self-service permissions
             arr.add(new Permission("Upload avatar", "/api/v1/users/avatar", "POST", "USERS"));
             arr.add(new Permission("Change password", "/api/v1/users/change-password", "POST", "USERS"));
@@ -224,7 +225,7 @@ public class DatabaseInitializer implements CommandLineRunner {
                     || (p.getApiPath().equals("/api/v1/companies") && p.getMethod().equals("POST"))
                     // Nộp resume và xem resume của bản thân
                     || (p.getApiPath().equals("/api/v1/resumes") && p.getMethod().equals("POST"))
-                    || (p.getApiPath().equals("/api/v1/resumes/by-user") && p.getMethod().equals("POST"))
+                    || (p.getApiPath().equals("/api/v1/resumes/by-user") && p.getMethod().equals("GET"))
                     // Upload file (chỉ resume, được check ở FileController)
                     || (p.getModule().equals("FILES"))
                     // Tự quản lý profile
@@ -327,10 +328,63 @@ public class DatabaseInitializer implements CommandLineRunner {
             }
         }
 
+        // SYNC PERMISSIONS FIX (For existing databases)
+        this.syncPermissions();
+
         if (countPermissions > 0 && countRoles > 0 && countUsers > 0 && countCompanies > 0) {
             System.out.println(">>> SKIP INIT DATABASE ~ ALREADY HAVE DATA...");
         } else
             System.out.println(">>> END INIT DATABASE");
+    }
+
+    private void syncPermissions() {
+        // Fix "Upload a file" (POST) and "Download a file" (GET)
+        Permission uploadPerm = this.permissionRepository.findByName("Upload a file");
+        if (uploadPerm != null && uploadPerm.getMethod().equals("GET")) {
+            uploadPerm.setMethod("POST");
+            this.permissionRepository.save(uploadPerm);
+        }
+
+        Permission downloadPerm = this.permissionRepository.findByName("Download a file");
+        if (downloadPerm != null && (downloadPerm.getMethod().equals("POST") || !downloadPerm.getApiPath().contains("download"))) {
+            downloadPerm.setMethod("GET");
+            downloadPerm.setApiPath("/api/v1/files/download");
+            this.permissionRepository.save(downloadPerm);
+        }
+
+        // Fix "Get resumes by user" (GET)
+        Permission resumesByUserPerm = this.permissionRepository.findByName("Get resumes by user");
+        if (resumesByUserPerm != null && resumesByUserPerm.getMethod().equals("POST")) {
+            resumesByUserPerm.setMethod("GET");
+            this.permissionRepository.save(resumesByUserPerm);
+        }
+
+        // Ensure NORMAL_USER has correct permissions after sync
+        Role userRole = this.roleRepository.findByName("NORMAL_USER");
+        if (userRole != null) {
+            List<Permission> allPermissions = this.permissionRepository.findAll();
+            List<Permission> userPermissions = allPermissions.stream()
+                .filter(p ->
+                    (p.getModule().equals("JOBS") && p.getMethod().equals("GET"))
+                    || (p.getApiPath().equals("/api/v1/jobs/{id}/save") && p.getMethod().equals("POST"))
+                    || (p.getApiPath().equals("/api/v1/jobs/saved") && p.getMethod().equals("GET"))
+                    || (p.getApiPath().equals("/api/v1/jobs/recommend") && p.getMethod().equals("GET"))
+                    || (p.getModule().equals("COMPANIES") && p.getMethod().equals("GET"))
+                    || (p.getApiPath().equals("/api/v1/companies") && p.getMethod().equals("POST"))
+                    || (p.getApiPath().equals("/api/v1/resumes") && p.getMethod().equals("POST"))
+                    || (p.getApiPath().equals("/api/v1/resumes/by-user") && p.getMethod().equals("GET"))
+                    || (p.getModule().equals("FILES"))
+                    || (p.getApiPath().equals("/api/v1/users/avatar") && p.getMethod().equals("POST"))
+                    || (p.getApiPath().equals("/api/v1/users/change-password") && p.getMethod().equals("POST"))
+                    || (p.getApiPath().equals("/api/v1/users") && p.getMethod().equals("PUT"))
+                    || (p.getApiPath().equals("/api/v1/users/{id}") && p.getMethod().equals("DELETE"))
+                    || (p.getApiPath().equals("/api/v1/subscribers") && p.getMethod().equals("POST"))
+                    || (p.getApiPath().equals("/api/v1/subscribers") && p.getMethod().equals("PUT"))
+                )
+                .collect(java.util.stream.Collectors.toList());
+            userRole.setPermissions(userPermissions);
+            this.roleRepository.save(userRole);
+        }
     }
 
 }

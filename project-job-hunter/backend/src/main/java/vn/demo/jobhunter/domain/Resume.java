@@ -34,6 +34,10 @@ public class Resume {
     @NotBlank(message = "url không được để trống (upload cv chưa thành công)")
     private String url;
 
+    private String location;
+
+    private String coverLetter;
+
     @Enumerated(EnumType.STRING)
     private ResumeStateEnum status;
 

@@ -19,8 +19,9 @@ import { BORDER_RADIUS, COLORS, SHADOW, SPACING, TYPOGRAPHY } from '@constants/t
 import api from '@services/api';
 import { ENDPOINTS, API_CONFIG } from '@constants/endpoints';
 import { Resume, ResumeStatus } from '@/types/resume.types';
-import { LoadingSpinner } from '@components/index';
+import { LoadingSpinner, LoginRequired } from '@components/index';
 import { LinearGradient } from 'expo-linear-gradient';
+import useAuthStore from '@store/authStore';
 
 const { width } = Dimensions.get('window');
 
@@ -34,8 +35,9 @@ const STATUS_CONFIG: Record<ResumeStatus, { label: string; color: string; bg: st
 export default function ApplicationsScreen() {
   const router = useRouter();
   const { jobId } = useLocalSearchParams();
+  const { isAuthenticated } = useAuthStore();
   const [resumes, setResumes] = useState<Resume[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(isAuthenticated);
   const [refreshing, setRefreshing] = useState(false);
   
   // Status Modal State
@@ -65,7 +67,9 @@ export default function ApplicationsScreen() {
     }
   }, [jobId]);
 
-  useEffect(() => { fetchApplications(); }, [fetchApplications]);
+  useEffect(() => { 
+    if (isAuthenticated) fetchApplications(); 
+  }, [isAuthenticated, fetchApplications]);
 
   const openStatusModal = (resume: Resume, status: ResumeStatus) => {
     setSelectedResume(resume);
@@ -153,6 +157,7 @@ export default function ApplicationsScreen() {
     );
   };
 
+  if (!isAuthenticated) return <LoginRequired message="Bạn cần đăng nhập với quyền HR để xem danh sách ứng viên" />;
   if (loading) return <LoadingSpinner fullScreen message="Đang tải danh sách hồ sơ..." />;
 
   return (

@@ -21,7 +21,6 @@ import vn.demo.jobhunter.domain.Job;
 import vn.demo.jobhunter.domain.response.ResultPaginationDTO;
 import vn.demo.jobhunter.domain.response.job.ResCreateJobDTO;
 import vn.demo.jobhunter.domain.response.job.ResUpdateJobDTO;
-import vn.demo.jobhunter.service.JobService;
 import vn.demo.jobhunter.util.annotation.ApiMessage;
 import vn.demo.jobhunter.util.error.IdInvalidException;
 
@@ -126,8 +125,9 @@ public class JobController {
     public ResponseEntity<java.util.List<Job>> getJobsNearby(
             @org.springframework.web.bind.annotation.RequestParam("lat") double lat,
             @org.springframework.web.bind.annotation.RequestParam("lng") double lng,
-            @org.springframework.web.bind.annotation.RequestParam(value = "radius", defaultValue = "10") double radius) {
-        return ResponseEntity.ok().body(this.jobService.findJobsNearby(lat, lng, radius));
+            @org.springframework.web.bind.annotation.RequestParam(value = "radius", defaultValue = "10") double radius,
+            @org.springframework.web.bind.annotation.RequestParam(value = "name", required = false) String name) {
+        return ResponseEntity.ok().body(this.jobService.findJobsNearby(lat, lng, radius, name));
     }
 
     @GetMapping("/jobs/{id}")
@@ -146,8 +146,8 @@ public class JobController {
     @ApiMessage("Get job with pagination")
     @Operation(summary = "Danh sách việc làm", description = "Lấy danh sách tin tuyển dụng với phân trang và bộ lọc (công khai)")
     public ResponseEntity<ResultPaginationDTO> getAllJob(
-            @Filter Specification<Job> spec,
-            Pageable pageable) {
+            @Filter @org.springframework.lang.NonNull Specification<Job> spec,
+            @org.springframework.lang.NonNull Pageable pageable) {
 
         return ResponseEntity.ok().body(this.jobService.fetchAll(spec, pageable));
     }
@@ -206,7 +206,9 @@ public class JobController {
 
         if (exists) {
             vn.demo.jobhunter.domain.SavedJob savedJob = this.savedJobRepository.findByUserAndJob(currentUser, job);
-            this.savedJobRepository.delete(savedJob);
+            if (savedJob != null) {
+                this.savedJobRepository.delete(savedJob);
+            }
             return ResponseEntity.ok().body("Job unsaved successfully");
         } else {
             vn.demo.jobhunter.domain.SavedJob savedJob = new vn.demo.jobhunter.domain.SavedJob();
