@@ -145,8 +145,13 @@ public class ResumeService {
             res.setCompanyName(resume.getJob().getCompany().getName());
         }
 
-        res.setUser(new ResFetchResumeDTO.UserResume(resume.getUser().getId(), resume.getUser().getName()));
+        res.setUser(new ResFetchResumeDTO.UserResume(resume.getUser().getId(), resume.getUser().getName(), resume.getUser().getWarnings()));
         res.setJob(new ResFetchResumeDTO.JobResume(resume.getJob().getId(), resume.getJob().getName()));
+
+        res.setIsReported(resume.getIsReported() != null ? resume.getIsReported() : false);
+        res.setReportReason(resume.getReportReason());
+        res.setReportedBy(resume.getReportedBy());
+        res.setReportedAt(resume.getReportedAt());
 
         return res;
     }
@@ -205,5 +210,89 @@ public class ResumeService {
         rs.setResult(listResume);
 
         return rs;
+    }
+
+    public Resume report(long id, String reason) throws vn.demo.jobhunter.util.error.IdInvalidException {
+        Optional<Resume> resumeOptional = this.resumeRepository.findById(id);
+        if (resumeOptional.isEmpty()) {
+            throw new vn.demo.jobhunter.util.error.IdInvalidException("Resume với id = " + id + " không tồn tại");
+        }
+        Resume resume = resumeOptional.get();
+        resume.setIsReported(true);
+        resume.setReportReason(reason);
+        resume.setReportedBy(SecurityUtil.getCurrentUserLogin().orElse("system"));
+        resume.setReportedAt(java.time.Instant.now());
+        return this.resumeRepository.save(resume);
+    }
+
+    public void warnCandidate(long id) throws vn.demo.jobhunter.util.error.IdInvalidException {
+        Optional<Resume> resumeOptional = this.resumeRepository.findById(id);
+        if (resumeOptional.isEmpty()) {
+            throw new vn.demo.jobhunter.util.error.IdInvalidException("Resume với id = " + id + " không tồn tại");
+        }
+        Resume resume = resumeOptional.get();
+        User candidate = resume.getUser();
+        if (candidate != null) {
+            int currentWarnings = candidate.getWarnings();
+            candidate.setWarnings(currentWarnings + 1);
+            if (candidate.getWarnings() >= 2) {
+                candidate.setIsBanned(true);
+            }
+            this.userRepository.save(candidate);
+
+            // Send notification to candidate
+            String warningMsg = "Bạn đã nhận được một cảnh cáo vi phạm từ hệ thống do gửi CV không hợp lệ. Lý do: " 
+                + (resume.getReportReason() != null ? resume.getReportReason() : "Nội dung không hợp lệ") 
+                + ". (Lưu ý: Nếu nhận đủ 2 cảnh cáo, tài khoản của bạn sẽ bị khóa vĩnh viễn!)";
+            this.notificationService.createNotification(
+                candidate,
+                "Cảnh cáo vi phạm",
+                warningMsg,
+                "VIOLATION_WARNING",
+                "{}"
+            );
+        }
+
+        // Clear report status
+        resume.setIsReported(false);
+        resume.setReportReason(null);
+        resume.setReportedBy(null);
+        resume.setReportedAt(null);
+        this.resumeRepository.save(resume);
+    }
+
+    public void banUser(long id) throws vn.demo.jobhunter.util.error.IdInvalidException {
+        Optional<Resume> resumeOptional = this.resumeRepository.findById(id);
+        if (resumeOptional.isEmpty()) {
+            throw new vn.demo.jobhunter.util.error.IdInvalidException("Resume với id = " + id + " không tồn tại");
+        }
+        Resume resume = resumeOptional.get();
+        User candidate = resume.getUser();
+        if (candidate != null) {
+            candidate.setIsBanned(true);
+            this.userRepository.save(candidate);
+        }
+
+        // Clear report status
+        resume.setIsReported(false);
+        resume.setReportReason(null);
+        resume.setReportedBy(null);
+        resume.setReportedAt(null);
+        this.resumeRepository.save(resume);
+    }
+
+    public void dismissReport(long id) throws vn.demo.jobhunter.util.error.IdInvalidException {
+        Optional<Resume> resumeOptional = this.resumeRepository.findById(id);
+        if (resumeOptional.isEmpty()) {
+            throw new vn.demo.jobhunter.util.error.IdInvalidException("Resume với id = " + id + " không tồn tại");
+        }
+        Resume resume = resumeOptional.get();
+        
+        // Clear report status
+        resume.setIsReported(false);
+        resume.setReportReason(null);
+        resume.setReportedBy(null);
+        resume.setReportedAt(null);
+        this.resumeRepository.save(resume);
     }
 }

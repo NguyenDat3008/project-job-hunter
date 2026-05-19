@@ -15,9 +15,14 @@ export interface Resume {
   user: {
     id: number;
     name: string;
+    warnings?: number;
   };
   job: {
     id: number;
     name: string;
   };
+  isReported?: boolean;
+  reportReason?: string;
+  reportedBy?: string;
+  reportedAt?: string;
 }

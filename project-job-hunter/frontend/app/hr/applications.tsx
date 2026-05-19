@@ -46,6 +46,11 @@ export default function ApplicationsScreen() {
   const [targetStatus, setTargetStatus] = useState<ResumeStatus>('PENDING');
   const [statusMessage, setStatusMessage] = useState('');
   const [updating, setUpdating] = useState(false);
+  
+  // Report Modal State
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reporting, setReporting] = useState(false);
 
   const fetchApplications = useCallback(async () => {
     try {
@@ -94,6 +99,32 @@ export default function ApplicationsScreen() {
       Alert.alert('Lỗi', error.message || 'Không thể cập nhật trạng thái.');
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const openReportModal = (resume: Resume) => {
+    setSelectedResume(resume);
+    setReportReason('');
+    setReportModalVisible(true);
+  };
+
+  const handleSendReport = async () => {
+    if (!selectedResume) return;
+    if (!reportReason.trim()) {
+      Alert.alert('Thông báo', 'Vui lòng nhập lý do báo cáo vi phạm.');
+      return;
+    }
+    setReporting(true);
+    try {
+      await api.put(`/resumes/${selectedResume.id}/report`, {
+        reason: reportReason,
+      });
+      setReportModalVisible(false);
+      Alert.alert('Thành công', 'Đã gửi báo cáo vi phạm của hồ sơ này lên Admin để xem xét.');
+    } catch (error: any) {
+      Alert.alert('Lỗi', error.message || 'Không thể gửi báo cáo.');
+    } finally {
+      setReporting(false);
     }
   };
 
@@ -150,6 +181,9 @@ export default function ApplicationsScreen() {
               </TouchableOpacity>
               <TouchableOpacity style={[styles.miniBtn, { backgroundColor: '#FEF2F2' }]} onPress={() => openStatusModal(item, 'REJECTED')}>
                  <Ionicons name="close-circle" size={16} color="#EF4444" />
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.miniBtn, { backgroundColor: '#FFF7ED' }]} onPress={() => openReportModal(item)}>
+                 <Ionicons name="flag" size={16} color="#EA580C" />
               </TouchableOpacity>
            </View>
         </View>
@@ -219,6 +253,43 @@ export default function ApplicationsScreen() {
               disabled={updating}
             >
               <Text style={styles.submitBtnText}>{updating ? 'Đang gửi...' : 'Xác nhận cập nhật'}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modern Report Modal */}
+      <Modal visible={reportModalVisible} transparent animationType="slide" onRequestClose={() => setReportModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Báo cáo vi phạm CV</Text>
+              <TouchableOpacity onPress={() => setReportModalVisible(false)}>
+                 <Ionicons name="close" size={24} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={[styles.statusPreview, { backgroundColor: '#FEF2F2' }]}>
+               <Text style={{ color: '#EF4444', fontWeight: '700' }}>
+                 Báo cáo hồ sơ của: {selectedResume?.user?.name}
+               </Text>
+            </View>
+
+            <TextInput
+              style={styles.input}
+              placeholder="Nhập lý do chi tiết (Ví dụ: CV rác, đính kèm file linh tinh không phải CV, thông tin phản cảm, spam...)"
+              multiline
+              numberOfLines={4}
+              value={reportReason}
+              onChangeText={setReportReason}
+            />
+
+            <TouchableOpacity 
+              style={[styles.submitBtn, { backgroundColor: '#EA580C' }]} 
+              onPress={handleSendReport}
+              disabled={reporting}
+            >
+              <Text style={styles.submitBtnText}>{reporting ? 'Đang gửi báo cáo...' : 'Gửi báo cáo vi phạm'}</Text>
             </TouchableOpacity>
           </View>
         </View>

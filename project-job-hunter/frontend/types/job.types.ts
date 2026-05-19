@@ -85,6 +85,7 @@ export interface Resume {
     id: number;
     name: string;
     email: string;
+    warnings?: number;
   };
   job?: {
     id: number;
@@ -95,6 +96,10 @@ export interface Resume {
     };
   };
   companyName?: string;
+  isReported?: boolean;
+  reportReason?: string;
+  reportedBy?: string;
+  reportedAt?: string;
 }
 
 export interface ResumeState {

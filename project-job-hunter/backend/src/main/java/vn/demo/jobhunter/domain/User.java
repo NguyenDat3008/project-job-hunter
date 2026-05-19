@@ -71,6 +71,9 @@ public class User {
     private Boolean isPremiumCandidate = false;
     private Instant premiumCandidateExpiryDate;
 
+    private int warnings = 0;
+    private Boolean isBanned = false;
+
     @PrePersist
     public void handleBeforeCreate() {
         this.createdBy = SecurityUtil.getCurrentUserLogin().isPresent() == true

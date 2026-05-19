@@ -24,6 +24,9 @@ public class UserDetailsCustom implements UserDetailsService {
         if (user == null) {
             throw new UsernameNotFoundException("Username/password không hợp lệ");
         }
+        if (user.getIsBanned() != null && user.getIsBanned()) {
+            throw new UsernameNotFoundException("Tài khoản của bạn đã bị khóa vĩnh viễn do nhận đủ 2 cảnh báo vi phạm từ hệ thống!");
+        }
 
         return new User(
                 user.getEmail(),

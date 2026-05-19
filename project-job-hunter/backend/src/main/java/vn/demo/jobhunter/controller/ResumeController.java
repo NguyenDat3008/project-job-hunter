@@ -204,4 +204,76 @@ public class ResumeController {
 
         return ResponseEntity.ok().body(this.resumeService.fetchResumeByUser(pageable));
     }
+
+    @PutMapping("/resumes/{id}/report")
+    @ApiMessage("Báo cáo vi phạm CV")
+    @Operation(summary = "Báo cáo vi phạm CV", description = "HR báo cáo CV của ứng viên gửi linh tinh/rác")
+    public ResponseEntity<ResFetchResumeDTO> reportResume(
+            @PathVariable("id") long id,
+            @RequestBody(required = false) java.util.Map<String, String> body) throws IdInvalidException, vn.demo.jobhunter.util.error.PermissionException {
+        // CHECK OWNERSHIP
+        String email = SecurityUtil.getCurrentUserLogin().orElse("");
+        User currentUser = this.userService.handleGetUserByUsername(email);
+        if (currentUser != null && currentUser.getRole() != null) {
+            if (!currentUser.getRole().getName().equals("SUPER_ADMIN")) {
+                Optional<Resume> reqResumeOptional = this.resumeService.fetchById(id);
+                if (reqResumeOptional.isEmpty()) {
+                    throw new IdInvalidException("Resume với id = " + id + " không tồn tại");
+                }
+                Resume reqResume = reqResumeOptional.get();
+                if (currentUser.getCompany() == null || reqResume.getJob() == null || reqResume.getJob().getCompany() == null || currentUser.getCompany().getId() != reqResume.getJob().getCompany().getId()) {
+                    throw new vn.demo.jobhunter.util.error.PermissionException("Bạn không có quyền báo cáo Resume của công ty khác.");
+                }
+            }
+        }
+
+        String reason = (body != null && body.containsKey("reason")) ? body.get("reason") : "Không rõ lý do";
+        Resume updated = this.resumeService.report(id, reason);
+        return ResponseEntity.ok().body(this.resumeService.getResume(updated));
+    }
+
+    @PutMapping("/resumes/{id}/warn")
+    @ApiMessage("Cảnh cáo ứng viên vi phạm")
+    @Operation(summary = "Cảnh cáo ứng viên", description = "Admin gửi cảnh cáo cho ứng viên. Đủ 2 cảnh cáo sẽ tự động khóa tài khoản.")
+    public ResponseEntity<Void> warnCandidate(@PathVariable("id") long id) throws IdInvalidException, vn.demo.jobhunter.util.error.PermissionException {
+        // CHECK ADMIN
+        String email = SecurityUtil.getCurrentUserLogin().orElse("");
+        User currentUser = this.userService.handleGetUserByUsername(email);
+        if (currentUser == null || currentUser.getRole() == null || !currentUser.getRole().getName().equals("SUPER_ADMIN")) {
+            throw new vn.demo.jobhunter.util.error.PermissionException("Bạn không có quyền thực hiện hành động này.");
+        }
+
+        this.resumeService.warnCandidate(id);
+        return ResponseEntity.ok().body(null);
+    }
+
+    @PutMapping("/resumes/{id}/ban-user")
+    @ApiMessage("Khóa tài khoản ứng viên")
+    @Operation(summary = "Khóa tài khoản ứng viên", description = "Admin khóa vĩnh viễn tài khoản của ứng viên.")
+    public ResponseEntity<Void> banUser(@PathVariable("id") long id) throws IdInvalidException, vn.demo.jobhunter.util.error.PermissionException {
+        // CHECK ADMIN
+        String email = SecurityUtil.getCurrentUserLogin().orElse("");
+        User currentUser = this.userService.handleGetUserByUsername(email);
+        if (currentUser == null || currentUser.getRole() == null || !currentUser.getRole().getName().equals("SUPER_ADMIN")) {
+            throw new vn.demo.jobhunter.util.error.PermissionException("Bạn không có quyền thực hiện hành động này.");
+        }
+
+        this.resumeService.banUser(id);
+        return ResponseEntity.ok().body(null);
+    }
+
+    @PutMapping("/resumes/{id}/dismiss-report")
+    @ApiMessage("Bỏ qua báo cáo vi phạm")
+    @Operation(summary = "Bỏ qua báo cáo vi phạm", description = "Admin bỏ qua báo cáo vi phạm của CV này.")
+    public ResponseEntity<Void> dismissReport(@PathVariable("id") long id) throws IdInvalidException, vn.demo.jobhunter.util.error.PermissionException {
+        // CHECK ADMIN
+        String email = SecurityUtil.getCurrentUserLogin().orElse("");
+        User currentUser = this.userService.handleGetUserByUsername(email);
+        if (currentUser == null || currentUser.getRole() == null || !currentUser.getRole().getName().equals("SUPER_ADMIN")) {
+            throw new vn.demo.jobhunter.util.error.PermissionException("Bạn không có quyền thực hiện hành động này.");
+        }
+
+        this.resumeService.dismissReport(id);
+        return ResponseEntity.ok().body(null);
+    }
 }

@@ -30,12 +30,18 @@ public class ResFetchResumeDTO {
     private UserResume user;
     private JobResume job;
 
+    private Boolean isReported;
+    private String reportReason;
+    private String reportedBy;
+    private Instant reportedAt;
+
     @Getter
     @Setter
     @AllArgsConstructor
     public static class UserResume {
         private long id;
         private String name;
+        private int warnings;
     }
 
     @Getter

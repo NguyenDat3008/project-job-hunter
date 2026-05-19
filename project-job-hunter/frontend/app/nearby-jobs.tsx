@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, Stack } from 'expo-router';
-import MapView, { Marker, UrlTile } from 'react-native-maps';
+import MapView, { Marker, UrlTile } from '@components/MapViewWrapper';
 import * as Location from 'expo-location';
 import api from '@services/api';
 import { COLORS, SHADOW } from '@constants/theme';
@@ -25,7 +25,7 @@ const { width, height } = Dimensions.get('window');
 
 export default function NearbyJobsScreen() {
   const router = useRouter();
-  const mapRef = useRef<MapView>(null);
+  const mapRef = useRef<any>(null);
   
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);

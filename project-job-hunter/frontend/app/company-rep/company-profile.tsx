@@ -18,7 +18,7 @@ import * as ImagePicker from 'expo-image-picker';
 import api from '@services/api';
 import useAuthStore from '@store/authStore';
 import { API_CONFIG } from '@constants/endpoints';
-import MapView, { Marker, UrlTile } from 'react-native-maps';
+import MapView, { Marker, UrlTile } from '@components/MapViewWrapper';
 
 const COLORS = {
   primary: '#00B14F',

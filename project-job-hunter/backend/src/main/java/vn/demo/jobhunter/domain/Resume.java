@@ -55,6 +55,11 @@ public class Resume {
     @JoinColumn(name = "job_id")
     private Job job;
 
+    private Boolean isReported = false;
+    private String reportReason;
+    private String reportedBy;
+    private java.time.Instant reportedAt;
+
     @PrePersist
     public void handleBeforeCreate() {
         this.createdBy = SecurityUtil.getCurrentUserLogin().isPresent() == true
