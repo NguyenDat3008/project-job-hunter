@@ -2,9 +2,66 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { ActivityIndicator, Platform, StyleSheet, useColorScheme, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, useColorScheme, View, Alert } from 'react-native';
 import 'react-native-reanimated';
 import { useAuthStore } from '../store/authStore';
+import { Toast } from '../components/Toast';
+import { useToastStore } from '../store/toastStore';
+
+// === GLOBAL MONKEY-PATCH FOR Alert.alert ===
+const originalAlert = Alert.alert;
+
+Alert.alert = (title, message, buttons, options) => {
+  // 1. If it's a confirmation dialog (has 2 or more buttons), preserve native Alert
+  if (buttons && buttons.length > 1) {
+    return originalAlert(title, message, buttons, options);
+  }
+
+  // 2. Classify notification type based on content keywords
+  const textToCheck = `${title || ''} ${message || ''}`.toLowerCase();
+  let type: 'success' | 'error' | 'warning' | 'info' = 'info';
+
+  if (
+    textToCheck.includes('thành công') ||
+    textToCheck.includes('hoàn tất') ||
+    textToCheck.includes('đã lưu') ||
+    textToCheck.includes('gửi thành công') ||
+    textToCheck.includes('đăng tin') ||
+    textToCheck.includes('nộp cv') ||
+    textToCheck.includes('đăng ký thành công')
+  ) {
+    type = 'success';
+  } else if (
+    textToCheck.includes('lỗi') ||
+    textToCheck.includes('thất bại') ||
+    textToCheck.includes('không thể') ||
+    textToCheck.includes('sai') ||
+    textToCheck.includes('chưa nhập') ||
+    textToCheck.includes('thiếu') ||
+    textToCheck.includes('yêu cầu')
+  ) {
+    type = 'error';
+  } else if (
+    textToCheck.includes('cảnh báo') ||
+    textToCheck.includes('chú ý') ||
+    textToCheck.includes('vui lòng')
+  ) {
+    type = 'warning';
+  }
+
+  const mainMessage = message || title || '';
+
+  // 3. Show Toast notification
+  useToastStore.getState().show(mainMessage, type);
+
+  // 4. If the single button has an onPress handler (e.g. navigation or callback), trigger it automatically
+  if (buttons && buttons[0] && buttons[0].onPress) {
+    setTimeout(() => {
+      buttons[0].onPress?.();
+    }, 1200); // 1.2s delay to let user read the toast first
+  }
+};
+
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -51,6 +108,7 @@ export default function RootLayout() {
         <Stack.Screen name="company-rep/hr-management" options={{ headerShown: true, headerBackTitle: 'Quay lại' }} />
       </Stack>
       <StatusBar style="auto" />
+      <Toast />
     </ThemeProvider>
   );
 
