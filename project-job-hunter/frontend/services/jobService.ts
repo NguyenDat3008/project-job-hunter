@@ -141,6 +141,14 @@ export const jobService = {
 
     return api.get<PaginationResponse<Job>>(`/jobs?page=1&size=50&filter=${encodeURIComponent(filter)}&sort=createdAt,desc`);
   },
+
+  /**
+   * PUT /api/v1/jobs/{id}/report
+   * Báo cáo tin tuyển dụng lừa đảo — Cần Token
+   */
+  reportJob: async (id: number, reason: string): Promise<Job> => {
+    return api.put<Job>(`/jobs/${id}/report`, { reason });
+  },
 };
 
 export default jobService;

@@ -235,6 +235,20 @@ const AdminDashboard = () => {
             <Ionicons name="megaphone" size={24} color={COLORS.primary} />
             <Text style={styles.statLabel}>Broadcast</Text>
           </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.statBox, { backgroundColor: '#FFF7ED' }]}
+            onPress={() => router.push('/admin/reported-jobs' as any)}
+          >
+            <Ionicons name="flag" size={24} color="#EA580C" />
+            <Text style={[styles.statLabel, { color: '#EA580C' }]}>Báo cáo Job</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.statBox, { backgroundColor: '#FEF2F2' }]}
+            onPress={() => router.push('/admin/resumes' as any)}
+          >
+            <Ionicons name="document-text" size={24} color="#DC2626" />
+            <Text style={[styles.statLabel, { color: '#DC2626' }]}>Báo cáo CV</Text>
+          </TouchableOpacity>
         </ScrollView>
       </View>
 

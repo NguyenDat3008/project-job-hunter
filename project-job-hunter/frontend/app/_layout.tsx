@@ -27,6 +27,7 @@ export default function RootLayout() {
         <Stack.Screen name="signup" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="detail" options={{ headerShown: false }} />
+        <Stack.Screen name="report" options={{ headerShown: false }} />
         <Stack.Screen name="company-detail" options={{ headerShown: false }} />
         <Stack.Screen name="premium" options={{ headerShown: true, title: 'Gói Premium', headerBackTitle: 'Đóng' }} />
         <Stack.Screen name="saved-jobs" options={{ headerShown: false }} />
@@ -36,11 +37,11 @@ export default function RootLayout() {
         <Stack.Screen name="account-settings" options={{ headerShown: false }} />
         <Stack.Screen name="register-company" options={{ headerShown: true, headerBackTitle: 'Quay lại' }} />
 
-        {/* Admin screens */}
         <Stack.Screen name="admin/dashboard" options={{ headerShown: true, headerBackTitle: 'Quay lại' }} />
         <Stack.Screen name="admin/companies" options={{ headerShown: true, headerBackTitle: 'Quay lại' }} />
         <Stack.Screen name="admin/resumes" options={{ headerShown: true, headerBackTitle: 'Quay lại' }} />
         <Stack.Screen name="admin/users" options={{ headerShown: true, headerBackTitle: 'Quay lại' }} />
+        <Stack.Screen name="admin/reported-jobs" options={{ headerShown: true, headerBackTitle: 'Quay lại' }} />
 
         {/* HR screens */}
         <Stack.Screen name="hr/job-form" options={{ headerShown: true, headerBackTitle: 'Quay lại' }} />

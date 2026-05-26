@@ -40,21 +40,11 @@ export default function SignUpScreen() {
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-            <Image source={require('../assets/images/logotopCV.jpg')} style={styles.logo} resizeMode="contain" />
+          <Image source={require('../assets/images/logotopCV.jpg')} style={styles.logo} resizeMode="contain" />
         </View>
 
         <Text style={styles.headerTitle}>Tạo tài khoản</Text>
         <Text style={styles.subtitleText}>Đăng ký ngay để trải nghiệm các tính năng tìm việc thông minh AI</Text>
-
-        {/* Roles Select */}
-        <View style={styles.roleContainer}>
-          <TouchableOpacity style={[styles.roleBtn, styles.roleBtnActive]}>
-            <Text style={[styles.roleBtnText, styles.roleBtnTextActive]}>Tôi là Ứng viên</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.roleBtn}>
-            <Text style={styles.roleBtnText}>Tôi là Nhà tuyển dụng</Text>
-          </TouchableOpacity>
-        </View>
 
         <View style={styles.formContainer}>
           <TextField label="Họ và tên" placeholder="Vd: Nguyễn Văn A" value={name}
@@ -69,7 +59,7 @@ export default function SignUpScreen() {
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
           <Button title="Đăng ký tài khoản" onPress={handleSignUp} isLoading={isLoading} fullWidth style={styles.registerButton} />
-          
+
           <View style={styles.dividerContainer}>
             <View style={styles.divider} />
             <Text style={styles.dividerText}>Hoặc đăng ký bằng</Text>

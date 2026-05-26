@@ -1,4 +1,4 @@
-// Job Detail Screen — Refined aesthetic
+// Job Detail Screen — Refined aesthetic + Report Fraud Feature
 import { Button, LoadingSpinner, MatchScore, PremiumBadge } from '@components/index';
 import { BORDER_RADIUS, COLORS, SHADOW, SPACING, TYPOGRAPHY } from '@constants/theme';
 import { useAuthStore } from '@store/authStore';
@@ -12,11 +12,13 @@ import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Image,
+  Modal,
   Platform,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -92,6 +94,21 @@ export default function JobDetailScreen() {
     }
   };
 
+  const handleOpenReport = () => {
+    if (!job) return;
+    if (!isAuthenticated) {
+      Alert.alert('Yêu cầu đăng nhập', 'Bạn cần đăng nhập để báo cáo tin tuyển dụng.', [
+        { text: 'Hủy', style: 'cancel' },
+        { text: 'Đăng nhập', onPress: () => router.push('/login') }
+      ]);
+      return;
+    }
+    router.push({
+      pathname: '/report',
+      params: { jobId: job.id.toString(), jobName: job.name }
+    });
+  };
+
   if (isLoading || !job) return <LoadingSpinner fullScreen message="Đang tải chi tiết..." />;
 
   return (
@@ -103,9 +120,14 @@ export default function JobDetailScreen() {
           <Ionicons name="arrow-back" size={24} color={COLORS.text.primary} />
         </TouchableOpacity>
         <Text style={styles.navTitle} numberOfLines={1}>Chi tiết công việc</Text>
-        <TouchableOpacity style={styles.navBtn}>
-          <Ionicons name="share-social-outline" size={24} color={COLORS.text.primary} />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <TouchableOpacity style={styles.navBtn} onPress={handleOpenReport}>
+            <Ionicons name="warning-outline" size={22} color="#EA580C" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.navBtn}>
+            <Ionicons name="share-social-outline" size={24} color={COLORS.text.primary} />
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -244,6 +266,18 @@ export default function JobDetailScreen() {
           </View>
         )}
 
+        {/* Report CTA Banner */}
+        <TouchableOpacity style={styles.reportBanner} onPress={handleOpenReport}>
+          <View style={styles.reportBannerIcon}>
+            <Ionicons name="shield-checkmark-outline" size={24} color="#EA580C" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.reportBannerTitle}>Tin tuyển dụng này có vấn đề?</Text>
+            <Text style={styles.reportBannerDesc}>Báo cáo để bảo vệ cộng đồng người tìm việc</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#EA580C" />
+        </TouchableOpacity>
+
         <View style={{ height: 100 }} />
       </ScrollView>
 
@@ -268,6 +302,7 @@ export default function JobDetailScreen() {
           </Text>
         </TouchableOpacity>
       </View>
+
     </View>
   );
 }
@@ -335,6 +370,30 @@ const styles = StyleSheet.create({
   skillsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   skillTag: { backgroundColor: '#F0FDF4', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
   skillText: { fontSize: 11, color: COLORS.primary, fontWeight: '600' },
+
+  // Report CTA Banner
+  reportBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 28,
+    marginTop: 8,
+    padding: 16,
+    backgroundColor: '#FFF7ED',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#FED7AA',
+    gap: 12,
+  },
+  reportBannerIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#FFEDD5',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  reportBannerTitle: { fontSize: 14, fontWeight: '700', color: '#9A3412', marginBottom: 2 },
+  reportBannerDesc: { fontSize: 11, color: '#C2410C' },
   
   footer: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', backgroundColor: COLORS.white, paddingHorizontal: 28, paddingTop: 10, paddingBottom: Platform.OS === 'ios' ? 30 : 16, gap: 12, borderTopWidth: 0.5, borderTopColor: '#F0F0F0' },
   saveBtn: { width: 48, height: 48, borderRadius: 12, borderWidth: 1, borderColor: '#F0F0F0', justifyContent: 'center', alignItems: 'center', backgroundColor: '#F9FAFB' },
@@ -342,4 +401,86 @@ const styles = StyleSheet.create({
   applyBtn: { flex: 1, height: 48, backgroundColor: COLORS.primary, borderRadius: 24, justifyContent: 'center', alignItems: 'center', ...SHADOW.sm },
   appliedBtn: { backgroundColor: COLORS.text.light },
   applyBtnText: { color: COLORS.white, fontSize: 14, fontWeight: '800' },
+
+  // Report Modal Styles
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    padding: 24,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+    maxHeight: '85%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#EA580C',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalTitle: { fontSize: 20, fontWeight: '800', color: '#1E293B' },
+  reportJobInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#F8FAFC',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  reportJobName: { fontSize: 13, color: '#334155', fontWeight: '600', flex: 1 },
+  reasonLabel: { fontSize: 14, fontWeight: '700', color: '#1E293B', marginBottom: 10 },
+  reasonList: { maxHeight: 240, marginBottom: 12 },
+  reasonItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    marginBottom: 6,
+    backgroundColor: '#F8FAFC',
+  },
+  reasonItemSelected: {
+    backgroundColor: '#FFF7ED',
+    borderWidth: 1,
+    borderColor: '#FDBA74',
+  },
+  reasonText: { fontSize: 13, color: '#475569', flex: 1, lineHeight: 19 },
+  reasonTextSelected: { color: '#9A3412', fontWeight: '600' },
+  reportInput: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    padding: 16,
+    height: 80,
+    textAlignVertical: 'top',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 16,
+    fontSize: 14,
+    color: '#1E293B',
+  },
+  reportSubmitBtn: {
+    flexDirection: 'row',
+    backgroundColor: '#EA580C',
+    paddingVertical: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 4,
+    shadowColor: '#EA580C',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  reportSubmitBtnDisabled: { opacity: 0.5 },
+  reportSubmitText: { color: '#FFFFFF', fontWeight: '800', fontSize: 16 },
 });

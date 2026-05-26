@@ -275,6 +275,14 @@ export default function ProfileTab() {
                 iconColor={COLORS.primary}
                 bgColor="#F0FDF4"
               />
+              <View style={styles.divider} />
+              <MenuItem 
+                icon="warning-outline" 
+                label="Tin tuyển dụng bị báo cáo" 
+                onPress={() => router.push('/admin/reported-jobs')}
+                iconColor="#EA580C"
+                bgColor="#FFF7ED"
+              />
             </View>
           </>
         )}
@@ -776,6 +784,6 @@ const styles = StyleSheet.create({
     color: COLORS.error || '#F44336',
   },
   bottomSpacer: {
-    height: 40,
+    height: 100,
   },
 });

@@ -1,10 +1,18 @@
-# Job Hunter - Ignore files
-GUIDE_JOB_HUNTER.md
-.env
-node_modules/
-.expo/
-target/
-.idea/
-.vscode/
+project-job-hunter/backend/target/classes/vn/demo/jobhunter/util/error/IdInvalidException.class
+project-job-hunter/backend/target/classes/vn/demo/jobhunter/util/error/GlobalException.class
+project-job-hunter/backend/target/classes/vn/demo/jobhunter/util/error/PermissionException.class
+project-job-hunter/backend/target/classes/vn/demo/jobhunter/util/error/StorageException.class
+**/target/
 *.class
-*.log
+**/target/
+*.class
+project-job-hunter/frontend/node_modules/
+project-job-hunter/backend/target/
+
+.env
+.env.local
+.DS_Store
+
+ARCHITECTURE.md
+node_modules
+venv
