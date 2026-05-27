@@ -98,6 +98,11 @@ public class Job {
     @JsonIgnore
     List<Resume> resumes;
 
+    private Boolean isReported = false;
+    private String reportReason;
+    private String reportedBy;
+    private java.time.Instant reportedAt;
+
     @PrePersist
     public void handleBeforeCreate() {
         this.createdBy = SecurityUtil.getCurrentUserLogin().isPresent() == true

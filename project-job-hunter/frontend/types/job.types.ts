@@ -30,6 +30,10 @@ export interface Job {
   isPremium?: boolean;
   createdAt?: string;
   updatedAt?: string;
+  isReported?: boolean;
+  reportReason?: string;
+  reportedBy?: string;
+  reportedAt?: string;
 }
 
 // ─── Company (matches backend Company entity) ─────────────────────────────────

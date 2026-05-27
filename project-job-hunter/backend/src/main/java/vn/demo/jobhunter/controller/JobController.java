@@ -218,4 +218,60 @@ public class JobController {
             return ResponseEntity.ok().body("Job saved successfully");
         }
     }
+
+    @PutMapping("/jobs/{id}/report")
+    @ApiMessage("Báo cáo tin tuyển dụng lừa đảo")
+    @Operation(summary = "Báo cáo tin lừa đảo", description = "Ứng viên báo cáo tin tuyển dụng có dấu hiệu lừa đảo")
+    public ResponseEntity<vn.demo.jobhunter.domain.response.job.ResFetchJobDTO> reportJob(
+            @PathVariable("id") long id,
+            @RequestBody(required = false) java.util.Map<String, String> body) throws IdInvalidException {
+        String reason = (body != null && body.containsKey("reason")) ? body.get("reason") : "Không rõ lý do";
+        Job updated = this.jobService.reportJob(id, reason);
+        return ResponseEntity.ok().body(this.jobService.convertToResFetchJobDTO(updated));
+    }
+
+    @PutMapping("/jobs/{id}/warn-company")
+    @ApiMessage("Cảnh cáo công ty vi phạm")
+    @Operation(summary = "Cảnh cáo công ty", description = "Admin cảnh cáo công ty đăng tin lừa đảo. Đủ 2 cảnh cáo sẽ vô hiệu hóa công ty.")
+    public ResponseEntity<Void> warnCompany(@PathVariable("id") long id) throws IdInvalidException, vn.demo.jobhunter.util.error.PermissionException {
+        // CHECK ADMIN
+        String email = vn.demo.jobhunter.util.SecurityUtil.getCurrentUserLogin().orElse("");
+        vn.demo.jobhunter.domain.User currentUser = this.userService.handleGetUserByUsername(email);
+        if (currentUser == null || currentUser.getRole() == null || !currentUser.getRole().getName().equals("SUPER_ADMIN")) {
+            throw new vn.demo.jobhunter.util.error.PermissionException("Bạn không có quyền thực hiện hành động này.");
+        }
+
+        this.jobService.warnCompany(id);
+        return ResponseEntity.ok().body(null);
+    }
+
+    @PutMapping("/jobs/{id}/hide")
+    @ApiMessage("Ẩn tin tuyển dụng bị báo cáo")
+    @Operation(summary = "Ẩn tin tuyển dụng", description = "Admin ẩn tin tuyển dụng lừa đảo khỏi hệ thống.")
+    public ResponseEntity<Void> hideReportedJob(@PathVariable("id") long id) throws IdInvalidException, vn.demo.jobhunter.util.error.PermissionException {
+        // CHECK ADMIN
+        String email = vn.demo.jobhunter.util.SecurityUtil.getCurrentUserLogin().orElse("");
+        vn.demo.jobhunter.domain.User currentUser = this.userService.handleGetUserByUsername(email);
+        if (currentUser == null || currentUser.getRole() == null || !currentUser.getRole().getName().equals("SUPER_ADMIN")) {
+            throw new vn.demo.jobhunter.util.error.PermissionException("Bạn không có quyền thực hiện hành động này.");
+        }
+
+        this.jobService.hideReportedJob(id);
+        return ResponseEntity.ok().body(null);
+    }
+
+    @PutMapping("/jobs/{id}/dismiss-report")
+    @ApiMessage("Bỏ qua báo cáo tin tuyển dụng")
+    @Operation(summary = "Bỏ qua báo cáo", description = "Admin bỏ qua báo cáo tin tuyển dụng lừa đảo.")
+    public ResponseEntity<Void> dismissJobReport(@PathVariable("id") long id) throws IdInvalidException, vn.demo.jobhunter.util.error.PermissionException {
+        // CHECK ADMIN
+        String email = vn.demo.jobhunter.util.SecurityUtil.getCurrentUserLogin().orElse("");
+        vn.demo.jobhunter.domain.User currentUser = this.userService.handleGetUserByUsername(email);
+        if (currentUser == null || currentUser.getRole() == null || !currentUser.getRole().getName().equals("SUPER_ADMIN")) {
+            throw new vn.demo.jobhunter.util.error.PermissionException("Bạn không có quyền thực hiện hành động này.");
+        }
+
+        this.jobService.dismissJobReport(id);
+        return ResponseEntity.ok().body(null);
+    }
 }

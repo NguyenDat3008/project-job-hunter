@@ -40,6 +40,11 @@ public class ResFetchJobDTO {
     private String createdBy;
     private String updatedBy;
 
+    private Boolean isReported;
+    private String reportReason;
+    private String reportedBy;
+    private java.time.Instant reportedAt;
+
     @Getter
     @Setter
     @AllArgsConstructor

@@ -75,6 +75,8 @@ public class Company {
     private Double latitude;
     private Double longitude;
 
+    private int warnings = 0;
+
     @PrePersist
     public void handleBeforeCreate() {
         this.createdBy = SecurityUtil.getCurrentUserLogin().isPresent() == true

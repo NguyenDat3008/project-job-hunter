@@ -31,6 +31,7 @@ public class JobService {
     private final SavedJobRepository savedJobRepository;
     private final UserRepository userRepository;
     private final ResumeRepository resumeRepository;
+    private final NotificationService notificationService;
 
     public JobService(
             JobRepository jobRepository,
@@ -38,13 +39,15 @@ public class JobService {
             CompanyRepository companyRepository,
             SavedJobRepository savedJobRepository,
             UserRepository userRepository,
-            ResumeRepository resumeRepository) {
+            ResumeRepository resumeRepository,
+            NotificationService notificationService) {
         this.jobRepository = jobRepository;
         this.skillRepository = skillRepository;
         this.companyRepository = companyRepository;
         this.savedJobRepository = savedJobRepository;
         this.userRepository = userRepository;
         this.resumeRepository = resumeRepository;
+        this.notificationService = notificationService;
     }
 
     public Optional<Job> fetchJobById(long id) {
@@ -109,6 +112,12 @@ public class JobService {
             dto.setIsSaved(false);
             dto.setIsApplied(false);
         }
+
+        // Map report fields
+        dto.setIsReported(job.getIsReported() != null ? job.getIsReported() : false);
+        dto.setReportReason(job.getReportReason());
+        dto.setReportedBy(job.getReportedBy());
+        dto.setReportedAt(job.getReportedAt());
  
         return dto;
     }
@@ -304,5 +313,122 @@ public class JobService {
                    Math.sin(dLon / 2) * Math.sin(dLon / 2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return R * c;
+    }
+
+    // ==================== JOB REPORT (FRAUD) ====================
+
+    public Job reportJob(long id, String reason) throws vn.demo.jobhunter.util.error.IdInvalidException {
+        Optional<Job> jobOptional = this.jobRepository.findById(id);
+        if (jobOptional.isEmpty()) {
+            throw new vn.demo.jobhunter.util.error.IdInvalidException("Job với id = " + id + " không tồn tại");
+        }
+        Job job = jobOptional.get();
+        job.setIsReported(true);
+        job.setReportReason(reason);
+        job.setReportedBy(SecurityUtil.getCurrentUserLogin().orElse("anonymous"));
+        job.setReportedAt(java.time.Instant.now());
+        job = this.jobRepository.save(job);
+
+        // Gửi thông báo cho tất cả SUPER_ADMIN
+        List<User> admins = this.userRepository.findByRoleName("SUPER_ADMIN");
+        for (User admin : admins) {
+            this.notificationService.createNotification(
+                admin,
+                "Báo cáo tin tuyển dụng lừa đảo",
+                "Tin tuyển dụng \"" + job.getName() + "\" của công ty " 
+                    + (job.getCompany() != null ? job.getCompany().getName() : "N/A") 
+                    + " bị báo cáo. Lý do: " + reason,
+                "JOB_FRAUD_REPORT",
+                "{\"jobId\": " + job.getId() + "}"
+            );
+        }
+
+        return job;
+    }
+
+    public void warnCompany(long id) throws vn.demo.jobhunter.util.error.IdInvalidException {
+        Optional<Job> jobOptional = this.jobRepository.findById(id);
+        if (jobOptional.isEmpty()) {
+            throw new vn.demo.jobhunter.util.error.IdInvalidException("Job với id = " + id + " không tồn tại");
+        }
+        Job job = jobOptional.get();
+        vn.demo.jobhunter.domain.Company company = job.getCompany();
+        if (company != null) {
+            int currentWarnings = company.getWarnings();
+            company.setWarnings(currentWarnings + 1);
+            // Đủ 2 cảnh cáo → vô hiệu hóa công ty
+            if (company.getWarnings() >= 2) {
+                company.setActive(false);
+            }
+            this.companyRepository.save(company);
+
+            // Gửi thông báo cho HR/người tạo công ty
+            User companyCreator = this.userRepository.findByEmail(company.getCreatedBy());
+            if (companyCreator != null) {
+                String warningMsg = "Công ty " + company.getName() + " đã nhận được cảnh cáo vi phạm do tin tuyển dụng \"" 
+                    + job.getName() + "\" bị báo cáo lừa đảo. Lý do: " 
+                    + (job.getReportReason() != null ? job.getReportReason() : "Nội dung không hợp lệ")
+                    + ". (Lưu ý: Đủ 2 cảnh cáo, công ty sẽ bị vô hiệu hóa!)";
+                this.notificationService.createNotification(
+                    companyCreator,
+                    "Cảnh cáo vi phạm công ty",
+                    warningMsg,
+                    "COMPANY_WARNING",
+                    "{\"jobId\": " + job.getId() + "}"
+                );
+            }
+        }
+
+        // Clear report status
+        job.setIsReported(false);
+        job.setReportReason(null);
+        job.setReportedBy(null);
+        job.setReportedAt(null);
+        this.jobRepository.save(job);
+    }
+
+    public void hideReportedJob(long id) throws vn.demo.jobhunter.util.error.IdInvalidException {
+        Optional<Job> jobOptional = this.jobRepository.findById(id);
+        if (jobOptional.isEmpty()) {
+            throw new vn.demo.jobhunter.util.error.IdInvalidException("Job với id = " + id + " không tồn tại");
+        }
+        Job job = jobOptional.get();
+        job.setActive(false); // Ẩn tin tuyển dụng
+
+        // Gửi thông báo cho HR
+        if (job.getCompany() != null) {
+            User companyCreator = this.userRepository.findByEmail(job.getCreatedBy());
+            if (companyCreator != null) {
+                this.notificationService.createNotification(
+                    companyCreator,
+                    "Tin tuyển dụng bị ẩn",
+                    "Tin tuyển dụng \"" + job.getName() + "\" đã bị Admin ẩn do bị báo cáo lừa đảo.",
+                    "JOB_HIDDEN",
+                    "{\"jobId\": " + job.getId() + "}"
+                );
+            }
+        }
+
+        // Clear report status
+        job.setIsReported(false);
+        job.setReportReason(null);
+        job.setReportedBy(null);
+        job.setReportedAt(null);
+        this.jobRepository.save(job);
+    }
+
+    public void dismissJobReport(long id) throws vn.demo.jobhunter.util.error.IdInvalidException {
+        Optional<Job> jobOptional = this.jobRepository.findById(id);
+        if (jobOptional.isEmpty()) {
+            throw new vn.demo.jobhunter.util.error.IdInvalidException("Job với id = " + id + " không tồn tại");
+        }
+        Job job = jobOptional.get();
+
+        // Clear report status
+        job.setIsReported(false);
+        job.setReportReason(null);
+        job.setReportedBy(null);
+        job.setReportedAt(null);
+        this.jobRepository.save(job);
     }
 }
