@@ -33,7 +33,7 @@ export default function JobDetailScreen() {
   const router = useRouter();
   const { jobId } = useLocalSearchParams<{ jobId: string }>();
   const { user, isAuthenticated } = useAuthStore();
-  
+
   const [job, setJob] = useState<Job | null>(null);
   const [matchInfo, setMatchInfo] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,7 +47,7 @@ export default function JobDetailScreen() {
     try {
       const id = parseInt(jobId as string, 10);
       const [jobData, matchData] = await Promise.all([
-        jobService.getJobDetail(id),
+        jobService.getJobDetail(id), // Lấy chi tiết công việc
         recommendationService.getMatchScore(id).catch(() => null),
       ]);
       setJob(jobData);
@@ -97,7 +97,7 @@ export default function JobDetailScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      
+
       <SafeAreaView edges={['top']} style={styles.navHeader}>
         <TouchableOpacity onPress={() => router.back()} style={styles.navBtn}>
           <Ionicons name="arrow-back" size={24} color={COLORS.text.primary} />
@@ -122,14 +122,14 @@ export default function JobDetailScreen() {
             </View>
             <View style={styles.headerMainInfo}>
               <Text style={styles.jobTitle}>{job.name}</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => job.company && router.push(`/company-detail?companyId=${job.company.id}`)}
               >
                 <Text style={styles.companyLink}>{job.company?.name} ›</Text>
               </TouchableOpacity>
             </View>
           </View>
-          
+
           <View style={styles.salaryHighlight}>
             <Ionicons name="cash-outline" size={20} color={COLORS.primary} />
             <Text style={styles.salaryText}>{formatSalary(job.salary)} VND</Text>
@@ -209,7 +209,7 @@ export default function JobDetailScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Yêu cầu công việc</Text>
           <Text style={styles.sectionContent}>{job.requirements}</Text>
-          
+
           {job.requiredSkills && job.requiredSkills.length > 0 && (
             <View style={styles.skillsSubsection}>
               <Text style={styles.subsectionTitle}>Kỹ năng bắt buộc:</Text>
@@ -248,18 +248,18 @@ export default function JobDetailScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <TouchableOpacity 
-          style={[styles.saveBtn, job.isSaved && styles.saveBtnActive]} 
+        <TouchableOpacity
+          style={[styles.saveBtn, job.isSaved && styles.saveBtnActive]}
           onPress={handleSaveJob}
         >
-          <Ionicons 
-            name={job.isSaved ? "heart" : "heart-outline"} 
-            size={28} 
-            color={job.isSaved ? COLORS.primary : COLORS.text.secondary} 
+          <Ionicons
+            name={job.isSaved ? "heart" : "heart-outline"}
+            size={28}
+            color={job.isSaved ? COLORS.primary : COLORS.text.secondary}
           />
         </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.applyBtn, job.isApplied && styles.appliedBtn]} 
+        <TouchableOpacity
+          style={[styles.applyBtn, job.isApplied && styles.appliedBtn]}
           onPress={handleApply}
           disabled={job.isApplied || isApplying}
         >
@@ -285,13 +285,13 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F0F0F0',
     zIndex: 10,
   },
-  navBtn: { 
-    width: 32, 
-    height: 32, 
-    borderRadius: 16, 
-    backgroundColor: '#F9FAFB', 
-    justifyContent: 'center', 
-    alignItems: 'center' 
+  navBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F9FAFB',
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   navTitle: { fontSize: 15, fontWeight: '700', color: COLORS.text.primary, flex: 1, textAlign: 'center' },
   scrollContent: { paddingBottom: 40 },
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
   headerMainInfo: { flex: 1 },
   jobTitle: { fontSize: 20, fontWeight: '800', color: COLORS.text.primary, marginBottom: 4, lineHeight: 28 },
   companyLink: { fontSize: 14, color: COLORS.text.secondary, fontWeight: '600' },
-  
+
   salaryHighlight: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#F0FDF4', padding: 12, borderRadius: 12 },
   salaryText: { fontSize: 18, color: COLORS.primary, fontWeight: '800' },
   urgentBadge: { backgroundColor: COLORS.error, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4, marginLeft: 'auto' },
@@ -325,17 +325,17 @@ const styles = StyleSheet.create({
   aiStatValue: { fontSize: 16, fontWeight: '800', color: '#166534' },
   aiStatLabel: { fontSize: 10, color: '#166534' },
   aiStatDivider: { width: 1, height: 20, backgroundColor: '#DCFCE7' },
-  
+
   section: { backgroundColor: COLORS.white, padding: 20, paddingHorizontal: 28, marginBottom: 8 },
   sectionTitle: { fontSize: 16, fontWeight: '800', color: COLORS.text.primary, marginBottom: 12, borderLeftWidth: 4, borderLeftColor: COLORS.primary, paddingLeft: 12 },
   sectionContent: { fontSize: 14, color: COLORS.text.secondary, lineHeight: 22, fontWeight: '400' },
-  
+
   skillsSubsection: { marginTop: 16 },
   subsectionTitle: { fontSize: 13, fontWeight: '700', color: COLORS.text.primary, marginBottom: 8 },
   skillsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   skillTag: { backgroundColor: '#F0FDF4', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
   skillText: { fontSize: 11, color: COLORS.primary, fontWeight: '600' },
-  
+
   footer: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', backgroundColor: COLORS.white, paddingHorizontal: 28, paddingTop: 10, paddingBottom: Platform.OS === 'ios' ? 30 : 16, gap: 12, borderTopWidth: 0.5, borderTopColor: '#F0F0F0' },
   saveBtn: { width: 48, height: 48, borderRadius: 12, borderWidth: 1, borderColor: '#F0F0F0', justifyContent: 'center', alignItems: 'center', backgroundColor: '#F9FAFB' },
   saveBtnActive: { borderColor: COLORS.primary, backgroundColor: '#F0FDF4' },

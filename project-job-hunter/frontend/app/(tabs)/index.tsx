@@ -15,7 +15,7 @@ import {
   StatusBar,
   Alert,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context'; // Thiết kế tràn viền
 import { jobService } from '@services/jobService';
 import { LoadingSpinner, Banner, JobCard } from '@components/index';
 import { COLORS, SHADOW } from '@constants/theme';
@@ -24,11 +24,11 @@ import { NotificationBell } from '@components/index';
 
 export default function HomeTab() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
+  const insets = useSafeAreaInsets(); // Gọi hook để lấy các giá trị khoảng trống an toàn
   const { user, isAuthenticated } = useAuthStore();
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [latestJobs, setLatestJobs] = useState<Job[]>([]);
+  const [latestJobs, setLatestJobs] = useState<Job[]>([]); // Khởi tạo State để lưu danh sách công việc
 
   const loadData = useCallback(async () => {
     try {
@@ -36,7 +36,7 @@ export default function HomeTab() {
       if (jobs && jobs.length > 0) {
         setLatestJobs(jobs);
       }
-    } catch (e) {} finally {
+    } catch (e) { } finally {
       setLoading(false);
     }
   }, []);
@@ -71,8 +71,8 @@ export default function HomeTab() {
     }
     try {
       await jobService.saveJob(job.id);
-      // Update local state for immediate feedback
-      setLatestJobs(prev => prev.map(j => 
+      // Cập nhật trực tiếp UI bằng cách đảo ngược trạng thái isSaved ngay trong State mà không cần reload trang
+      setLatestJobs(prev => prev.map(j =>
         j.id === job.id ? { ...j, isSaved: !j.isSaved } : j
       ));
     } catch (error: any) {
@@ -84,10 +84,10 @@ export default function HomeTab() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-      
+
       {/* Edge-to-Edge Top Header matching iPhone safe area */}
       <View style={[styles.topHeaderWrapper, { paddingTop: insets.top }]}>
-        <Image 
+        <Image
           source={bannerImage}
           style={styles.topHeaderBg}
           resizeMode="cover"
@@ -96,9 +96,9 @@ export default function HomeTab() {
           <View style={styles.headerTop}>
             <View style={styles.headerLeftContainer}>
               <View style={styles.logoAndGreeting}>
-                <Image 
-                  source={require('../../assets/images/logotopCV.jpg')} 
-                  style={styles.miniLogo} 
+                <Image
+                  source={require('../../assets/images/logotopCV.jpg')}
+                  style={styles.miniLogo}
                 />
                 <View>
                   <Text style={styles.greetingText}>Chào bạn,</Text>
@@ -115,8 +115,8 @@ export default function HomeTab() {
           </View>
 
           {/* Search Bar - Navigate to Search Screen */}
-          <TouchableOpacity 
-            style={styles.searchContainer} 
+          <TouchableOpacity
+            style={styles.searchContainer}
             activeOpacity={0.9}
             onPress={() => router.push('/search')}
           >
@@ -131,9 +131,9 @@ export default function HomeTab() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[COLORS.primary]} />}
       >
         {/* Quick Category Navigation */}
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false} 
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.navIconsRow}
         >
           {categories.map((cat, idx) => (
@@ -147,8 +147,8 @@ export default function HomeTab() {
         </ScrollView>
 
         {/* Khám phá việc làm CTA */}
-        <TouchableOpacity 
-          style={styles.exploreBtn} 
+        <TouchableOpacity
+          style={styles.exploreBtn}
           activeOpacity={0.8}
           onPress={() => router.push('/nearby-jobs' as any)}
         >
@@ -162,7 +162,7 @@ export default function HomeTab() {
           <View style={styles.suggestionHeader}>
             <Text style={styles.suggestionTitle}>Dựa trên hồ sơ và mong muốn của bạn</Text>
           </View>
-          
+
           {/* Blue Info Bar */}
           <View style={styles.swipeInfoBar}>
             <Text style={styles.swipeInfoText}>Vuốt trái để bỏ việc làm không phù hợp</Text>
@@ -178,6 +178,7 @@ export default function HomeTab() {
                 job={job}
                 onPress={() => router.push(`/detail?jobId=${job.id}`)}
                 onSavePress={() => handleToggleSave(job)}
+              //ruyền hàm xử lý này vào thuộc tính onSavePress của <JobCard /> (nơi chứa icon trái tim)
               />
             ))
           ) : (
@@ -240,9 +241,9 @@ export default function HomeTab() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#F9FAFB' 
+  container: {
+    flex: 1,
+    backgroundColor: '#F9FAFB'
   },
   topHeaderWrapper: {
     width: '100%',
@@ -337,24 +338,24 @@ const styles = StyleSheet.create({
   searchIcon: {
     marginRight: 8,
   },
-  searchInputPlaceholder: { 
-    flex: 1, 
+  searchInputPlaceholder: {
+    flex: 1,
     fontSize: 14,
     color: COLORS.text.secondary,
   },
-  navIconsRow: { 
+  navIconsRow: {
     paddingHorizontal: 16,
     paddingVertical: 20,
     gap: 16,
   },
-  navItem: { 
-    alignItems: 'center', 
+  navItem: {
+    alignItems: 'center',
     width: 65,
   },
-  navIconBox: { 
-    width: 48, 
-    height: 48, 
-    borderRadius: 12, 
+  navIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
     backgroundColor: COLORS.white,
     justifyContent: 'center',
     alignItems: 'center',
@@ -362,13 +363,13 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     ...SHADOW.sm,
   },
-  navImage: { 
-    width: '100%', 
-    height: '100%' 
+  navImage: {
+    width: '100%',
+    height: '100%'
   },
-  navText: { 
+  navText: {
     fontSize: 12,
-    color: '#4B5563', 
+    color: '#4B5563',
     textAlign: 'center',
     fontWeight: '500',
   },
@@ -390,9 +391,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
-  sectionWrap: { 
+  sectionWrap: {
     paddingHorizontal: 16,
-    marginBottom: 16 
+    marginBottom: 16
   },
   suggestionHeader: {
     alignItems: 'center',

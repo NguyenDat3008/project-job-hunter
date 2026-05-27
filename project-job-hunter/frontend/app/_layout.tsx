@@ -7,7 +7,7 @@ import 'react-native-reanimated';
 import { useAuthStore } from '../store/authStore';
 
 export const unstable_settings = {
-  anchor: '(tabs)',
+  anchor: '(tabs)', // Chỉ định nhóm tab điều hướng dưới đáy làm mốc mỏ neo chính khi tải ứng dụng
 };
 
 export default function RootLayout() {
@@ -15,7 +15,7 @@ export default function RootLayout() {
   const { restoreAuth, isLoading } = useAuthStore();
 
   useEffect(() => {
-    restoreAuth();
+    restoreAuth(); // Lấy Token cũ lưu trong máy để tự đăng nhập lại cho người dùng
   }, []);
 
 

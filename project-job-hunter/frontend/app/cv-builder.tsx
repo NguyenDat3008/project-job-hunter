@@ -137,7 +137,7 @@ export default function CVBuilderScreen() {
     try {
       // 1. Phân loại sections cho 2 cột
       const leftColTypes = ['SKILL', 'LANGUAGE', 'CERTIFICATION'];
-      const leftSections = sections.filter(s => leftColTypes.includes(s.type));
+      const leftSections = sections.filter(s => leftColTypes.includes(s.type)); // // Lọc các kỹ năng, ngôn ngữ cho vào cột trái Sidebar 
       const rightSections = sections.filter(s => !leftColTypes.includes(s.type));
 
       const generateSectionHtml = (sec: CVSection, isLeft: boolean) => `
@@ -600,7 +600,7 @@ const styles = StyleSheet.create({
   stepContent: { padding: 28 },
   stepTitle: { fontSize: 16, fontWeight: '800', color: COLORS.text.primary, marginBottom: 4 },
   stepSubtitle: { fontSize: 11, color: COLORS.text.secondary, marginBottom: 20 },
-  
+
   existingSection: { marginBottom: 20 },
   existingLabel: { fontSize: 10, fontWeight: '800', color: COLORS.text.primary, marginBottom: 10, textTransform: 'uppercase' },
   existingCard: {
@@ -611,7 +611,7 @@ const styles = StyleSheet.create({
   existingInfo: { flex: 1 },
   existingTitle: { fontSize: 13, fontWeight: '700', color: COLORS.text.primary },
   existingDate: { fontSize: 10, color: COLORS.text.light },
-  
+
   templateGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   templateCard: {
     width: '47%', backgroundColor: COLORS.white, borderRadius: 14,
@@ -636,7 +636,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center',
   },
   selectedBadgeText: { color: COLORS.white, fontSize: 10, fontWeight: '800' },
-  
+
   addSectionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 20 },
   addSectionChip: {
     backgroundColor: '#F0FDF4', paddingHorizontal: 10, paddingVertical: 6,
@@ -645,7 +645,7 @@ const styles = StyleSheet.create({
   addSectionChipDisabled: { backgroundColor: '#F3F4F6', borderColor: '#E5E7EB' },
   addSectionText: { fontSize: 10, fontWeight: '700', color: COLORS.primary },
   addSectionTextDisabled: { color: COLORS.text.light },
-  
+
   sectionEditor: {
     backgroundColor: '#F9FAFB', borderRadius: 14,
     padding: 16, marginBottom: 16, borderWidth: 0.5, borderColor: '#F0F0F0',
@@ -666,7 +666,7 @@ const styles = StyleSheet.create({
   addItemText: { fontSize: 11, color: COLORS.primary, fontWeight: '700' },
   emptySections: { alignItems: 'center', paddingVertical: 40 },
   emptySectionsText: { fontSize: 12, color: COLORS.text.light, fontWeight: '500' },
-  
+
   previewContainer: {
     flexDirection: 'row',
     backgroundColor: COLORS.white,
@@ -688,13 +688,13 @@ const styles = StyleSheet.create({
   },
   previewName: { fontSize: 16, fontWeight: '900', textTransform: 'uppercase', marginBottom: 2 },
   previewJobTitle: { fontSize: 11, color: COLORS.text.secondary, fontWeight: '600', marginBottom: 16, textTransform: 'uppercase' },
-  
+
   previewAvatarBox: { width: 50, height: 50, borderRadius: 25, borderWidth: 1, borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center', alignSelf: 'center', marginBottom: 10 },
   previewSectionTitleLight: { fontSize: 9, fontWeight: '800', color: COLORS.white, textTransform: 'uppercase', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.3)', paddingBottom: 4, marginBottom: 8, marginTop: 12 },
   previewContactLight: { fontSize: 8, color: 'rgba(255,255,255,0.9)', marginBottom: 4 },
   previewItemTitleLight: { fontSize: 9, fontWeight: '700', color: COLORS.white },
   previewTextLight: { fontSize: 8, color: 'rgba(255,255,255,0.8)', marginTop: 2, lineHeight: 12 },
-  
+
   previewSectionTitle: { fontSize: 10, fontWeight: '900', letterSpacing: 1, textTransform: 'uppercase', borderBottomWidth: 1.5, borderBottomColor: '#F0F0F0', paddingBottom: 4, marginBottom: 8 },
   previewText: { fontSize: 9, color: COLORS.text.secondary, lineHeight: 13 },
   previewSection: { marginTop: 8 },
@@ -703,10 +703,10 @@ const styles = StyleSheet.create({
   previewItemSubtitle: { fontSize: 10, color: COLORS.text.secondary, fontStyle: 'italic', marginTop: 1 },
   previewItemDate: { fontSize: 8, color: COLORS.text.light, marginTop: 2 },
   previewEmpty: { fontSize: 9, color: COLORS.text.light, fontStyle: 'italic' },
-  
+
   avatarSection: { marginBottom: 16 },
   avatarPicker: { backgroundColor: '#F0FDF4', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#DCFCE7', borderStyle: 'dashed', alignItems: 'center' },
-  
+
   bottomNav: {
     flexDirection: 'row', padding: 20, paddingHorizontal: 28,
     backgroundColor: COLORS.white, borderTopWidth: 0.5, borderTopColor: '#F0F0F0',

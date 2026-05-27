@@ -26,7 +26,7 @@ const { width, height } = Dimensions.get('window');
 export default function NearbyJobsScreen() {
   const router = useRouter();
   const mapRef = useRef<any>(null);
-  
+
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -37,7 +37,7 @@ export default function NearbyJobsScreen() {
 
   useEffect(() => {
     (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
+      let { status } = await Location.requestForegroundPermissionsAsync();// Xin quyền định vị
       if (status !== 'granted') {
         setErrorMsg('Quyền truy cập vị trí bị từ chối');
         setLoading(false);
@@ -73,7 +73,7 @@ export default function NearbyJobsScreen() {
   const handleToggleSave = async (job: Job) => {
     try {
       await jobService.saveJob(job.id);
-      setJobs(prev => prev.map(j => 
+      setJobs(prev => prev.map(j =>
         j.id === job.id ? { ...j, isSaved: !j.isSaved } : j
       ));
     } catch (error) {
@@ -134,7 +134,7 @@ export default function NearbyJobsScreen() {
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ title: 'Việc làm quanh đây', headerShadowVisible: false }} />
-      
+
       <View style={styles.mapWrapper}>
         <MapView
           ref={mapRef}
@@ -142,11 +142,13 @@ export default function NearbyJobsScreen() {
           initialRegion={initialRegion}
           showsUserLocation={true}
         >
+          {/* Vẽ bản đồ */}
           <UrlTile
             urlTemplate="https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"
             maximumZ={19}
             flipY={false}
           />
+          {/* Sử dụng tile bản đồ miễn phí OpenStreetMap */}
           {jobs.map((job) => (
             job.company?.latitude && job.company?.longitude ? (
               <Marker
@@ -154,7 +156,7 @@ export default function NearbyJobsScreen() {
                 coordinate={{
                   latitude: job.company.latitude,
                   longitude: job.company.longitude,
-                }}
+                }} // Tọa độ công ty
                 title={job.name}
                 description={job.company.name}
                 onCalloutPress={() => router.push(`/detail?jobId=${job.id}`)}
@@ -166,7 +168,7 @@ export default function NearbyJobsScreen() {
             ) : null
           ))}
         </MapView>
-        
+
         {searching && (
           <View style={styles.searchingOverlay}>
             <ActivityIndicator color={COLORS.primary} />

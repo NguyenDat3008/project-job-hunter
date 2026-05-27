@@ -6,13 +6,13 @@ import { Job } from '@/types/job.types';
 import { useAuthStore } from '@store/authStore';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState, useRef } from 'react';
-import { 
-  ScrollView, 
-  StyleSheet, 
-  Text, 
-  View, 
-  TouchableOpacity, 
-  Animated, 
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  Animated,
   Easing,
   Dimensions,
   Modal,
@@ -26,8 +26,8 @@ import api from '@services/api';
 const { width } = Dimensions.get('window');
 
 const PRESET_SKILLS = [
-  'Java', 'Spring Boot', 'React Native', 'React', 'Node.js', 
-  'Python', 'AWS', 'Docker', 'SQL', 'NoSQL', 'TypeScript', 
+  'Java', 'Spring Boot', 'React Native', 'React', 'Node.js',
+  'Python', 'AWS', 'Docker', 'SQL', 'NoSQL', 'TypeScript',
   'UI/UX', 'Project Management', 'Agile', 'English', 'Flutter',
   'PHP', 'C#', 'DevOps', 'Data Science'
 ];
@@ -48,8 +48,8 @@ export default function AIMatchTab() {
   const [scanning, setScanning] = useState(false);
   const [showSurvey, setShowSurvey] = useState(false);
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
-  
-  // Animation refs
+
+  // Animation refs Hiệu ứng radar
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const scanLineAnim = useRef(new Animated.Value(0)).current;
 
@@ -100,10 +100,10 @@ export default function AIMatchTab() {
     try {
       setScanning(true);
       startAnimations();
-      
+
       // Simulate scanning for visual effect
       await new Promise(resolve => setTimeout(resolve, 2500));
-      
+
       const data = await recommendationService.getRecommendedJobs();
       setResults(data);
     } catch (error) {
@@ -126,7 +126,7 @@ export default function AIMatchTab() {
       // We need the subscriber id, but let's assume we can update by email
       // Actually, PUT /subscribers requires ID. Let's find subscriber first.
       const subResponse = await api.post<any>('/subscribers/skills');
-      
+
       const updatedSub = {
         id: subResponse.id,
         email: user?.email,
@@ -157,7 +157,7 @@ export default function AIMatchTab() {
   const handleToggleSave = async (job: Job) => {
     try {
       await jobService.saveJob(job.id);
-      setResults(prev => prev.map(r => 
+      setResults(prev => prev.map(r =>
         r.job.id === job.id ? { ...r, job: { ...r.job, isSaved: !r.job.isSaved } } : r
       ));
     } catch (error) {
@@ -169,22 +169,24 @@ export default function AIMatchTab() {
     try {
       const DocumentPicker = require('expo-document-picker');
       const result = await DocumentPicker.getDocumentAsync({
+        //Cấu hình bộ lọc chỉ chấp nhận tải lên các file định dạng tài liệu PDF hoặc Word
         type: ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
       });
 
       if (!result.canceled) {
         setLoading(true);
         const file = result.assets[0];
-        
+
         const formData = new FormData();
         formData.append('file', {
           uri: file.uri,
           name: file.name,
           type: file.mimeType || 'application/pdf',
         } as any);
-
+        //Tiến hành đẩy file lên endpoint API 
         const scanResult = await api.upload<any>('/subscribers/scan-cv', formData);
-        
+
+        //Nhận mảng kỹ năng trả về từ AI (extracted_skills), tiến hành lọc trùng lặp thông qua new Set và gộp trực tiếp vào danh sách kỹ năng hiện tại trên giao diện.
         if (scanResult && scanResult.extracted_skills) {
           const newSkills = [...new Set([...selectedSkills, ...scanResult.extracted_skills])];
           setSelectedSkills(newSkills);
@@ -213,7 +215,7 @@ export default function AIMatchTab() {
         <Text style={styles.emptySubtitle}>
           Đăng nhập để AI phân tích hàng ngàn việc làm và tìm ra cơ hội phù hợp nhất với bạn.
         </Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.loginBtn}
           onPress={() => router.push('/login')}
         >
@@ -231,13 +233,13 @@ export default function AIMatchTab() {
           <Text style={styles.surveySubtitle}>
             Hãy chọn các kỹ năng bạn có để AI tìm kiếm việc làm chính xác nhất.
           </Text>
-          
+
           <TouchableOpacity style={styles.scanCvBtn} onPress={handleScanCV}>
             <Ionicons name="document-text" size={20} color="white" />
             <Text style={styles.scanCvBtnText}>Tải CV để AI quét kỹ năng</Text>
           </TouchableOpacity>
         </LinearGradient>
-        
+
         <ScrollView style={styles.surveyScroll} contentContainerStyle={styles.surveyContent}>
           <Text style={styles.skillLabel}>Kỹ năng phổ biến</Text>
           <View style={styles.skillGrid}>
@@ -262,7 +264,7 @@ export default function AIMatchTab() {
         </ScrollView>
 
         <View style={styles.surveyFooter}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.matchNowBtn, selectedSkills.length === 0 && styles.disabledBtn]}
             onPress={handleSaveSkills}
             disabled={selectedSkills.length === 0}
@@ -287,7 +289,7 @@ export default function AIMatchTab() {
             <Ionicons name="options-outline" size={24} color="white" />
           </TouchableOpacity>
         </View>
-        
+
         <View style={styles.scannerWrapper}>
           {scanning ? (
             <View style={styles.scanningBox}>
@@ -296,18 +298,18 @@ export default function AIMatchTab() {
               <View style={styles.aiIconBox}>
                 <Ionicons name="scan" size={50} color="#818CF8" />
               </View>
-              <Animated.View 
+              <Animated.View
                 style={[
-                  styles.scanLine, 
-                  { 
-                    transform: [{ 
+                  styles.scanLine,
+                  {
+                    transform: [{
                       translateY: scanLineAnim.interpolate({
                         inputRange: [0, 1],
                         outputRange: [0, 140]
-                      }) 
-                    }] 
+                      })
+                    }]
                   }
-                ]} 
+                ]}
               />
             </View>
           ) : (
@@ -328,8 +330,8 @@ export default function AIMatchTab() {
         </View>
       </LinearGradient>
 
-      <ScrollView 
-        style={styles.resultsScroll} 
+      <ScrollView
+        style={styles.resultsScroll}
         contentContainerStyle={styles.resultsContent}
         showsVerticalScrollIndicator={false}
       >
@@ -353,7 +355,7 @@ export default function AIMatchTab() {
               <View style={styles.scoreBadge}>
                 <Text style={styles.scoreText}>{result.matchScore}% Match</Text>
               </View>
-              
+
               <JobCard
                 job={result.job}
                 onPress={() => router.push(`/detail?jobId=${result.job.id}`)}

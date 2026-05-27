@@ -33,11 +33,11 @@ const HomeScreen: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchJobs = useCallback(() => 
+  const fetchJobs = useCallback(() =>
     jobService.getJobs({
       page: 1,
       limit: 20,
-      search: searchQuery,
+      search: searchQuery, // Gửi từ khóa tìm kiếm lên Server
     }),
     [searchQuery]
   );
@@ -136,7 +136,7 @@ const HomeScreen: React.FC = () => {
   if (isLoading && jobs.length === 0) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
-         <LoadingSpinner fullScreen message="Đang tải việc làm..." />
+        <LoadingSpinner fullScreen message="Đang tải việc làm..." />
       </SafeAreaView>
     );
   }

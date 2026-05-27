@@ -45,8 +45,8 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerShown: false,
-        tabBarStyle: styles.tabBar,
+        headerShown: false, // Ẩn thanh header mặc định xấu xí ở phía trên cùng màn hình
+        tabBarStyle: styles.tabBar,// Áp dụng giao diện tùy biến (bo góc, bóng đổ) cho thanh Tab
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.text.light,
         tabBarLabelStyle: styles.tabLabel,
@@ -57,6 +57,7 @@ export default function TabLayout() {
         options={{
           title: 'Khám phá',
           tabBarIcon: ({ color, focused }) => (
+            // Nếu đang chọn thì hiện icon la bàn đặc ('compass')
             <Ionicons name={focused ? 'compass' : 'compass-outline'} size={24} color={color} />
           ),
         }}
@@ -120,6 +121,7 @@ const styles = StyleSheet.create({
     paddingBottom: 0,
     paddingTop: 0,
     borderTopWidth: 0,
+    // Đổ bóng (Shadow) giúp thanh tab nổi bật lên trên mặt phẳng 3D
     ...SHADOW.md,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
