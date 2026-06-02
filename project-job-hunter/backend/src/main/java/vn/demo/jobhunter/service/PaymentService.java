@@ -94,8 +94,10 @@ public class PaymentService {
             // Bóc vỏ lớp 1 (RestResponse)
             JsonNode restData = responseBody.has("data") ? responseBody.get("data") : responseBody;
 
-            // Kiểm tra thành công (có thể ở lớp ngoài hoặc trong data)
-            boolean isSuccess = responseBody.path("statusCode").asInt() == 200 || 
+            // Kiểm tra thành công (có thể ở lớp ngoài hoặc trong data hoặc dựa trên HTTP status)
+            boolean isSuccess = response.getStatusCode().is2xxSuccessful() ||
+                               responseBody.path("success").asBoolean() == true ||
+                               responseBody.path("statusCode").asInt() == 200 || 
                                restData.path("success").asBoolean() == true;
 
             if (isSuccess) {
