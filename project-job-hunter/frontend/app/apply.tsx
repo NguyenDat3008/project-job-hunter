@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Platform,
   StatusBar,
   KeyboardAvoidingView,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, Feather } from '@expo/vector-icons';
@@ -20,6 +21,8 @@ import { Button, LoadingSpinner } from '@components/index';
 import { cvService } from '@services/cvService';
 import { jobService } from '@services/jobService';
 import { useAuthStore } from '@store/authStore';
+import { generalStorage } from '@/utils/storage';
+import dayjs from 'dayjs';
 
 export default function ApplyScreen() {
   const router = useRouter();
@@ -31,6 +34,40 @@ export default function ApplyScreen() {
   const [coverLetter, setCoverLetter] = useState('');
   const [isAgreed, setIsAgreed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // States for choosing existing CV
+  const [uploadType, setUploadType] = useState<'picker' | 'existing'>('picker');
+  const [existingCvs, setExistingCvs] = useState<any[]>([]);
+  const [selectedExistingCv, setSelectedExistingCv] = useState<any | null>(null);
+  const [loadingCvs, setLoadingCvs] = useState(false);
+
+  useEffect(() => {
+    const loadCvs = async () => {
+      try {
+        setLoadingCvs(true);
+        // 1. Fetch server resumes (CVs used to apply)
+        const data = await cvService.getCVs();
+        const serverList = data?.result || [];
+
+        // 2. Fetch local storage CVs (directly uploaded)
+        const localCvs = await generalStorage.get<any[]>('uploaded_cvs') || [];
+
+        // Combine and deduplicate by URL
+        const combined = [...localCvs, ...serverList];
+        const uniqueCvs = combined.filter((v: any, i: any, a: any) => a.findIndex((t: any) => t.url === v.url) === i);
+
+        // Sort by date descending
+        uniqueCvs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+        setExistingCvs(uniqueCvs);
+      } catch (error) {
+        console.error('Error loading existing CVs:', error);
+      } finally {
+        setLoadingCvs(false);
+      }
+    };
+    loadCvs();
+  }, []);
 
   const handlePickDocument = async () => {
     try {
@@ -45,6 +82,16 @@ export default function ApplyScreen() {
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const file = result.assets[0];
+        
+        // Check file extension strictly
+        const name = file.name || '';
+        const allowedExtensions = ['pdf', 'doc', 'docx'];
+        const fileExtension = name.split('.').pop()?.toLowerCase();
+        if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
+          Alert.alert('Lỗi', 'Chỉ chấp nhận file CV ở định dạng: .pdf, .doc, .docx');
+          return;
+        }
+
         if (file.size && file.size > 5 * 1024 * 1024) {
           Alert.alert('Lỗi', 'File không được vượt quá 5MB');
           return;
@@ -57,8 +104,12 @@ export default function ApplyScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!cvFile) {
+    if (uploadType === 'picker' && !cvFile) {
       Alert.alert('Thông báo', 'Vui lòng tải CV lên');
+      return;
+    }
+    if (uploadType === 'existing' && !selectedExistingCv) {
+      Alert.alert('Thông báo', 'Vui lòng chọn CV đã tải lên');
       return;
     }
     if (!location.trim()) {
@@ -72,17 +123,21 @@ export default function ApplyScreen() {
 
     setIsSubmitting(true);
     try {
-      // 1. Upload CV
-      const fileToUpload = {
-        uri: cvFile.uri,
-        name: cvFile.name,
-        type: cvFile.mimeType || 'application/pdf',
-      };
-      const fileNameOnServer = await cvService.uploadCV(fileToUpload);
+      let fileNameOnServer = '';
+
+      if (uploadType === 'picker' && cvFile) {
+        // 1. Upload CV
+        const fileToUpload = {
+          uri: cvFile.uri,
+          name: cvFile.name,
+          type: cvFile.mimeType || 'application/pdf',
+        };
+        fileNameOnServer = await cvService.uploadCV(fileToUpload);
+      } else if (uploadType === 'existing' && selectedExistingCv) {
+        fileNameOnServer = selectedExistingCv.url;
+      }
 
       // 2. Submit Application
-      // Note: We can expand the API to accept location and cover letter if backend supports it.
-      // For now, we'll follow the existing applyJob signature and maybe add metadata if needed.
       await jobService.applyJob({
         jobId: parseInt(jobId as string, 10),
         email: user?.email || '',
@@ -125,28 +180,97 @@ export default function ApplyScreen() {
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           <Text style={styles.sectionTitle}>CV ứng tuyển</Text>
           
+          {/* Option 1: Tải CV mới */}
           <TouchableOpacity 
-            style={[styles.uploadContainer, cvFile && styles.uploadContainerActive]} 
-            onPress={handlePickDocument}
+            style={[
+              styles.optionCard, 
+              uploadType === 'picker' && styles.optionCardActive
+            ]}
+            onPress={() => setUploadType('picker')}
+            activeOpacity={0.8}
           >
             <View style={styles.radioRow}>
-              <View style={[styles.radio, { borderColor: COLORS.primary }]}>
-                <View style={[styles.radioInner, { backgroundColor: COLORS.primary }]} />
+              <View style={[styles.radio, { borderColor: uploadType === 'picker' ? COLORS.primary : COLORS.gray[300] }]}>
+                {uploadType === 'picker' && <View style={[styles.radioInner, { backgroundColor: COLORS.primary }]} />}
               </View>
-              <Text style={styles.radioText}>Tải CV lên từ điện thoại</Text>
+              <Text style={styles.radioText}>Tải CV mới từ điện thoại</Text>
             </View>
 
-            <View style={styles.dropZone}>
-              <View style={styles.uploadIconCircle}>
-                <Feather name="upload-cloud" size={32} color={COLORS.primary} />
+            {uploadType === 'picker' && (
+              <TouchableOpacity 
+                style={[styles.dropZone, cvFile && styles.dropZoneActive]} 
+                onPress={handlePickDocument}
+                activeOpacity={0.7}
+              >
+                <View style={styles.uploadIconCircle}>
+                  <Feather name="upload-cloud" size={24} color={COLORS.primary} />
+                </View>
+                <Text style={styles.uploadText}>
+                  {cvFile ? cvFile.name : 'Chọn file từ thiết bị'}
+                </Text>
+                <Text style={styles.uploadSubtext}>
+                  Định dạng .doc, .docx, .pdf dưới 5MB
+                </Text>
+              </TouchableOpacity>
+            )}
+          </TouchableOpacity>
+
+          {/* Option 2: Chọn CV sẵn có */}
+          <TouchableOpacity 
+            style={[
+              styles.optionCard, 
+              uploadType === 'existing' && styles.optionCardActive
+            ]}
+            onPress={() => setUploadType('existing')}
+            activeOpacity={0.8}
+          >
+            <View style={styles.radioRow}>
+              <View style={[styles.radio, { borderColor: uploadType === 'existing' ? COLORS.primary : COLORS.gray[300] }]}>
+                {uploadType === 'existing' && <View style={[styles.radioInner, { backgroundColor: COLORS.primary }]} />}
               </View>
-              <Text style={styles.uploadText}>
-                {cvFile ? cvFile.name : 'Nhấn để tải lên'}
-              </Text>
-              <Text style={styles.uploadSubtext}>
-                Hỗ trợ định dạng .doc, .docx, pdf có kích thước dưới <Text style={{fontWeight: '700'}}>5MB</Text>
-              </Text>
+              <Text style={styles.radioText}>Chọn từ CV đã tải lên ({existingCvs.length})</Text>
             </View>
+
+            {uploadType === 'existing' && (
+              <View style={styles.existingContainer}>
+                {loadingCvs ? (
+                  <ActivityIndicator size="small" color={COLORS.primary} style={{ marginVertical: 12 }} />
+                ) : existingCvs.length === 0 ? (
+                  <Text style={styles.noExistingText}>Bạn chưa tải lên CV nào trước đây.</Text>
+                ) : (
+                  existingCvs.map((cv) => {
+                    const isSelected = selectedExistingCv?.id === cv.id;
+                    const cleanName = cv.url.replace(/^\d+-/, '');
+                    return (
+                      <TouchableOpacity
+                        key={cv.id}
+                        style={[
+                          styles.cvItemCard,
+                          isSelected && styles.cvItemCardActive
+                        ]}
+                        onPress={() => setSelectedExistingCv(cv)}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons 
+                          name="document-text" 
+                          size={22} 
+                          color={isSelected ? COLORS.primary : COLORS.gray[400]} 
+                        />
+                        <View style={{ flex: 1, marginLeft: 8 }}>
+                          <Text style={styles.cvItemName} numberOfLines={1}>{cleanName}</Text>
+                          <Text style={styles.cvItemDate}>
+                            Ngày: {dayjs(cv.createdAt).format('DD/MM/YYYY')}
+                          </Text>
+                        </View>
+                        {isSelected && (
+                          <Ionicons name="checkmark-circle" size={18} color={COLORS.primary} />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })
+                )}
+              </View>
+            )}
           </TouchableOpacity>
 
           <View style={styles.inputSection}>
@@ -400,5 +524,57 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: 16,
     fontWeight: '700',
+  },
+  optionCard: {
+    borderWidth: 1,
+    borderColor: '#EEEEEE',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    backgroundColor: '#FAFAFA',
+  },
+  optionCardActive: {
+    borderColor: COLORS.primary,
+    backgroundColor: '#FFFFFF',
+  },
+  dropZoneActive: {
+    backgroundColor: '#F0FDF4',
+    borderColor: COLORS.primary,
+  },
+  existingContainer: {
+    marginTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#EEEEEE',
+    paddingTop: 12,
+  },
+  noExistingText: {
+    fontSize: 13,
+    color: COLORS.text.secondary,
+    textAlign: 'center',
+    paddingVertical: 10,
+  },
+  cvItemCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    marginBottom: 8,
+    backgroundColor: '#F9FAFB',
+  },
+  cvItemCardActive: {
+    borderColor: COLORS.primary,
+    backgroundColor: '#F0FDF4',
+  },
+  cvItemName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.text.primary,
+  },
+  cvItemDate: {
+    fontSize: 11,
+    color: COLORS.text.secondary,
+    marginTop: 2,
   },
 });

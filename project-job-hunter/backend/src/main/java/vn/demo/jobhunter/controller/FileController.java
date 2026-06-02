@@ -61,12 +61,28 @@ public class FileController {
             throw new StorageException("File is empty. Please upload a file.");
         }
 
-        List<String> allowedExtensions = Arrays.asList("pdf", "jpg", "jpeg", "png", "doc", "docx");
         String fileName = file.getOriginalFilename();
-        boolean isValid = allowedExtensions.stream().anyMatch(item -> fileName != null && fileName.toLowerCase().endsWith(item));
 
-        if (!isValid) {
-            throw new StorageException("Invalid file extension. Allowed: " + allowedExtensions.toString());
+        if ("resume".equals(folder)) {
+            // Strictly check extension for CV/Resume
+            List<String> allowedResumeExtensions = Arrays.asList("pdf", "doc", "docx");
+            boolean isValidResume = allowedResumeExtensions.stream()
+                    .anyMatch(item -> fileName != null && fileName.toLowerCase().endsWith(item));
+            if (!isValidResume) {
+                throw new StorageException("Chỉ chấp nhận file CV ở định dạng: .pdf, .doc, .docx");
+            }
+            // Limit CV size to 5MB
+            if (file.getSize() > 5 * 1024 * 1024) {
+                throw new StorageException("File CV không được vượt quá 5MB.");
+            }
+        } else {
+            // General validation for other folders (e.g. logos, avatars)
+            List<String> allowedExtensions = Arrays.asList("pdf", "jpg", "jpeg", "png", "doc", "docx");
+            boolean isValid = allowedExtensions.stream()
+                    .anyMatch(item -> fileName != null && fileName.toLowerCase().endsWith(item));
+            if (!isValid) {
+                throw new StorageException("Invalid file extension. Allowed: " + allowedExtensions.toString());
+            }
         }
 
         // store file
