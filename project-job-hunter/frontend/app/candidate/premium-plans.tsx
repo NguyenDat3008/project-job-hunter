@@ -100,10 +100,11 @@ export default function CandidatePremiumPlans() {
                 packageId: pkg.id
               }) as any;
               
-              if (res.qrUrl) {
+              const data = res?.data || res;
+              if (data && data.qrUrl) {
                 Alert.alert(
                   'Đơn hàng đã tạo',
-                  `Mã đơn: ${res.orderCode}\nSố tiền: ${res.amount.toLocaleString()}đ\n\nTrong bản demo này, bạn có thể nhấn nút dưới đây để giả lập thanh toán thành công.`,
+                  `Mã đơn: ${data.orderCode}\nSố tiền: ${data.amount.toLocaleString()}đ\n\nTrong bản demo này, bạn có thể nhấn nút dưới đây để giả lập thanh toán thành công.`,
                   [
                     { text: 'Đóng', style: 'cancel' },
                     { 
@@ -111,7 +112,7 @@ export default function CandidatePremiumPlans() {
                       onPress: async () => {
                         try {
                           setLoading(true);
-                          await api.post(`/payment/mock/simulate-success/${res.orderCode}`);
+                          await api.post(`/payment/mock/simulate-success/${data.orderCode}`);
                           Alert.alert('Thành công', 'Chúc mừng! Bạn đã trở thành ứng viên Premium.', [
                             { text: 'Về Profile', onPress: () => router.push('/(tabs)/profile') }
                           ]);

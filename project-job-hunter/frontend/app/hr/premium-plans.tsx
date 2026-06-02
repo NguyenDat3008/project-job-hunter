@@ -113,10 +113,11 @@ export default function PremiumPlans() {
                 packageId: pkg.id
               }) as any;
               
-              if (res.qrUrl) {
+              const data = res?.data || res;
+              if (data && data.qrUrl) {
                 Alert.alert(
                   'Đơn hàng đã tạo',
-                  `Mã đơn: ${res.orderCode}\nSố tiền: ${res.amount.toLocaleString()}đ\n\nBạn có thể nhấn nút dưới đây để giả lập thanh toán test.`,
+                  `Mã đơn: ${data.orderCode}\nSố tiền: ${data.amount.toLocaleString()}đ\n\nBạn có thể nhấn nút dưới đây để giả lập thanh toán test.`,
                   [
                     { text: 'Đóng', style: 'cancel' },
                     { 
@@ -124,7 +125,7 @@ export default function PremiumPlans() {
                       onPress: async () => {
                         try {
                           setLoading(true);
-                          await api.post(`/payment/mock/simulate-success/${res.orderCode}`);
+                          await api.post(`/payment/mock/simulate-success/${data.orderCode}`);
                           Alert.alert('Thành công', 'Nâng cấp thành công! Vui lòng đăng nhập lại để cập nhật quyền lợi.', [
                             { text: 'OK', onPress: () => router.push('/(tabs)/profile') }
                           ]);
