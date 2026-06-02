@@ -3,6 +3,7 @@ import { COLORS, SHADOW } from '@/constants/theme';
 import { cvService } from '@/services/cvService';
 import { API_CONFIG } from '@/constants/endpoints';
 import { generalStorage } from '@/utils/storage';
+import { useAuthStore } from '@/store/authStore';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
@@ -12,10 +13,14 @@ import dayjs from 'dayjs';
 
 export default function UploadCVScreen() {
   const router = useRouter();
+  const { user } = useAuthStore();
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<any>(null);
   const [existingCvs, setExistingCvs] = useState<any[]>([]);
   const [isLoadingCvs, setIsLoadingCvs] = useState(true);
+
+  // User-specific storage key
+  const storageKey = user?.email ? `uploaded_cvs_${user.email}` : 'uploaded_cvs_guest';
 
   const fetchExistingCvs = async () => {
     try {
@@ -23,8 +28,8 @@ export default function UploadCVScreen() {
       const data = await cvService.getCVs();
       const serverList = data?.result || [];
 
-      // 2. Fetch local storage CVs (directly uploaded from this device)
-      const localCvs = await generalStorage.get<any[]>('uploaded_cvs') || [];
+      // 2. Fetch local storage CVs (directly uploaded from this device for this user)
+      const localCvs = await generalStorage.get<any[]>(storageKey) || [];
 
       // Combine and deduplicate by URL
       const combined = [...localCvs, ...serverList];
@@ -43,7 +48,7 @@ export default function UploadCVScreen() {
 
   useEffect(() => {
     fetchExistingCvs();
-  }, []);
+  }, [user?.email]);
 
   const handleOpenCV = (url: string) => {
     if (!url) return;
@@ -110,9 +115,9 @@ export default function UploadCVScreen() {
         url: fileNameOnServer,
         createdAt: new Date().toISOString(),
       };
-      const localCvs = await generalStorage.get<any[]>('uploaded_cvs') || [];
+      const localCvs = await generalStorage.get<any[]>(storageKey) || [];
       localCvs.unshift(newCvItem);
-      await generalStorage.set('uploaded_cvs', localCvs);
+      await generalStorage.set(storageKey, localCvs);
       
       Alert.alert('Thành công', 'CV của bạn đã được tải lên hệ thống');
       setSelectedFile(null);

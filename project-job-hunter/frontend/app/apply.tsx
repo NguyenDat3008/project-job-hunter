@@ -41,6 +41,9 @@ export default function ApplyScreen() {
   const [selectedExistingCv, setSelectedExistingCv] = useState<any | null>(null);
   const [loadingCvs, setLoadingCvs] = useState(false);
 
+  // User-specific storage key
+  const storageKey = user?.email ? `uploaded_cvs_${user.email}` : 'uploaded_cvs_guest';
+
   useEffect(() => {
     const loadCvs = async () => {
       try {
@@ -50,7 +53,7 @@ export default function ApplyScreen() {
         const serverList = data?.result || [];
 
         // 2. Fetch local storage CVs (directly uploaded)
-        const localCvs = await generalStorage.get<any[]>('uploaded_cvs') || [];
+        const localCvs = await generalStorage.get<any[]>(storageKey) || [];
 
         // Combine and deduplicate by URL
         const combined = [...localCvs, ...serverList];
@@ -67,7 +70,7 @@ export default function ApplyScreen() {
       }
     };
     loadCvs();
-  }, []);
+  }, [user?.email]);
 
   const handlePickDocument = async () => {
     try {
