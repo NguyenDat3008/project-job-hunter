@@ -122,6 +122,7 @@ public class PaymentService {
         return order;
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public void handleCallback(String bodyJson, String signature, String timestamp) 
             throws JsonProcessingException {
         // 1. Verify HMAC

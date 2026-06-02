@@ -9,6 +9,7 @@ import {
   Image,
   Alert,
   Dimensions,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
@@ -57,6 +58,8 @@ export default function CandidatePremiumPlans() {
   const router = useRouter();
   const { user } = useAuthStore();
   const [loading, setLoading] = useState(false);
+  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+  const [orderData, setOrderData] = useState<any>(null);
 
   const getTierRank = (tier: string | undefined) => {
     if (!tier) return 0;
@@ -100,31 +103,10 @@ export default function CandidatePremiumPlans() {
                 packageId: pkg.id
               }) as any;
               
-              const data = res?.data || res;
+               const data = res?.data || res;
               if (data && data.qrUrl) {
-                Alert.alert(
-                  'Đơn hàng đã tạo',
-                  `Mã đơn: ${data.orderCode}\nSố tiền: ${data.amount.toLocaleString()}đ\n\nTrong bản demo này, bạn có thể nhấn nút dưới đây để giả lập thanh toán thành công.`,
-                  [
-                    { text: 'Đóng', style: 'cancel' },
-                    { 
-                      text: 'Thanh toán giả lập (TEST)', 
-                      onPress: async () => {
-                        try {
-                          setLoading(true);
-                          await api.post(`/payment/mock/simulate-success/${data.orderCode}`);
-                          Alert.alert('Thành công', 'Chúc mừng! Bạn đã trở thành ứng viên Premium.', [
-                            { text: 'Về Profile', onPress: () => router.push('/(tabs)/profile') }
-                          ]);
-                        } catch (e: any) {
-                          Alert.alert('Lỗi', 'Không thể giả lập: ' + e.message);
-                        } finally {
-                          setLoading(false);
-                        }
-                      }
-                    }
-                  ]
-                );
+                setOrderData(data);
+                setPaymentModalVisible(true);
               }
             } catch (error: any) {
               Alert.alert('Lỗi', error.message || 'Không thể tạo đơn hàng.');
@@ -227,6 +209,84 @@ export default function CandidatePremiumPlans() {
         </View>
         <View style={{ height: 40 }} />
       </ScrollView>
+      <Modal
+        visible={paymentModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setPaymentModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Thanh toán quét mã VietQR</Text>
+              <TouchableOpacity onPress={() => setPaymentModalVisible(false)} style={styles.closeBtn}>
+                <Ionicons name="close" size={24} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.modalScroll}>
+              <Text style={styles.paymentGuide}>
+                Quét mã QR dưới đây bằng ứng dụng Ngân hàng (Mobile Banking) để thực hiện chuyển khoản tự động.
+              </Text>
+
+              <View style={styles.qrContainer}>
+                {orderData?.qrUrl ? (
+                  <Image
+                    source={{ uri: orderData.qrUrl }}
+                    style={styles.qrImage}
+                    resizeMode="contain"
+                  />
+                ) : null}
+              </View>
+
+              <View style={styles.billingDetails}>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Mã đơn hàng</Text>
+                  <Text style={styles.detailValue}>{orderData?.orderCode}</Text>
+                </View>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Số tiền</Text>
+                  <Text style={[styles.detailValue, { color: '#EAB308', fontWeight: '800' }]}>
+                    {orderData?.amount?.toLocaleString()}đ
+                  </Text>
+                </View>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Trạng thái</Text>
+                  <Text style={[styles.detailValue, { color: '#F59E0B' }]}>Đang chờ quét...</Text>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={styles.simulateBtn}
+                onPress={async () => {
+                  try {
+                    setLoading(true);
+                    await api.post(`/payment/mock/simulate-success/${orderData?.orderCode}`);
+                    setPaymentModalVisible(false);
+                    Alert.alert('Thành công', 'Chúc mừng! Bạn đã trở thành ứng viên Premium.', [
+                      { text: 'Về Profile', onPress: () => router.push('/(tabs)/profile') }
+                    ]);
+                  } catch (e: any) {
+                    Alert.alert('Lỗi', 'Không thể giả lập: ' + e.message);
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                disabled={loading}
+              >
+                <Text style={styles.simulateBtnText}>Thanh toán giả lập (TEST)</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.cancelBtn}
+                onPress={() => setPaymentModalVisible(false)}
+              >
+                <Text style={styles.cancelBtnText}>Đóng</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -274,4 +334,110 @@ const styles = StyleSheet.create({
   subscribeBtnText: { color: COLORS.white, fontWeight: '800', fontSize: 15 },
   footerInfo: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 0 },
   footerText: { fontSize: 11, color: '#64748B', fontWeight: '600' },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 40,
+    maxHeight: '90%',
+    ...SHADOW.lg,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#1E293B',
+  },
+  closeBtn: {
+    padding: 4,
+  },
+  modalScroll: {
+    alignItems: 'center',
+    paddingBottom: 20,
+  },
+  paymentGuide: {
+    fontSize: 13,
+    color: '#64748B',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 18,
+  },
+  qrContainer: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: width - 48,
+    height: width - 48,
+  },
+  qrImage: {
+    width: '100%',
+    height: '100%',
+  },
+  billingDetails: {
+    width: '100%',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 24,
+    gap: 12,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  detailLabel: {
+    fontSize: 13,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  detailValue: {
+    fontSize: 13,
+    color: '#1E293B',
+    fontWeight: '700',
+  },
+  simulateBtn: {
+    backgroundColor: '#10B981',
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 12,
+    ...SHADOW.sm,
+  },
+  simulateBtnText: {
+    color: COLORS.white,
+    fontWeight: '800',
+    fontSize: 15,
+  },
+  cancelBtn: {
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+  },
+  cancelBtnText: {
+    color: '#64748B',
+    fontWeight: '700',
+    fontSize: 15,
+  },
 });

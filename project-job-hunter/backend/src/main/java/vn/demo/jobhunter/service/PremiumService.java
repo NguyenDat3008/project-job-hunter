@@ -19,6 +19,7 @@ public class PremiumService {
         this.jobRepository = jobRepository;
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public void subscribePremium(Company company, String tier, int days) {
         company.setIsPremium(true);
         company.setPremiumTier(tier.toUpperCase());
