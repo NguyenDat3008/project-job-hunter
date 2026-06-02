@@ -15,6 +15,7 @@ public interface JobRepository extends JpaRepository<Job, Long>,
 
         List<Job> findBySkillsIn(List<Skill> skills);
         List<Job> findByActiveTrue();
+        List<Job> findByCompanyId(long companyId);
         long countByCompanyId(long companyId);
         long countByActive(boolean active);
 

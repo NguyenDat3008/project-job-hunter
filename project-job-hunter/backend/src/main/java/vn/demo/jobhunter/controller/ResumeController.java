@@ -28,6 +28,7 @@ import vn.demo.jobhunter.domain.response.resume.ResCreateResumeDTO;
 import vn.demo.jobhunter.domain.response.resume.ResFetchResumeDTO;
 import vn.demo.jobhunter.domain.response.resume.ResUpdateResumeDTO;
 import vn.demo.jobhunter.service.ResumeService;
+import vn.demo.jobhunter.repository.JobRepository;
 import vn.demo.jobhunter.service.UserService;
 import vn.demo.jobhunter.util.SecurityUtil;
 import vn.demo.jobhunter.util.annotation.ApiMessage;
@@ -46,6 +47,7 @@ public class ResumeController {
 
     private final ResumeService resumeService;
     private final UserService userService;
+    private final JobRepository jobRepository;
 
     private final FilterBuilder filterBuilder;
     private final FilterSpecificationConverter filterSpecificationConverter;
@@ -53,10 +55,12 @@ public class ResumeController {
     public ResumeController(
             ResumeService resumeService,
             UserService userService,
+            JobRepository jobRepository,
             FilterBuilder filterBuilder,
             FilterSpecificationConverter filterSpecificationConverter) {
         this.resumeService = resumeService;
         this.userService = userService;
+        this.jobRepository = jobRepository;
         this.filterBuilder = filterBuilder;
         this.filterSpecificationConverter = filterSpecificationConverter;
     }
@@ -154,7 +158,7 @@ public class ResumeController {
         if (currentUser != null) {
             Company userCompany = currentUser.getCompany();
             if (userCompany != null) {
-                List<Job> companyJobs = userCompany.getJobs();
+                List<Job> companyJobs = this.jobRepository.findByCompanyId(userCompany.getId());
                 if (companyJobs != null && companyJobs.size() > 0) {
                     arrJobIds = companyJobs.stream().map(x -> x.getId())
                             .collect(Collectors.toList());
