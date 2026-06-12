@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   StyleSheet,
   View,
@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   FlatList,
   ActivityIndicator,
-  Alert,
   Dimensions,
   TextInput,
   Platform,
@@ -20,8 +19,15 @@ import { COLORS, SHADOW } from '@constants/theme';
 import { Job } from '@/types/job.types';
 import { JobCard } from '@components/index';
 import { jobService } from '@services/jobService';
+import {
+  getClusters,
+  getRegionForCluster,
+  MapRegion,
+  MapMarker,
+  ClusterMarker,
+} from '@utils/clustering';
 
-const { width, height } = Dimensions.get('window');
+const { height } = Dimensions.get('window');
 
 export default function NearbyJobsScreen() {
   const router = useRouter();
@@ -32,12 +38,23 @@ export default function NearbyJobsScreen() {
   const [loading, setLoading] = useState(true);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [searching, setSearching] = useState(false);
-  const [radius, setRadius] = useState(10); // 10km radius default
+  const [radius, setRadius] = useState(10);
   const [keyword, setKeyword] = useState('');
+
+  // ── State: theo dõi vùng hiển thị hiện tại của bản đồ ──────────────────────
+  const [region, setRegion] = useState<MapRegion>({
+    latitude: 21.0285,
+    longitude: 105.8542,
+    latitudeDelta: 0.05,
+    longitudeDelta: 0.05,
+  });
+
+  // ── Gom cụm: tính toán lại mỗi khi jobs hoặc region thay đổi ───────────────
+  const clusteredMarkers: MapMarker[] = getClusters(jobs, region);
 
   useEffect(() => {
     (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();// Xin quyền định vị
+      let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         setErrorMsg('Quyền truy cập vị trí bị từ chối');
         setLoading(false);
@@ -47,7 +64,21 @@ export default function NearbyJobsScreen() {
       try {
         let currentLocation = await Location.getCurrentPositionAsync({});
         setLocation(currentLocation);
-        fetchNearbyJobs(currentLocation.coords.latitude, currentLocation.coords.longitude, keyword);
+
+        // Cập nhật region ban đầu theo vị trí thật
+        const initialRegion: MapRegion = {
+          latitude: currentLocation.coords.latitude,
+          longitude: currentLocation.coords.longitude,
+          latitudeDelta: 0.05,
+          longitudeDelta: 0.05,
+        };
+        setRegion(initialRegion);
+
+        fetchNearbyJobs(
+          currentLocation.coords.latitude,
+          currentLocation.coords.longitude,
+          keyword
+        );
       } catch (error) {
         console.error('Get location error:', error);
         setErrorMsg('Không thể lấy vị trí hiện tại');
@@ -59,7 +90,9 @@ export default function NearbyJobsScreen() {
   const fetchNearbyJobs = async (lat: number, lng: number, name?: string) => {
     try {
       setSearching(true);
-      const url = `/jobs/nearby?lat=${lat}&lng=${lng}&radius=${radius}${name ? `&name=${encodeURIComponent(name)}` : ''}`;
+      const url = `/jobs/nearby?lat=${lat}&lng=${lng}&radius=${radius}${
+        name ? `&name=${encodeURIComponent(name)}` : ''
+      }`;
       const data = await api.get<Job[]>(url);
       setJobs(data || []);
     } catch (error) {
@@ -73,9 +106,9 @@ export default function NearbyJobsScreen() {
   const handleToggleSave = async (job: Job) => {
     try {
       await jobService.saveJob(job.id);
-      setJobs(prev => prev.map(j =>
-        j.id === job.id ? { ...j, isSaved: !j.isSaved } : j
-      ));
+      setJobs((prev) =>
+        prev.map((j) => (j.id === job.id ? { ...j, isSaved: !j.isSaved } : j))
+      );
     } catch (error) {
       console.error('Error toggling save:', error);
     }
@@ -83,16 +116,27 @@ export default function NearbyJobsScreen() {
 
   const handleSearch = () => {
     if (location) {
-      fetchNearbyJobs(location.coords.latitude, location.coords.longitude, keyword);
+      fetchNearbyJobs(
+        location.coords.latitude,
+        location.coords.longitude,
+        keyword
+      );
     }
   };
 
-  const handleSearchThisArea = () => {
+  // ── Cập nhật region khi người dùng kéo/zoom bản đồ ─────────────────────────
+  const handleRegionChangeComplete = useCallback((newRegion: MapRegion) => {
+    setRegion(newRegion);
+  }, []);
+
+  // ── Xử lý nhấn vào cụm → zoom bản đồ đến khu vực chứa các job đó ──────────
+  const handleClusterPress = useCallback((cluster: ClusterMarker) => {
+    const newRegion = getRegionForCluster(cluster);
+    setRegion(newRegion);
     if (mapRef.current) {
-      // Get current map center and search
-      // Note: react-native-maps doesn't easily expose current center without state
+      mapRef.current.animateToRegion(newRegion, 400);
     }
-  };
+  }, []);
 
   const renderJobItem = ({ item }: { item: Job }) => (
     <JobCard
@@ -124,13 +168,6 @@ export default function NearbyJobsScreen() {
     );
   }
 
-  const initialRegion = {
-    latitude: location?.coords.latitude || 21.0285,
-    longitude: location?.coords.longitude || 105.8542,
-    latitudeDelta: 0.05,
-    longitudeDelta: 0.05,
-  };
-
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ title: 'Việc làm quanh đây', headerShadowVisible: false }} />
@@ -139,34 +176,79 @@ export default function NearbyJobsScreen() {
         <MapView
           ref={mapRef}
           style={styles.map}
-          initialRegion={initialRegion}
+          initialRegion={region}
           showsUserLocation={true}
+          onRegionChangeComplete={handleRegionChangeComplete}
         >
-          {/* Vẽ bản đồ */}
+          {/* Tile bản đồ OpenStreetMap miễn phí */}
           <UrlTile
             urlTemplate="https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"
             maximumZ={19}
             flipY={false}
           />
-          {/* Sử dụng tile bản đồ miễn phí OpenStreetMap */}
-          {jobs.map((job) => (
-            job.company?.latitude && job.company?.longitude ? (
-              <Marker
-                key={job.id}
-                coordinate={{
-                  latitude: job.company.latitude,
-                  longitude: job.company.longitude,
-                }} // Tọa độ công ty
-                title={job.name}
-                description={job.company.name}
-                onCalloutPress={() => router.push(`/detail?jobId=${job.id}`)}
-              >
-                <View style={styles.customMarker}>
-                  <Ionicons name="briefcase" size={20} color={COLORS.white} />
-                </View>
-              </Marker>
-            ) : null
-          ))}
+
+          {/* ── Render các marker đã gom cụm ────────────────────────────────── */}
+          {clusteredMarkers.map((marker) => {
+            if (marker.type === 'single') {
+              // Marker đơn lẻ: hiển thị icon chiếc vali
+              return (
+                <Marker
+                  key={`single_${marker.job.id}`}
+                  coordinate={{
+                    latitude: marker.latitude,
+                    longitude: marker.longitude,
+                  }}
+                  title={marker.job.name}
+                  description={marker.job.company?.name}
+                  onCalloutPress={() =>
+                    router.push(`/detail?jobId=${marker.job.id}`)
+                  }
+                >
+                  <View style={styles.singleMarker}>
+                    <Ionicons name="briefcase" size={18} color={COLORS.white} />
+                  </View>
+                </Marker>
+              );
+            } else {
+              // Marker cụm: hiển thị vòng tròn với số lượng
+              const countLabel =
+                marker.count > 99 ? '99+' : String(marker.count);
+              const size =
+                marker.count >= 50 ? 54 : marker.count >= 10 ? 46 : 38;
+
+              return (
+                <Marker
+                  key={marker.id}
+                  coordinate={{
+                    latitude: marker.latitude,
+                    longitude: marker.longitude,
+                  }}
+                  onPress={() => handleClusterPress(marker)}
+                  tracksViewChanges={false}
+                >
+                  <View
+                    style={[
+                      styles.clusterMarker,
+                      { width: size, height: size, borderRadius: size / 2 },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.clusterInner,
+                        {
+                          width: size - 10,
+                          height: size - 10,
+                          borderRadius: (size - 10) / 2,
+                        },
+                      ]}
+                    >
+                      <Text style={styles.clusterCount}>{countLabel}</Text>
+                    </View>
+                  </View>
+                </Marker>
+              );
+            }
+          })}
         </MapView>
 
         {searching && (
@@ -189,7 +271,12 @@ export default function NearbyJobsScreen() {
               returnKeyType="search"
             />
             {keyword.length > 0 && (
-              <TouchableOpacity onPress={() => { setKeyword(''); handleSearch(); }}>
+              <TouchableOpacity
+                onPress={() => {
+                  setKeyword('');
+                  handleSearch();
+                }}
+              >
                 <Ionicons name="close-circle" size={18} color={COLORS.gray[400]} />
               </TouchableOpacity>
             )}
@@ -211,7 +298,9 @@ export default function NearbyJobsScreen() {
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <Ionicons name="search" size={48} color="#CCC" />
-              <Text style={styles.emptyText}>Không tìm thấy việc làm nào quanh đây</Text>
+              <Text style={styles.emptyText}>
+                Không tìm thấy việc làm nào quanh đây
+              </Text>
             </View>
           }
         />
@@ -260,14 +349,37 @@ const styles = StyleSheet.create({
   map: {
     ...StyleSheet.absoluteFillObject,
   },
-  customMarker: {
+
+  // ── Marker đơn lẻ ──────────────────────────────────────────────────────────
+  singleMarker: {
     backgroundColor: COLORS.primary,
-    padding: 5,
+    padding: 6,
     borderRadius: 20,
     borderWidth: 2,
     borderColor: COLORS.white,
     ...SHADOW.sm,
   },
+
+  // ── Cluster marker ─────────────────────────────────────────────────────────
+  clusterMarker: {
+    backgroundColor: 'rgba(0, 102, 255, 0.25)', // vòng ngoài mờ
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  clusterInner: {
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: COLORS.white,
+    ...SHADOW.md,
+  },
+  clusterCount: {
+    color: COLORS.white,
+    fontWeight: '800',
+    fontSize: 12,
+  },
+
   searchingOverlay: {
     position: 'absolute',
     top: 20,
@@ -306,43 +418,6 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 15,
-  },
-  jobCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-  },
-  jobInfo: {
-    flex: 1,
-  },
-  jobName: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: COLORS.black,
-    marginBottom: 2,
-  },
-  companyName: {
-    fontSize: 12,
-    color: COLORS.gray[500],
-    marginBottom: 5,
-  },
-  tagRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  salaryText: {
-    fontSize: 13,
-    color: COLORS.primary,
-    fontWeight: '700',
-  },
-  locationText: {
-    fontSize: 12,
-    color: COLORS.gray[500],
   },
   emptyState: {
     alignItems: 'center',
